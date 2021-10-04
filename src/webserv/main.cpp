@@ -7,9 +7,9 @@
 
 int		server( int port ) {
 	
-	int		sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	int		server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	
-	if (sockfd == -1) {
+	if (server_fd == -1) {
     
 		std::cout << "Failed to create socket. errno: " << errno << " " << strerror(errno) << std::endl;
     	exit(EXIT_FAILURE);
@@ -20,37 +20,47 @@ int		server( int port ) {
 	sockaddr.sin_addr.s_addr = INADDR_ANY;
 	sockaddr.sin_port = htons(port);
 	
-	if (bind(sockfd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0) {
+	if (bind(server_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0) {
     
 		std::cout << "Failed to bind to port " << port << ": " << errno << " " << strerror(errno) << std::endl;
     	exit(EXIT_FAILURE);
 	}
 	
-	if (listen(sockfd, 10) < 0) {
+	if (listen(server_fd, 10) < 0) {
     
 		std::cout << "Failed to listen on socket. errno: " << errno << " " <<  strerror(errno) << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	
-	auto	addrlen = sizeof(sockaddr);
-	int		connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+	int		addrlen = sizeof(sockaddr);
+
+	while (1) {
 	
-	if (connection < 0) {
+		int		connection = accept(server_fd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+	
+		if (connection < 0) {
 		
-		std::cout << "Failed to grab connection. errno: " << errno << std::endl;
-		exit(EXIT_FAILURE);
+			std::cout << "Failed to grab connection. errno: " << errno << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	
+		char	buffer[1024];
+		bzero(buffer, 1024);
+		int		bytesread = read(connection, buffer, 1024); 
+
+		if (!bytesread)
+			std::cout << "nothing received..." << std::endl;
+		else
+			std::cout << buffer << std::endl << "---------------------" << std::endl;
+	
+		std::string		response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 22\n\nWebserv is working!!!!";
+		write(connection, response.c_str(), response.length());
+//		send(connection, response.c_str(), response.size(), 0);
+	
+		close(connection);
 	}
 	
-	char	buffer[100];
-	auto	bytesRead = read(connection, buffer, 100);
-	
-	std::cout << "Client said: " << buffer;
-	
-	std::string response = "Copy that\n";
-	send(connection, response.c_str(), response.size(), 0);
-	
-	close(connection);
-	close(sockfd);
+	close(server_fd);
 
 	return 0;
 }
@@ -60,7 +70,7 @@ int		main( int ac, char **av ) {
 	if (ac != 2) {
 
 		//std::cout << "Usage: ./webserv [path to config file]" << std::endl;
-		std::cout << "Usage: ./webserv [port to listen]" << std::endl;
+		std::cout << "Usage: ./webserv [port to bind]" << std::endl;
 		return 0;
 	}
 
