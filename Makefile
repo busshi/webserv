@@ -36,4 +36,8 @@ fclean:		clean
 
 re:			fclean all
 
-.PHONY:	all clean fclean re
+run:		re
+		@echo "Running $(NAME) on port 80..."
+		@./$(NAME) 80
+
+.PHONY:	all clean fclean re run
