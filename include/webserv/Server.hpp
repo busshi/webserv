@@ -6,12 +6,14 @@
 /*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 12:38:49 by aldubar          ###   ########.fr       */
+/*   Updated: 2021/10/05 14:44:55 by aldubar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 # define SERVER_HPP
+
+# include <netinet/in.h>
 
 class	Server {
 
@@ -23,10 +25,15 @@ class	Server {
 
 		Server &	operator=( Server const & rhs );
 
-		int			start( void);
+		void		init( void );
+		void		start( void);
+		void		stop( void);
 
 	private:
-		int		_port;
+		int			_port;
+		int			_socketFd;
+		int			_maxConnexion;
+		sockaddr_in	_sockaddr;
 };
 
 #endif

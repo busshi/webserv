@@ -6,20 +6,25 @@
 /*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 12:41:02 by aldubar          ###   ########.fr       */
+/*   Updated: 2021/10/05 14:48:50 by aldubar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
 
-Server::Server( void ): _port(80) {}
+Server::Server( void ): _port(80), _maxConnexion(10) {
 
-Server::Server( int port ): _port(port) {}
+	init();
+}
+
+Server::Server( int port ): _port(port), _maxConnexion(10) {
+
+	init();
+}
 
 Server::Server( Server const & src ) { *this = src; }
 
@@ -27,44 +32,49 @@ Server::~Server( void ) {}
 
 Server &	Server::operator=( Server const & rhs ) {
 
-	if (this != &rhs)
+	if (this != &rhs) {
+		
 		this->_port = rhs._port;
+		this->_socketFd = rhs._socketFd;
+	}
 
 	return *this;
 }
 
-int			Server::start( void ) {
+void		Server::init( void ) {
 
-	int		server_fd = socket(AF_INET, SOCK_STREAM, 0);
+	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (server_fd == -1) {
+	if (_socketFd == -1) {
 
 		std::cout << "Failed to create socket. errno: " << errno << " " << strerror(errno) << std::endl;
     	exit(EXIT_FAILURE);
 	}
 
-	sockaddr_in sockaddr;
-	sockaddr.sin_family = AF_INET;
-	sockaddr.sin_addr.s_addr = INADDR_ANY;
-	sockaddr.sin_port = htons(_port);
+	_sockaddr.sin_family = AF_INET;
+	_sockaddr.sin_addr.s_addr = INADDR_ANY;
+	_sockaddr.sin_port = htons(_port);
 
-	if (bind(server_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0) {
+	if (bind(_socketFd, (struct sockaddr *)&_sockaddr, sizeof(_sockaddr)) < 0) {
 
 		std::cout << "Failed to bind to port " << _port << ": " << errno << " " << strerror(errno) << std::endl;
     	exit(EXIT_FAILURE);
 	}
 
-	if (listen(server_fd, 10) < 0) {
+	if (listen(_socketFd, _maxConnexion) < 0) {
 
 		std::cout << "Failed to listen on socket. errno: " << errno << " " <<  strerror(errno) << std::endl;
 		exit(EXIT_FAILURE);
 	}
+}
 
-	int		addrlen = sizeof(sockaddr);
+void		Server::start( void ) {
+
+	int		addrlen = sizeof(_sockaddr);
 
 	while (1) {
 
-		int		connection = accept(server_fd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+		int		connection = accept(_socketFd, (struct sockaddr*)&_sockaddr, (socklen_t*)&addrlen);
 
 		if (connection < 0) {
 
@@ -74,6 +84,7 @@ int			Server::start( void ) {
 
 		char	buffer[1024];
 		bzero(buffer, 1024);
+
 		int		bytesread = read(connection, buffer, 1024);
 
 		if (!bytesread)
@@ -88,7 +99,9 @@ int			Server::start( void ) {
 		close(connection);
 	}
 
-	close(server_fd);
+}
 
-	return 0;
+void		Server::stop( void ) {
+
+	close(_socketFd);
 }

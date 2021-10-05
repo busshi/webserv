@@ -15,6 +15,7 @@ int		main( int ac, char **av ) {
 	Server	server(std::stoi(av[1]));
 
 	server.start();
+	server.stop();
 
 	return 0;
 }
