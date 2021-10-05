@@ -6,25 +6,22 @@
 /*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 14:48:50 by aldubar          ###   ########.fr       */
+/*   Updated: 2021/10/05 15:17:19 by aldubar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <cstdlib>
+#include <cstring>
+#include <cerrno>
 #include <iostream>
 #include <unistd.h>
 
-Server::Server( void ): _port(80), _maxConnexion(10) {
+Server::Server( void ): _port(80), _maxConnexion(10) {}
 
-	init();
-}
-
-Server::Server( int port ): _port(port), _maxConnexion(10) {
-
-	init();
-}
+Server::Server( int port ): _port(port), _maxConnexion(10) {}
 
 Server::Server( Server const & src ) { *this = src; }
 
@@ -36,12 +33,14 @@ Server &	Server::operator=( Server const & rhs ) {
 		
 		this->_port = rhs._port;
 		this->_socketFd = rhs._socketFd;
+		this->_maxConnexion = rhs._maxConnexion;
+		this->_connexion = rhs._connexion;
 	}
 
 	return *this;
 }
 
-void		Server::init( void ) {
+void		Server::start( void ) {
 
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -51,11 +50,13 @@ void		Server::init( void ) {
     	exit(EXIT_FAILURE);
 	}
 
-	_sockaddr.sin_family = AF_INET;
-	_sockaddr.sin_addr.s_addr = INADDR_ANY;
-	_sockaddr.sin_port = htons(_port);
+	sockaddr_in		sockaddr;
 
-	if (bind(_socketFd, (struct sockaddr *)&_sockaddr, sizeof(_sockaddr)) < 0) {
+	sockaddr.sin_family = AF_INET;
+	sockaddr.sin_addr.s_addr = INADDR_ANY;
+	sockaddr.sin_port = htons(_port);
+
+	if (bind(_socketFd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0) {
 
 		std::cout << "Failed to bind to port " << _port << ": " << errno << " " << strerror(errno) << std::endl;
     	exit(EXIT_FAILURE);
@@ -66,17 +67,14 @@ void		Server::init( void ) {
 		std::cout << "Failed to listen on socket. errno: " << errno << " " <<  strerror(errno) << std::endl;
 		exit(EXIT_FAILURE);
 	}
-}
 
-void		Server::start( void ) {
-
-	int		addrlen = sizeof(_sockaddr);
+	int		addrlen = sizeof(sockaddr);
 
 	while (1) {
 
-		int		connection = accept(_socketFd, (struct sockaddr*)&_sockaddr, (socklen_t*)&addrlen);
+		_connexion = accept(_socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
 
-		if (connection < 0) {
+		if (_connexion < 0) {
 
 			std::cout << "Failed to grab connection. errno: " << errno << std::endl;
 			exit(EXIT_FAILURE);
@@ -85,20 +83,30 @@ void		Server::start( void ) {
 		char	buffer[1024];
 		bzero(buffer, 1024);
 
-		int		bytesread = read(connection, buffer, 1024);
+		int		bytesread = read(_connexion, buffer, 1024);
 
 		if (!bytesread)
 			std::cout << "nothing received..." << std::endl;
 		else
 			std::cout << buffer << std::endl << "---------------------" << std::endl;
 
-		std::string		response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 22\n\nWebserv is working!!!!";
-		write(connection, response.c_str(), response.length());
-//		send(connection, response.c_str(), response.size(), 0);
-
-		close(connection);
+		parseHeader();
+		sendResponse();
+		close(_connexion);
 	}
 
+}
+
+void		Server::parseHeader( void ) {
+
+}
+
+void		Server::sendResponse( void ) {
+
+		std::string		response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 22\n\nWebserv is working!!!!";
+
+		write(_connexion, response.c_str(), response.length());
+//		send(connexion, response.c_str(), response.size(), 0);
 }
 
 void		Server::stop( void ) {
