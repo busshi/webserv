@@ -1,6 +1,5 @@
 #include "Server.hpp"
 #include <iostream>
-#include <cstdlib>
 
 int		main( int ac, char **av ) {
 
@@ -11,13 +10,16 @@ int		main( int ac, char **av ) {
 		return 0;
 	}
 
-//	char const *	configFile = av[1];
-	
-	int		port = atoi(av[1]);
-	Server	server(port);
+	Server	server;
 
-	server.start();
-	server.stop();
+	try {
+		server.init(av[1]);
+		server.start();
+		server.stop();
+	}
+	catch (std::exception & e) {
+		std::cout << e.what() << std::endl;
+	}
 
 	return 0;
 }

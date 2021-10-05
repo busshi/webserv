@@ -6,22 +6,23 @@
 /*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 15:17:19 by aldubar          ###   ########.fr       */
+/*   Updated: 2021/10/05 18:53:57 by aldubar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <cstdlib>
 #include <cstring>
+#include <cstdlib>
 #include <cerrno>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
+#include <sstream>
+#include <fstream>
 
-Server::Server( void ): _port(80), _maxConnexion(10) {}
-
-Server::Server( int port ): _port(port), _maxConnexion(10) {}
+Server::Server( void ) {}
 
 Server::Server( Server const & src ) { *this = src; }
 
@@ -38,6 +39,12 @@ Server &	Server::operator=( Server const & rhs ) {
 	}
 
 	return *this;
+}
+
+void		Server::init( char const *argv ) {
+
+	_port = atoi(argv);
+	_maxConnexion = 10;
 }
 
 void		Server::start( void ) {
@@ -83,28 +90,88 @@ void		Server::start( void ) {
 		char	buffer[1024];
 		bzero(buffer, 1024);
 
-		int		bytesread = read(_connexion, buffer, 1024);
+		int		bytesread = read(_connexion, &buffer, 1024);
 
 		if (!bytesread)
 			std::cout << "nothing received..." << std::endl;
 		else
 			std::cout << buffer << std::endl << "---------------------" << std::endl;
 
-		parseHeader();
+		parseHeader(buffer);
 		sendResponse();
 		close(_connexion);
 	}
 
 }
 
-void		Server::parseHeader( void ) {
+void		Server::parseHeader( char buffer[] ) {
+	
+	std::vector<std::string>	strings;
+	std::istringstream			buf(buffer);
+	std::string					s;
 
+	while (getline(buf, s, ' '))
+		strings.push_back(s);
+	
+	for (std::vector<std::string>::iterator it = strings.begin(); it != strings.end(); it++) {
+		
+		unsigned	id = it - strings.begin();
+
+		if (id == 0)
+			_method = *it;
+		if (id == 1) {
+
+			_path = *it;
+			_path = _path.substr(1);
+		}
+	}
+
+	display();
+}
+
+void		Server::display( void ) {
+
+	std::cout << "method: " << _method << std::endl;
+	std::cout << "path: " << _path << std::endl;
 }
 
 void		Server::sendResponse( void ) {
 
-		std::string		response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 22\n\nWebserv is working!!!!";
+		std::string		response;
+		std::ifstream	ifs;
+		std::string		path;
 
+		if (!_path.length())
+			path = "asset/index.html";
+		else
+			path = "asset/" + _path;
+
+		ifs.open(path.c_str());
+		if (ifs) {
+
+			std::string	s;
+			std::string	tmp;
+
+			while (getline(ifs, s))
+				tmp += s;
+			ifs.close();
+
+			unsigned len = tmp.length();
+			std::ostringstream	o;
+			o << len;
+			std::string		convertedLen(o.str());
+
+			ifs.open(path.c_str());
+			response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
+			response += convertedLen;
+			response += "\n\n";
+			while (getline(ifs, s))
+				response += s;
+			ifs.close();
+		}
+		else
+			response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\n404 NOT FOUND!!!";
+			
 		write(_connexion, response.c_str(), response.length());
 //		send(connexion, response.c_str(), response.size(), 0);
 }
