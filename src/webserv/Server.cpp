@@ -6,7 +6,7 @@
 /*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 18:53:57 by aldubar          ###   ########.fr       */
+/*   Updated: 2021/10/06 02:09:54 by aldubar          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,8 +152,11 @@ void		Server::sendResponse( void ) {
 			std::string	s;
 			std::string	tmp;
 
-			while (getline(ifs, s))
+			while (getline(ifs, s)) {
+
 				tmp += s;
+				tmp += "\n";
+			}
 			ifs.close();
 
 			unsigned len = tmp.length();
@@ -165,8 +168,11 @@ void		Server::sendResponse( void ) {
 			response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
 			response += convertedLen;
 			response += "\n\n";
-			while (getline(ifs, s))
+			while (getline(ifs, s)) {
+
 				response += s;
+				response += "\n";
+			}
 			ifs.close();
 		}
 		else
