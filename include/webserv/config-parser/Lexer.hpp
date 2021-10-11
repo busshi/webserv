@@ -4,14 +4,10 @@
 class Lexer
 {
 	private:
-		enum ContextFlag {
-			INSIDE_BLOCK,
-			EXPECT_VALUE,
-		};
-
 		std::string _s;
 		std::string::size_type _pos;
-		uint64_t _contextFlags;
+		size_t _blockDepth;
+
 
 	public:
 		enum TokenType {
@@ -21,6 +17,7 @@ class Lexer
 			KEY,
 			VALUE,
 			SEMICOLON,
+			END_OF_FILE,
 		};
 
 		// Lexer::Token {{{

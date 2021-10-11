@@ -1,12 +1,12 @@
 NAME		= webserv
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp)
+SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp config-parser/Lexer.cpp)
 
 HEADER		= $(addprefix include/webserv/, Server.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
-FLAGS		= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/
+FLAGS		= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude
 
 CC			= @clang++
 

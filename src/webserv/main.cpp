@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include <iostream>
+#include "webserv/config-parser/Lexer.hpp"
 
 int		main( int ac, char **av ) {
 
@@ -11,11 +12,22 @@ int		main( int ac, char **av ) {
 	}
 
 	Server	server;
+	Lexer lexer(
+			"{                    "
+			"                      "
+			"}                     {"
+		);
 
 	try {
+		(void)av;
+		(void)ac;
+		while (lexer.next().getType() != Lexer::END_OF_FILE);
+
+		/*
 		server.init(av[1]);
 		server.start();
 		server.stop();
+		*/
 	}
 	catch (std::exception & e) {
 		std::cout << e.what() << std::endl;
