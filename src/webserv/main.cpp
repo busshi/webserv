@@ -13,14 +13,15 @@ int		main( int ac, char **av ) {
 
 	Server	server;
 	Lexer lexer(
-			"{                    "
-			"                      "
-			"}                     {"
+			"{               "
+			" { }                     {}{}{}{}}"
+			"}                    "
 		);
 
 	try {
 		(void)av;
 		(void)ac;
+
 		while (lexer.next().getType() != Lexer::END_OF_FILE);
 
 		/*
@@ -28,6 +29,9 @@ int		main( int ac, char **av ) {
 		server.start();
 		server.stop();
 		*/
+	}
+	catch (Lexer::LexerException& e) {
+		e.printFormatted(std::cerr) << "\n";
 	}
 	catch (std::exception & e) {
 		std::cout << e.what() << std::endl;
