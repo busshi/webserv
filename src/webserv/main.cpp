@@ -19,17 +19,15 @@ int main(int ac, char** av) {
         (void)av;
         (void)ac;
 
-		ConfigParser cfgp;
+        ConfigParser cfgp;
 
-		WebservConfig* config = cfgp.loadConfig("./asset/config/example1.conf");
-		
-		delete config;
+        WebservConfig* config = cfgp.loadConfig("./asset/config/example1.conf");
 
-        /*
         server.init(av[1]);
         server.start();
         server.stop();
-        */
+
+        delete config;
     } catch (Lexer::LexerException& e) {
         e.printFormatted(std::cerr) << "\n";
     } catch (std::exception& e) {
