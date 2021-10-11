@@ -1,41 +1,40 @@
 #include "Server.hpp"
+#include "webserv/config-parser/ConfigParser.hpp"
 #include <iostream>
-#include "webserv/config-parser/Lexer.hpp"
 
-int		main( int ac, char **av ) {
+int main(int ac, char** av) {
 
-	if (ac != 2) {
+    /*
+    if (ac != 2) {
 
-		//std::cout << "Usage: ./webserv [path to config file]" << std::endl;
-		std::cout << "Usage: ./webserv [port to bind]" << std::endl;
-		return 0;
-	}
+            //std::cout << "Usage: ./webserv [path to config file]" <<
+    std::endl; std::cout << "Usage: ./webserv [port to bind]" << std::endl;
+            return 0;
+    }
+        */
 
-	Server	server;
-	Lexer lexer(
-			"{               "
-			" { }                     {}{}{}{}}"
-			"}                    "
-		);
+    Server server;
 
-	try {
-		(void)av;
-		(void)ac;
+    try {
+        (void)av;
+        (void)ac;
 
-		while (lexer.next().getType() != Lexer::END_OF_FILE);
+		ConfigParser cfgp;
 
-		/*
-		server.init(av[1]);
-		server.start();
-		server.stop();
-		*/
-	}
-	catch (Lexer::LexerException& e) {
-		e.printFormatted(std::cerr) << "\n";
-	}
-	catch (std::exception & e) {
-		std::cout << e.what() << std::endl;
-	}
+		WebservConfig* config = cfgp.loadConfig("./asset/config/example1.conf");
+		
+		delete config;
 
-	return 0;
+        /*
+        server.init(av[1]);
+        server.start();
+        server.stop();
+        */
+    } catch (Lexer::LexerException& e) {
+        e.printFormatted(std::cerr) << "\n";
+    } catch (std::exception& e) {
+        std::cout << e.what() << std::endl;
+    }
+
+    return 0;
 }

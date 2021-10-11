@@ -1,17 +1,18 @@
 #pragma once
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 class Lexer {
   public:
     enum TokenType {
-        UNKNOWN = -1,
+        UNKNOWN = 0,
         BLOCK_START,
         BLOCK_END,
         KEY,
         VALUE,
-        SEMICOLON,
         END_OF_FILE,
+        SEMICOLON,
     };
 
   public:
@@ -42,6 +43,8 @@ class Lexer {
 
     Lexer& operator=(const Lexer& other);
 
+    static std::string getTokenTypeAsString(TokenType type);
+
     class LexerException : public std::runtime_error {
         const char* _msg;
         size_t _lineNb, _columnNb;
@@ -70,4 +73,8 @@ class Lexer {
 
     void skipSpace(void);
     Token makeToken(TokenType type, const std::string& value);
+    Token getKey(void);
+    Token getValue(void);
 };
+
+std::ostream& operator<<(std::ostream& lhs, const Lexer::Token& rhs);

@@ -1,7 +1,14 @@
 #include "webserv/config-parser/Lexer.hpp"
-
 #include <cctype>
+#include <iomanip>
 #include <iostream>
+
+std::string Lexer::getTokenTypeAsString(TokenType type) {
+    const char* types[] = {"UNKNOWN", "BLOCK_START", "BLOCK_END", "KEY",
+                           "VALUE",   "EOF",         "SEMICOLON"};
+
+    return types[type];
+}
 
 void Lexer::skipSpace(void) {
     while (isspace(_s[_pos])) {
@@ -12,9 +19,38 @@ void Lexer::skipSpace(void) {
     }
 }
 
+Lexer::Token Lexer::getKey(void) {
+    size_t begPos = _pos;
+
+    while (isalpha(_s[_pos])) {
+        ++_pos;
+    }
+
+    if (_s[_pos] != '{' && !isspace(_s[_pos])) {
+        throw LexerException(
+            _lineNb, 0,
+            "A directive name must only contain alphabetical characters");
+    }
+
+    return makeToken(KEY, _s.substr(begPos, _pos - begPos));
+}
+
+Lexer::Token Lexer::getValue(void) {
+    size_t begPos = _pos;
+
+    while (_s[_pos] && _s[_pos] != ';' && _s[_pos] != '{') {
+        ++_pos;
+    }
+
+    if (!_s[_pos]) {
+        throw LexerException(_lineNb, 0, "Unexpected end of file");
+    }
+
+    return makeToken(VALUE, _s.substr(begPos, _pos - begPos));
+}
+
 Lexer::Token Lexer::makeToken(TokenType type, const std::string& value = "") {
     _lastTokenType = type;
-    ++_pos;
     return Token(type, value);
 }
 
@@ -47,8 +83,27 @@ Lexer::Token Lexer::next(void) {
         return makeToken(END_OF_FILE, "EOF");
     }
 
-    switch (_s[_pos]) {
+    if (isprint(_s[_pos]) && _s[_pos] != '{' && _s[_pos] != '}' &&
+        _s[_pos] != ';') {
+        if (_lastTokenType != KEY) {
+            return getKey();
+        } else {
+            return getValue();
+        }
+    }
+
+    switch (_s[_pos++]) {
+    case ';':
+        if (_lastTokenType != VALUE) {
+            throw LexerException(
+                _lineNb, 0,
+                "A semicolon is only valid after a directive's value");
+        }
+        return makeToken(SEMICOLON, ";");
     case '{':
+        if (_lastTokenType != KEY && _lastTokenType != VALUE) {
+            throw LexerException(_lineNb, 0, "A block must have a name");
+        }
         ++_blockDepth;
         return makeToken(BLOCK_START, "{");
     case '}':
@@ -58,13 +113,6 @@ Lexer::Token Lexer::next(void) {
             throw LexerException(_lineNb, 0, "Extraneous closing brace '}'");
         }
         return makeToken(BLOCK_END, "}");
-    }
-
-    if (!isalpha(_s[_pos])) {
-        std::cerr
-            << "Unexpected token " << _s[_pos]
-            << ": directive names only contain alphabetical characters.\n";
-        return makeToken(UNKNOWN);
     }
 
     return Token(UNKNOWN);
@@ -91,6 +139,11 @@ Lexer::Token& Lexer::Token::operator=(const Lexer::Token& rhs) {
 const std::string& Lexer::Token::getValue(void) const { return _s; }
 
 Lexer::TokenType Lexer::Token::getType(void) const { return _type; }
+
+std::ostream& operator<<(std::ostream& lhs, const Lexer::Token& rhs) {
+    return lhs << std::left << std::setw(15)
+               << Lexer::getTokenTypeAsString(rhs.getType()) << rhs.getValue();
+}
 
 // }}}
 
