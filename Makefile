@@ -14,11 +14,17 @@ RM			= @rm -f
 
 OK			= "\r[ \033[0;32mok\033[0m ]"
 
+FORMATTER   := clang-format
+
 %.o:%.cpp	$(HEADER)
 		$(CC) $(FLAGS) $< -c -o $@
 		@printf "CC\t$@\n"
 			
 all:		$(NAME)
+
+format:
+	@$(FORMATTER) -i $(SRCS) $(HEADER) > /dev/null
+	@printf "Codebase formatted using $(FORMATTER)\n"
 
 $(NAME):	$(OBJS) $(HEADER)
 		$(CC) $(FLAGS) $(OBJS) -o $@

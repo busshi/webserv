@@ -11,36 +11,36 @@
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
 #include <string>
 #include <vector>
 
-class	Server {
+class Server
+{
+  public:
+    Server(void);
+    Server(Server const& src);
+    ~Server(void);
 
-	public:
-		Server( void );
-		Server( Server const & src );
-		~Server( void );
+    Server& operator=(Server const& rhs);
 
-		Server &	operator=( Server const & rhs );
+    void init(char const* argv);
+    void start(void);
+    void parseHeader(char buffer[]);
+    void sendResponse(void);
+    void stop(void);
 
-		void		init( char const *argv );
-		void		start( void );
-		void		parseHeader( char buffer[] );
-		void		sendResponse( void );
-		void		stop( void );
+    void display(void);
 
-		void		display( void );
+  private:
+    int _port;
+    int _socketFd;
+    int _maxConnexion;
+    int _connexion;
 
-	private:
-		int			_port;
-		int			_socketFd;
-		int			_maxConnexion;
-		int			_connexion;
-
-		std::string	_method;
-		std::string	_path;
+    std::string _method;
+    std::string _path;
 };
 
 #endif

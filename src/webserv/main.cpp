@@ -2,16 +2,14 @@
 #include "webserv/config-parser/ConfigParser.hpp"
 #include <iostream>
 
-int main(int ac, char** av) {
-
-    /*
+int
+main(int ac, char** av)
+{
     if (ac != 2) {
-
-            //std::cout << "Usage: ./webserv [path to config file]" <<
-    std::endl; std::cout << "Usage: ./webserv [port to bind]" << std::endl;
-            return 0;
+        // std::cout << "Usage: ./webserv [path to config file]" << std::endl;
+        std::cout << "Usage: ./webserv [port to bind]" << std::endl;
+        return 0;
     }
-        */
 
     Server server;
 
@@ -33,6 +31,6 @@ int main(int ac, char** av) {
     } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
     }
-
+  
     return 0;
 }
