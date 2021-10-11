@@ -16,23 +16,19 @@ OK			= "\r[ \033[0;32mok\033[0m ]"
 
 %.o:%.cpp	$(HEADER)
 		$(CC) $(FLAGS) $< -c -o $@
+		@printf "CC\t$@\n"
 			
 all:		$(NAME)
 
 $(NAME):	$(OBJS) $(HEADER)
-		@echo "[....] Compiling $(NAME)\c"
 		$(CC) $(FLAGS) $(OBJS) -o $@
-		@echo $(OK)
+		@printf "LD\t$@\n"
 
 clean:
-		@echo "[....] Removing $(NAME) objects\c"
 		$(RM) $(OBJS)
-		@echo $(OK)
 
 fclean:		clean
-		@echo "[....] Removing $(NAME)\c"
 		$(RM) $(NAME)
-		@echo $(OK)
 
 re:			fclean all
 
