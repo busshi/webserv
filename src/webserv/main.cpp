@@ -19,11 +19,15 @@ main(int ac, char** av)
 
         ConfigParser cfgp;
 
-        WebservConfig* config = cfgp.loadConfig("./asset/config/example1.conf");
+        ConfigBlock* config = cfgp.loadConfig("./asset/config/example1.conf");
+
+        /*j
 
         server.init(av[1]);
         server.start();
         server.stop();
+
+        */
 
         delete config;
     } catch (Lexer::LexerException& e) {

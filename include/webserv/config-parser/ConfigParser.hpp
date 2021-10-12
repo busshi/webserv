@@ -1,11 +1,37 @@
 #pragma once
-#include "webserv/config-parser/Lexer.hpp"
 #include <vector>
+#include <map>
+#include <string>
+#include "webserv/config-parser/Lexer.hpp"
 
-struct WebservConfig {};
+struct ConfigDirective {
+  std::string key, value;
+};
+
+typedef std::map<std::string, ConfigDirective> DirectiveMap;
+
+enum BlockType {
+    BLOCK_GLOBAL = 0,
+    BLOCK_LOCATION = 1 << 0,
+    BLOCK_SERVER = 1 << 1
+};
+
+class ConfigBlock  {
+  BlockType _type;
+  DirectiveMap _directives;
+  std::vector<ConfigBlock*> _blocks;
+
+  public:
+    ConfigBlock(BlockType type);
+    ~ConfigBlock(void);
+
+    BlockType getType(void) const;
+    DirectiveMap& getDirectiveMap(void) const;
+};
 
 class ConfigParser {
     std::vector<Lexer::Token> lex(const std::string& data);
+    ConfigBlock* parse(std::vector<Lexer::Token>);
 
   public:
     ConfigParser(void);
@@ -15,5 +41,5 @@ class ConfigParser {
 
     ConfigParser& operator=(const ConfigParser& rhs);
 
-    WebservConfig* loadConfig(const char* configPath);
+    ConfigBlock* loadConfig(const char* configPath);
 };
