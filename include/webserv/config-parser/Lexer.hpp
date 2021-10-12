@@ -15,6 +15,7 @@ class Lexer
         VALUE,
         END_OF_FILE,
         SEMICOLON,
+        COMMENT,
     };
 
   public:

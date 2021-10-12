@@ -13,7 +13,7 @@ Lexer::iskeyc(unsigned char c) const
 bool
 Lexer::isreservedc(unsigned char c) const
 {
-    return c == '{' || c == '}' || c == ';';
+    return c == '{' || c == '}' || c == ';' || c == '#';
 }
 
 bool
@@ -38,7 +38,7 @@ std::string
 Lexer::getTokenTypeAsString(TokenType type)
 {
     const char* types[] = { "UNKNOWN", "BLOCK_START", "BLOCK_END", "KEY",
-                            "VALUE",   "EOF",         "SEMICOLON" };
+                            "VALUE",   "EOF",         "SEMICOLON", "COMMENT" };
 
     return types[type];
 }
@@ -60,7 +60,7 @@ Lexer::getKey(void)
 {
     size_t begPos = _pos;
 
-    while (isalpha(ch())) {
+    while (iskeyc(ch())) {
         movePos(1);
     }
 
@@ -79,7 +79,7 @@ Lexer::getValue(void)
 {
     size_t begPos = _pos;
 
-    while (ch() && ch() != ';' && ch() != '{') {
+    while (isvaluec(ch())) {
         movePos(1);
     }
 
@@ -172,6 +172,12 @@ Lexer::next(void)
                   _lineNb, _columnNb, "Extraneous closing brace '}'");
             }
             return makeToken(BLOCK_END, "}");
+        case '#':
+            while (ch() && ch() != '\n') {
+                movePos(1);
+            }
+            return makeToken(COMMENT, "#");
+
     }
 
     return Token(UNKNOWN);
