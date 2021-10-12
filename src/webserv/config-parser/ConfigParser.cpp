@@ -1,43 +1,50 @@
+#include "webserv/config-parser/ConfigParser.hpp"
+#include "webserv/config-parser/ConfigBlock.hpp"
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include "webserv/config-parser/ConfigParser.hpp"
+#include <stdexcept>
 
 /*
-* The two static arrays defined below are used to construct
-* the _knownDirectives and _knownBlocks attributes of the
-* ConfigParser when its constructor is called.
-*/
+ * The two static arrays defined below are used to construct
+ * the _knownDirectives and _knownBlocks attributes of the
+ * ConfigParser when its constructor is called.
+ */
 
 static const DirectiveCaracteristics knownDirectives[] = {
-    { "root", NULL, BLOCK_SERVER |  BLOCK_LOCATION },
-    { "index", NULL, BLOCK_SERVER | BLOCK_LOCATION },
-    { "method", NULL, BLOCK_SERVER },
-    { "listen", NULL, BLOCK_SERVER },
+    { "root", NULL, ConfigBlock::BLOCK_SERVER | ConfigBlock::BLOCK_LOCATION },
+    { "index", NULL, ConfigBlock::BLOCK_SERVER | ConfigBlock::BLOCK_LOCATION },
+    { "method", NULL, ConfigBlock::BLOCK_SERVER },
+    { "listen", NULL, ConfigBlock::BLOCK_SERVER },
     { "autoindex", NULL, ~0 },
     { "file_upload", NULL, ~0 },
-    { "server_name", NULL, BLOCK_SERVER },
-    { "client_body_maxsize", NULL, BLOCK_SERVER },
-    { "default_error_file", NULL,  BLOCK_GLOBAL },
+    { "server_name", NULL, ConfigBlock::BLOCK_SERVER },
+    { "client_body_maxsize", NULL, ConfigBlock::BLOCK_SERVER },
+    { "default_error_file", NULL, ConfigBlock::BLOCK_GLOBAL },
 };
 
 static const BlockCaracteristics knownBlocks[] = {
-    { "location", NULL, BLOCK_LOCATION },
-    { "server", NULL, BLOCK_SERVER },
-    { "GLOBAL", NULL, BLOCK_GLOBAL }
+    { "location", NULL, ConfigBlock::BLOCK_LOCATION },
+    { "server", NULL, ConfigBlock::BLOCK_SERVER },
+    { "GLOBAL", NULL, ConfigBlock::BLOCK_GLOBAL }
 };
 
 ConfigParser::ConfigParser(void)
 {
-   for (size_t i = 0; i != sizeof(knownDirectives) / sizeof (DirectiveCaracteristics); ++i) {
-       std::pair<std::string, DirectiveCaracteristics> p(knownDirectives[i].name, knownDirectives[i]);
-       _knownDirectives.insert(p);
-   }
-   
-    for (size_t i = 0; i != sizeof(knownBlocks) / sizeof (BlockCaracteristics); ++i) {
-       std::pair<std::string, BlockCaracteristics> p(knownBlocks[i].name, knownBlocks[i]);
-       _knownBlocks.insert(p);
-   }
+    for (size_t i = 0;
+         i != sizeof(knownDirectives) / sizeof(DirectiveCaracteristics);
+         ++i) {
+        std::pair<std::string, DirectiveCaracteristics> p(
+          knownDirectives[i].name, knownDirectives[i]);
+        _knownDirectives.insert(p);
+    }
+
+    for (size_t i = 0; i != sizeof(knownBlocks) / sizeof(BlockCaracteristics);
+         ++i) {
+        std::pair<std::string, BlockCaracteristics> p(knownBlocks[i].name,
+                                                      knownBlocks[i]);
+        _knownBlocks.insert(p);
+    }
 }
 
 ConfigParser::ConfigParser(const ConfigParser& other)
@@ -73,7 +80,8 @@ ConfigBlock*
 ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
     (void)tv;
-    ConfigBlock *main = new ConfigBlock("GLOBAL", BLOCK_GLOBAL), *current = main, *tmp;
+    ConfigBlock *main = new ConfigBlock("GLOBAL", ConfigBlock::BLOCK_GLOBAL),
+                *current = main, *tmp;
     std::pair<std::string, std::string> keyval;
     std::ostringstream oss;
 
@@ -88,20 +96,16 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 keyval.second = ite->getValue();
                 break;
             case Lexer::SEMICOLON:
-                if (!isValidDirective(keyval.first)) {
-                    oss << "Directive \"" << keyval.first << "\" does not exist";
-                    throw std::runtime_error(oss.str());
-                }
-                if (!isValidDirectiveInBlock(keyval.first, current)) {
-                    oss << "Directive \"" << keyval.first << "\" is not allowed in block \"" << current->getName() << "\"";
-                    throw std::runtime_error(oss.str());
-                }
+                validateDirective(keyval, current);
                 current->addDirective(keyval);
                 keyval.first = "";
                 keyval.second = "";
                 break;
             case Lexer::BLOCK_START:
-                tmp = new ConfigBlock(keyval.first, BLOCK_GLOBAL, keyval.second, current);
+                tmp = new ConfigBlock(keyval.first,
+                                      ConfigBlock::BLOCK_SERVER,
+                                      keyval.second,
+                                      current);
                 current->_blocks.push_back(tmp);
                 current = tmp;
                 break;
@@ -111,23 +115,28 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
             case Lexer::END_OF_FILE:
                 break;
             default:
-                std::cerr << "Not supported yet :o\n";
+                break;
         }
     }
 
     return main;
 }
 
-bool ConfigParser::isValidDirective(const std::string& name) const
+bool
+ConfigParser::isValidDirective(const std::string& name) const
 {
     return (_knownDirectives.find(name) != _knownDirectives.end());
 }
 
-bool ConfigParser::isValidDirectiveInBlock(const std::string& name, ConfigBlock* block)
+bool
+ConfigParser::isValidDirectiveInBlock(const std::string& name,
+                                      ConfigBlock* block)
 {
-    std::map<std::string, DirectiveCaracteristics>::const_iterator ite = _knownDirectives.find(name);
+    std::map<std::string, DirectiveCaracteristics>::const_iterator ite =
+      _knownDirectives.find(name);
 
-    return (ite != _knownDirectives.end() && ite->second.validBlockContext & block->getType());
+    return (ite != _knownDirectives.end() &&
+            ite->second.validBlockContext & block->getType());
 }
 
 void
@@ -187,54 +196,41 @@ ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
     return os;
 }
 
-// ConfigBlocks {{{
-
-ConfigBlock::ConfigBlock(std::string name,
-                        BlockType type,
-                         std::string value,
-                         ConfigBlock* parent)
-  : _parent(parent)
-  , _name(name)
-  , _value(value)
-  , _type(type)
-{}
-
-const DirectiveMap&
-ConfigBlock::getDirectiveMap(void) const
+void
+ConfigParser::validateDirective(const Directive& direc, ConfigBlock* block)
 {
-    return _directives;
-}
+    std::ostringstream oss;
+    std::map<std::string, DirectiveCaracteristics>::const_iterator ite =
+      _knownDirectives.find(direc.first);
 
-ConfigBlock*
-ConfigBlock::getParent(void) const
-{
-    return _parent;
-}
+    /* ensure that directive exists */
+    if (ite == _knownDirectives.end()) {
+        oss << "Found unsupported directive \"" << direc.first << "\"";
+        throw ParserException(oss.str().c_str());
+    }
 
-const std::string&
-ConfigBlock::getName(void) const
-{
-    return _name;
-}
+    /* Ensure that the supported directive is valid in the block where it
+     * appears */
+    if (!(ite->second.validBlockContext & block->getType())) {
+        oss << "Directive \"" << direc.first << "\" is not valid in block \""
+            << block->getName() << "\"";
+        throw ParserException(oss.str());
+    }
 
-const std::string&
-ConfigBlock::getValue(void) const
-{
-    return _value;
-}
-
-BlockType ConfigBlock::getType(void) const
-{
-    return _type;
-}
-
-ConfigBlock::~ConfigBlock(void)
-{
-    for (std::vector<ConfigBlock*>::const_iterator ite = _blocks.begin();
-         ite != _blocks.end();
-         ++ite) {
-        delete *ite;
+    /* Run validator if there is one */
+    if (ite->second.validator && !ite->second.validator(direc.second)) {
+        oss << "Directive \"" << direc.first << "\" has an invalid value.";
+        throw ParserException(oss.str());
     }
 }
 
-// }}}
+ConfigParser::ParserException::ParserException(const std::string& msg)
+  : std::runtime_error(msg)
+{}
+
+std::ostream&
+ConfigParser::ParserException::printFormatted(std::ostream& os)
+{
+    return os << "\033[1;31mParser error\033[0m: \033[1m" << what()
+              << "\033[0m\n";
+}

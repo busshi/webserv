@@ -32,6 +32,8 @@ main(int ac, char** av)
         delete config;
     } catch (Lexer::LexerException& e) {
         e.printFormatted(std::cerr) << "\n";
+    } catch (ConfigParser::ParserException& e) {
+        e.printFormatted(std::cerr) << "\n";
     } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
     }
