@@ -3,6 +3,30 @@
 #include <iomanip>
 #include <iostream>
 
+bool
+Lexer::iskeyc(unsigned char c) const
+{
+    return isalpha(c) || c == '_';
+}
+
+bool
+Lexer::isreservedc(unsigned char c) const
+{
+    return c == '{' || c == '}' || c == ';';
+}
+
+bool
+Lexer::isvaluec(unsigned char c) const
+{
+    return isprint(c) && !isreservedc(c);
+}
+
+unsigned char
+Lexer::ch(void) const
+{
+    return _s[_pos];
+}
+
 std::string
 Lexer::getTokenTypeAsString(TokenType type)
 {
@@ -15,8 +39,8 @@ Lexer::getTokenTypeAsString(TokenType type)
 void
 Lexer::skipSpace(void)
 {
-    while (isspace(_s[_pos])) {
-        if (_s[_pos] == '\n') {
+    while (isspace(ch())) {
+        if (ch() == '\n') {
             ++_lineNb;
         }
         ++_pos;
@@ -28,11 +52,11 @@ Lexer::getKey(void)
 {
     size_t begPos = _pos;
 
-    while (isalpha(_s[_pos])) {
+    while (isalpha(ch())) {
         ++_pos;
     }
 
-    if (_s[_pos] != '{' && !isspace(_s[_pos])) {
+    if (ch() != '{' && !isspace(ch())) {
         throw LexerException(
           _lineNb,
           0,
@@ -47,11 +71,11 @@ Lexer::getValue(void)
 {
     size_t begPos = _pos;
 
-    while (_s[_pos] && _s[_pos] != ';' && _s[_pos] != '{') {
+    while (ch() && ch() != ';' && ch() != '{') {
         ++_pos;
     }
 
-    if (!_s[_pos]) {
+    if (!ch()) {
         throw LexerException(_lineNb, 0, "Unexpected end of file");
     }
 
@@ -104,9 +128,8 @@ Lexer::next(void)
         }
         return makeToken(END_OF_FILE, "EOF");
     }
-
-    if (isprint(_s[_pos]) && _s[_pos] != '{' && _s[_pos] != '}' &&
-        _s[_pos] != ';') {
+    
+    if (!isreservedc(ch())) {
         if (_lastTokenType != KEY) {
             return getKey();
         } else {
@@ -114,7 +137,10 @@ Lexer::next(void)
         }
     }
 
-    switch (_s[_pos++]) {
+    char c = ch();
+    ++_pos;
+
+    switch (c) {
         case ';':
             if (_lastTokenType != VALUE) {
                 throw LexerException(

@@ -80,6 +80,16 @@ class Lexer
     Token makeToken(TokenType type, const std::string& value);
     Token getKey(void);
     Token getValue(void);
+
+    bool iskeyc(unsigned char c) const;
+    bool isreservedc(unsigned char c) const;
+    bool isvaluec(unsigned char c) const;
+
+    /*
+     * Returns current character element.
+     * Shorthand for _s[_pos]
+     */
+    unsigned char ch(void) const;
 };
 
 std::ostream&

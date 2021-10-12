@@ -47,7 +47,7 @@ class ConfigParser
     ~ConfigParser(void);
 
     ConfigParser& operator=(const ConfigParser& rhs);
-
+    
     ConfigBlock* loadConfig(const char* configPath);
 
     std::ostream& printConfig(std::ostream& os,
