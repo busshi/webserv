@@ -1,0 +1,70 @@
+[
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/Server.o",
+            "src/webserv/Server.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/Server.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/config-parser/ConfigParser.o",
+            "src/webserv/config-parser/ConfigParser.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/config-parser/ConfigParser.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/main.o",
+            "src/webserv/main.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/main.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/config-parser/Lexer.o",
+            "src/webserv/config-parser/Lexer.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/config-parser/Lexer.cpp"
+    }
+]
