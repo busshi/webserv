@@ -28,7 +28,8 @@ Lexer::ch(void) const
     return _s[_pos];
 }
 
-void Lexer::movePos(size_t n)
+void
+Lexer::movePos(size_t n)
 {
     _pos += n;
     _columnNb += n;
@@ -135,9 +136,12 @@ Lexer::next(void)
             throw LexerException(
               _lineNb, _columnNb, "Unclosed block, missing closing brace");
         }
+        if (_lastTokenType == KEY) {
+            throw LexerException(_lineNb, _columnNb, "Unexpected token");
+        }
         return makeToken(END_OF_FILE, "EOF");
     }
-    
+
     if (!isreservedc(ch())) {
         if (_lastTokenType != KEY) {
             return getKey();
@@ -160,7 +164,8 @@ Lexer::next(void)
             return makeToken(SEMICOLON, ";");
         case '{':
             if (_lastTokenType != KEY && _lastTokenType != VALUE) {
-                throw LexerException(_lineNb, _columnNb, "A block must have a name");
+                throw LexerException(
+                  _lineNb, _columnNb, "A block must have a name");
             }
             ++_blockDepth;
             return makeToken(BLOCK_START, "{");
@@ -177,7 +182,6 @@ Lexer::next(void)
                 movePos(1);
             }
             return makeToken(COMMENT, "#");
-
     }
 
     return Token(UNKNOWN);
