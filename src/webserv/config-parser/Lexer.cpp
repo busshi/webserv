@@ -2,6 +2,7 @@
 #include <cctype>
 #include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 bool
 Lexer::iskeyc(unsigned char c) const
@@ -27,6 +28,12 @@ Lexer::ch(void) const
     return _s[_pos];
 }
 
+void Lexer::movePos(size_t n)
+{
+    _pos += n;
+    _columnNb += n;
+}
+
 std::string
 Lexer::getTokenTypeAsString(TokenType type)
 {
@@ -42,8 +49,9 @@ Lexer::skipSpace(void)
     while (isspace(ch())) {
         if (ch() == '\n') {
             ++_lineNb;
+            _columnNb = 0;
         }
-        ++_pos;
+        movePos(1);
     }
 }
 
@@ -53,13 +61,13 @@ Lexer::getKey(void)
     size_t begPos = _pos;
 
     while (isalpha(ch())) {
-        ++_pos;
+        movePos(1);
     }
 
     if (ch() != '{' && !isspace(ch())) {
         throw LexerException(
           _lineNb,
-          0,
+          _columnNb,
           "A directive name must only contain alphabetical characters");
     }
 
@@ -72,11 +80,11 @@ Lexer::getValue(void)
     size_t begPos = _pos;
 
     while (ch() && ch() != ';' && ch() != '{') {
-        ++_pos;
+        movePos(1);
     }
 
     if (!ch()) {
-        throw LexerException(_lineNb, 0, "Unexpected end of file");
+        throw LexerException(_lineNb, _columnNb, "Unexpected end of file");
     }
 
     return makeToken(VALUE, _s.substr(begPos, _pos - begPos));
@@ -94,6 +102,7 @@ Lexer::Lexer(const std::string& data)
   , _pos(0)
   , _blockDepth(0)
   , _lineNb(0)
+  , _columnNb(0)
   , _lastTokenType(Lexer::UNKNOWN)
 {}
 
@@ -124,7 +133,7 @@ Lexer::next(void)
     if (_pos == _s.size()) {
         if (_blockDepth > 0) {
             throw LexerException(
-              _lineNb, 0, "Unclosed block, missing closing brace");
+              _lineNb, _columnNb, "Unclosed block, missing closing brace");
         }
         return makeToken(END_OF_FILE, "EOF");
     }
@@ -138,20 +147,20 @@ Lexer::next(void)
     }
 
     char c = ch();
-    ++_pos;
+    movePos(1);
 
     switch (c) {
         case ';':
             if (_lastTokenType != VALUE) {
                 throw LexerException(
                   _lineNb,
-                  0,
+                  _columnNb,
                   "A semicolon is only valid after a directive's value");
             }
             return makeToken(SEMICOLON, ";");
         case '{':
             if (_lastTokenType != KEY && _lastTokenType != VALUE) {
-                throw LexerException(_lineNb, 0, "A block must have a name");
+                throw LexerException(_lineNb, _columnNb, "A block must have a name");
             }
             ++_blockDepth;
             return makeToken(BLOCK_START, "{");
@@ -160,7 +169,7 @@ Lexer::next(void)
                 --_blockDepth;
             } else {
                 throw LexerException(
-                  _lineNb, 0, "Extraneous closing brace '}'");
+                  _lineNb, _columnNb, "Extraneous closing brace '}'");
             }
             return makeToken(BLOCK_END, "}");
     }

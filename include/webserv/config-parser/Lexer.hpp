@@ -73,7 +73,7 @@ class Lexer
     std::string _s;
     std::string::size_type _pos;
     size_t _blockDepth;
-    size_t _lineNb;
+    size_t _lineNb, _columnNb;
     TokenType _lastTokenType;
 
     void skipSpace(void);
@@ -90,6 +90,14 @@ class Lexer
      * Shorthand for _s[_pos]
      */
     unsigned char ch(void) const;
+    
+    /*
+     * Move the cursor of n characters.
+     * Shortand for _pos += n
+     * Adds n to _columnNb
+     */
+    void movePos(size_t n);
+
 };
 
 std::ostream&
