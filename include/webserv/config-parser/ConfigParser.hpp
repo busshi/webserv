@@ -15,18 +15,17 @@ enum BlockType
 
 class ConfigBlock
 {
-    BlockType _type;
     DirectiveMap _directives;
     ConfigBlock* _parent;
+    std::string _name, _value;
 
   public:
     std::vector<ConfigBlock*> _blocks;
-    ConfigBlock(BlockType type, ConfigBlock* parent = 0);
+    ConfigBlock(std::string name, std::string value = "",  ConfigBlock* parent = 0);
     ~ConfigBlock(void);
 
     void addDirective(const DirectiveMap::value_type& value);
 
-    BlockType getType(void) const;
     const DirectiveMap& getDirectiveMap(void) const;
     ConfigBlock* getParent(void) const;
 };

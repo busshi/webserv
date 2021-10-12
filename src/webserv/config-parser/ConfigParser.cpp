@@ -37,7 +37,7 @@ ConfigBlock*
 ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
     (void)tv;
-    ConfigBlock *main = new ConfigBlock(BLOCK_GLOBAL), *current = main, *tmp;
+    ConfigBlock *main = new ConfigBlock("GLOBAL"), *current = main, *tmp;
     std::pair<std::string, std::string> keyval;
 
     for (std::vector<Lexer::Token>::const_iterator ite = tv.begin();
@@ -52,9 +52,11 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 break;
             case Lexer::SEMICOLON:
                 current->addDirective(keyval);
+                keyval.first = "";
+                keyval.second = "";
                 break;
             case Lexer::BLOCK_START:
-                tmp = new ConfigBlock(BLOCK_SERVER, current);
+                tmp = new ConfigBlock(keyval.first, keyval.second, current);
                 current->_blocks.push_back(tmp);
                 current = tmp;
                 break;
@@ -98,18 +100,6 @@ ConfigParser::loadConfig(const char* configPath)
     return block;
 }
 
-std::ostream&
-operator<<(std::ostream& os, ConfigBlock* main)
-{
-    for (DirectiveMap::const_iterator ite = main->getDirectiveMap().begin();
-         ite != main->getDirectiveMap().end();
-         ++ite) {
-        os << "\t" << ite->first << " " << ite->second << "\n";
-    }
-
-    return os;
-}
-
 /*
  * Print a block-based representation of the parsed config file, from the
  * original one. This is done recursively as each block has possibly many other
@@ -141,16 +131,14 @@ ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
 
 // ConfigBlocks {{{
 
-ConfigBlock::ConfigBlock(BlockType type, ConfigBlock* parent)
-  : _type(type)
-  , _parent(parent)
+ConfigBlock::ConfigBlock(std::string name,
+                         std::string value,
+                         ConfigBlock* parent)
+  : _parent(parent)
+  , _name(name)
+  , _value(value)
 {}
 
-BlockType
-ConfigBlock::getType(void) const
-{
-    return _type;
-}
 const DirectiveMap&
 ConfigBlock::getDirectiveMap(void) const
 {
