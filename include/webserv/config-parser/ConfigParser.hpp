@@ -4,11 +4,7 @@
 #include <string>
 #include "webserv/config-parser/Lexer.hpp"
 
-struct ConfigDirective {
-  std::string key, value;
-};
-
-typedef std::map<std::string, ConfigDirective> DirectiveMap;
+typedef std::map<std::string, std::string> DirectiveMap;
 
 enum BlockType {
     BLOCK_GLOBAL = 0,
@@ -19,19 +15,23 @@ enum BlockType {
 class ConfigBlock  {
   BlockType _type;
   DirectiveMap _directives;
-  std::vector<ConfigBlock*> _blocks;
+  ConfigBlock* _parent;
 
   public:
-    ConfigBlock(BlockType type);
+    std::vector<ConfigBlock*> _blocks;
+    ConfigBlock(BlockType type, ConfigBlock* parent = 0);
     ~ConfigBlock(void);
 
     BlockType getType(void) const;
-    DirectiveMap& getDirectiveMap(void) const;
+    DirectiveMap& getDirectiveMap(void);
+    ConfigBlock* getParent(void) const;
 };
+
+std::ostream& operator<<(std::ostream& os, ConfigBlock* block);
 
 class ConfigParser {
     std::vector<Lexer::Token> lex(const std::string& data);
-    ConfigBlock* parse(std::vector<Lexer::Token>);
+    ConfigBlock* parse(const std::vector<Lexer::Token>& tv);
 
   public:
     ConfigParser(void);
@@ -42,4 +42,6 @@ class ConfigParser {
     ConfigParser& operator=(const ConfigParser& rhs);
 
     ConfigBlock* loadConfig(const char* configPath);
+
+    std::ostream& printConfig(std::ostream& os, ConfigBlock* main, size_t depth = 0);
 };
