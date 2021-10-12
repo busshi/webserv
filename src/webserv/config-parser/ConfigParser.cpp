@@ -1,6 +1,6 @@
-#include "webserv/config-parser/ConfigParser.hpp"
 #include <fstream>
 #include <iomanip>
+#include "webserv/config-parser/ConfigParser.hpp"
 
 ConfigParser::ConfigParser(void) {}
 
@@ -76,6 +76,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 void
 ConfigBlock::addDirective(const DirectiveMap::value_type& value)
 {
+    // TODO: check if directive is valid or not in the current context
     _directives.insert(value);
 }
 
@@ -109,7 +110,8 @@ ConfigParser::loadConfig(const char* configPath)
 std::ostream&
 ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
 {
-    std::cout << std::string(depth, '\t') << "{\n";
+    std::cout << std::string(depth, '\t') << main->getName() << " "
+              << main->getValue() << " {\n";
 
     for (DirectiveMap::const_iterator ite = main->getDirectiveMap().begin();
          ite != main->getDirectiveMap().end();
@@ -118,10 +120,10 @@ ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
            << "\n";
     }
 
-    for (std::vector<ConfigBlock*>::iterator it = main->_blocks.begin();
-         it != main->_blocks.end();
-         ++it) {
-        printConfig(os, *it, depth + 1);
+    for (std::vector<ConfigBlock*>::const_iterator ite = main->_blocks.begin();
+         ite != main->_blocks.end();
+         ++ite) {
+        printConfig(os, *ite, depth + 1);
     }
 
     std::cout << std::string(depth, '\t') << "}\n";
@@ -144,10 +146,23 @@ ConfigBlock::getDirectiveMap(void) const
 {
     return _directives;
 }
+
 ConfigBlock*
 ConfigBlock::getParent(void) const
 {
     return _parent;
+}
+
+const std::string&
+ConfigBlock::getName(void) const
+{
+    return _name;
+}
+
+const std::string&
+ConfigBlock::getValue(void) const
+{
+    return _value;
 }
 
 ConfigBlock::~ConfigBlock(void)

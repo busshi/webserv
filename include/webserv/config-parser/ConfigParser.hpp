@@ -28,6 +28,8 @@ class ConfigBlock
 
     const DirectiveMap& getDirectiveMap(void) const;
     ConfigBlock* getParent(void) const;
+    const std::string& getName(void) const;
+    const std::string& getValue(void) const;
 };
 
 std::ostream&
