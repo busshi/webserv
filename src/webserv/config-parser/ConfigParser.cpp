@@ -1,21 +1,28 @@
+#include "webserv/config-parser/ConfigParser.hpp"
 #include <fstream>
 #include <iomanip>
-#include "webserv/config-parser/ConfigParser.hpp"
 
 ConfigParser::ConfigParser(void) {}
 
-ConfigParser::ConfigParser(const ConfigParser& other) { (void)other; }
+ConfigParser::ConfigParser(const ConfigParser& other)
+{
+    (void)other;
+}
 
 ConfigParser::~ConfigParser(void) {}
 
-ConfigParser& ConfigParser::operator=(const ConfigParser& rhs) {
+ConfigParser&
+ConfigParser::operator=(const ConfigParser& rhs)
+{
     if (this != &rhs) {
     }
 
     return *this;
 }
 
-std::vector<Lexer::Token> ConfigParser::lex(const std::string& data) {
+std::vector<Lexer::Token>
+ConfigParser::lex(const std::string& data)
+{
     std::vector<Lexer::Token> v;
     Lexer lexer(data);
 
@@ -26,33 +33,36 @@ std::vector<Lexer::Token> ConfigParser::lex(const std::string& data) {
     return v;
 }
 
-ConfigBlock* ConfigParser::parse(const std::vector<Lexer::Token>& tv)
+ConfigBlock*
+ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
     (void)tv;
-    ConfigBlock* main = new ConfigBlock(BLOCK_GLOBAL), *current = main, *tmp;
+    ConfigBlock *main = new ConfigBlock(BLOCK_GLOBAL), *current = main, *tmp;
     std::pair<std::string, std::string> keyval;
 
-    for (std::vector<Lexer::Token>::const_iterator ite = tv.begin(); ite != tv.end(); ++ite) {
+    for (std::vector<Lexer::Token>::const_iterator ite = tv.begin();
+         ite != tv.end();
+         ++ite) {
         switch (ite->getType()) {
             case Lexer::KEY:
                 keyval.first = ite->getValue();
-                break ;
+                break;
             case Lexer::VALUE:
                 keyval.second = ite->getValue();
-                break ;
+                break;
             case Lexer::SEMICOLON:
-                current->getDirectiveMap().insert(keyval);
-                break ;
+                current->addDirective(keyval);
+                break;
             case Lexer::BLOCK_START:
                 tmp = new ConfigBlock(BLOCK_SERVER, current);
                 current->_blocks.push_back(tmp);
                 current = tmp;
-                break ;
+                break;
             case Lexer::BLOCK_END:
                 current = current->getParent();
-                break ;
+                break;
             case Lexer::END_OF_FILE:
-                break ;
+                break;
             default:
                 std::cerr << "Not supported yet :o\n";
         }
@@ -61,7 +71,15 @@ ConfigBlock* ConfigParser::parse(const std::vector<Lexer::Token>& tv)
     return main;
 }
 
-ConfigBlock* ConfigParser::loadConfig(const char* configPath) {
+void
+ConfigBlock::addDirective(const DirectiveMap::value_type& value)
+{
+    _directives.insert(value);
+}
+
+ConfigBlock*
+ConfigParser::loadConfig(const char* configPath)
+{
     std::ifstream ifs(configPath);
     std::string line, data;
 
@@ -80,9 +98,12 @@ ConfigBlock* ConfigParser::loadConfig(const char* configPath) {
     return block;
 }
 
-std::ostream& operator<<(std::ostream& os, ConfigBlock* main)
+std::ostream&
+operator<<(std::ostream& os, ConfigBlock* main)
 {
-    for (DirectiveMap::iterator ite = main->getDirectiveMap().begin(); ite != main->getDirectiveMap().end(); ++ite) {
+    for (DirectiveMap::const_iterator ite = main->getDirectiveMap().begin();
+         ite != main->getDirectiveMap().end();
+         ++ite) {
         os << "\t" << ite->first << " " << ite->second << "\n";
     }
 
@@ -90,20 +111,26 @@ std::ostream& operator<<(std::ostream& os, ConfigBlock* main)
 }
 
 /*
- * Print a block-based representation of the parsed config file, from the original one.
- * This is done recursively as each block has possibly many other blocks as children, and so on.
+ * Print a block-based representation of the parsed config file, from the
+ * original one. This is done recursively as each block has possibly many other
+ * blocks as children, and so on.
  */
 
-std::ostream& ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
+std::ostream&
+ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
 {
     std::cout << std::string(depth, '\t') << "{\n";
 
-    for (DirectiveMap::iterator ite = main->getDirectiveMap().begin();
-            ite != main->getDirectiveMap().end(); ++ite) {
-        os << std::string(depth + 1, '\t') << ite->first << " " << ite->second << "\n";
+    for (DirectiveMap::const_iterator ite = main->getDirectiveMap().begin();
+         ite != main->getDirectiveMap().end();
+         ++ite) {
+        os << std::string(depth + 1, '\t') << ite->first << " " << ite->second
+           << "\n";
     }
 
-    for (std::vector<ConfigBlock*>::iterator it = main->_blocks.begin(); it != main->_blocks.end(); ++it) {
+    for (std::vector<ConfigBlock*>::iterator it = main->_blocks.begin();
+         it != main->_blocks.end();
+         ++it) {
         printConfig(os, *it, depth + 1);
     }
 
@@ -114,15 +141,32 @@ std::ostream& ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, siz
 
 // ConfigBlocks {{{
 
-ConfigBlock::ConfigBlock(BlockType type, ConfigBlock* parent): _type(type), _parent(parent) {}
+ConfigBlock::ConfigBlock(BlockType type, ConfigBlock* parent)
+  : _type(type)
+  , _parent(parent)
+{}
 
-BlockType ConfigBlock::getType(void) const { return _type; }
-DirectiveMap& ConfigBlock::getDirectiveMap(void) { return _directives; }
-ConfigBlock* ConfigBlock::getParent(void) const { return _parent; }
+BlockType
+ConfigBlock::getType(void) const
+{
+    return _type;
+}
+const DirectiveMap&
+ConfigBlock::getDirectiveMap(void) const
+{
+    return _directives;
+}
+ConfigBlock*
+ConfigBlock::getParent(void) const
+{
+    return _parent;
+}
 
 ConfigBlock::~ConfigBlock(void)
 {
-    for (std::vector<ConfigBlock*>::const_iterator ite = _blocks.begin(); ite != _blocks.end(); ++ite) {
+    for (std::vector<ConfigBlock*>::const_iterator ite = _blocks.begin();
+         ite != _blocks.end();
+         ++ite) {
         delete *ite;
     }
 }

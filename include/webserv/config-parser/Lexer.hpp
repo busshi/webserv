@@ -1,11 +1,13 @@
 #pragma once
+#include <iostream>
 #include <stdexcept>
 #include <string>
-#include <iostream>
 
-class Lexer {
+class Lexer
+{
   public:
-    enum TokenType {
+    enum TokenType
+    {
         UNKNOWN = 0,
         BLOCK_START,
         BLOCK_END,
@@ -17,7 +19,8 @@ class Lexer {
 
   public:
     // Lexer::Token {{{
-    class Token {
+    class Token
+    {
         TokenType _type;
         std::string _s;
 
@@ -45,12 +48,14 @@ class Lexer {
 
     static std::string getTokenTypeAsString(TokenType type);
 
-    class LexerException : public std::runtime_error {
+    class LexerException : public std::runtime_error
+    {
         const char* _msg;
         size_t _lineNb, _columnNb;
 
       public:
-        LexerException(size_t lineNb, size_t columnNb,
+        LexerException(size_t lineNb,
+                       size_t columnNb,
                        const char* msg = "Unknown error");
         LexerException(const LexerException& other);
 
@@ -77,4 +82,5 @@ class Lexer {
     Token getValue(void);
 };
 
-std::ostream& operator<<(std::ostream& lhs, const Lexer::Token& rhs);
+std::ostream&
+operator<<(std::ostream& lhs, const Lexer::Token& rhs);
