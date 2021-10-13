@@ -1,4 +1,5 @@
 #include "webserv/config-parser/ConfigParser.hpp"
+#include "utils/Formatter.hpp"
 #include "webserv/config-parser/ConfigBlock.hpp"
 #include <fstream>
 #include <iomanip>
@@ -175,28 +176,34 @@ ConfigParser::printConfig(std::ostream& os, ConfigBlock* main, size_t depth)
 void
 ConfigParser::validateDirective(const Directive& direc, ConfigBlock* block)
 {
-    std::ostringstream oss;
+    std::string errorMsg;
     std::map<std::string, DirectiveCaracteristics>::const_iterator ite =
       _knownDirectives.find(direc.first);
 
     /* ensure that directive exists */
     if (ite == _knownDirectives.end()) {
-        oss << "Found unsupported directive \"" << direc.first << "\"";
-        throw ParserException(oss.str().c_str());
+        Formatter() << "Found unsupported directive \"" << direc.first
+                    << "\"" >>
+          errorMsg;
+        throw ParserException(errorMsg);
     }
 
     /* Ensure that the supported directive is valid in the block where it
      * appears */
     if (!(ite->second.validBlockContext & block->getType())) {
-        oss << "Directive \"" << direc.first << "\" is not valid in block \""
-            << block->getName() << "\"";
-        throw ParserException(oss.str());
+        Formatter() << "Directive \"" << direc.first
+                    << "\" is not valid in block \"" << block->getName()
+                    << "\"" >>
+          errorMsg;
+        throw ParserException(errorMsg);
     }
 
     /* Run validator if there is one */
     if (ite->second.validator && !ite->second.validator(direc.second)) {
-        oss << "Directive \"" << direc.first << "\" has an invalid value.";
-        throw ParserException(oss.str());
+        Formatter() << "Directive \"" << direc.first
+                    << "\" has an invalid value." >>
+          errorMsg;
+        throw ParserException(errorMsg);
     }
 }
 
