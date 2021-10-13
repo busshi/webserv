@@ -1,4 +1,5 @@
 #include "utils/string.hpp"
+#include <cctype>
 
 std::vector<std::string>
 split(const std::string& s, unsigned char c)
@@ -22,4 +23,17 @@ split(const std::string& s, unsigned char c)
     }
 
     return v;
+}
+
+std::string
+trim(const std::string& s)
+{
+    std::string::size_type bpos = 0, epos = s.size() - 1;
+
+    while (isspace(s[bpos]))
+        ++bpos;
+    while (epos >= bpos && isspace(s[epos]))
+        --epos;
+
+    return s.substr(bpos, epos - bpos + 1);
 }

@@ -1,5 +1,6 @@
 #include "webserv/config-parser/ConfigParser.hpp"
 #include "utils/Formatter.hpp"
+#include "utils/string.hpp"
 #include "webserv/config-parser/validator.hpp"
 #include <algorithm>
 #include <fstream>
@@ -177,7 +178,7 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
     }
 
     if (ite->second.validator &&
-        !ite->second.validator(keyval.second, errorMsg)) {
+        !ite->second.validator(trim(keyval.second), errorMsg)) {
         throw ParserException(errorMsg);
     }
 
