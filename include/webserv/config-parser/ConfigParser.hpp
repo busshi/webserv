@@ -17,7 +17,7 @@ enum BlockType
 struct ConfigItemCaracteristics
 {
     std::string name;
-    bool (*validator)(const std::string& value);
+    bool (*validator)(const std::string& value, std::string& errorMsg);
     uint8_t validBlockContext;
     BlockType blockType;
 };

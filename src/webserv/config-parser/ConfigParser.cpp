@@ -1,5 +1,6 @@
 #include "webserv/config-parser/ConfigParser.hpp"
 #include "utils/Formatter.hpp"
+#include "webserv/config-parser/validator.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -16,7 +17,7 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "index", NULL, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
     { "method", NULL, BLOCK_SERVER, NOT_A_BLOCK },
     { "listen", NULL, BLOCK_SERVER, NOT_A_BLOCK },
-    { "autoindex", NULL, ~0, NOT_A_BLOCK },
+    { "autoindex", validateAutoindex, ~0, NOT_A_BLOCK },
     { "file_upload", NULL, ~0, NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },
     { "client_body_maxsize", NULL, BLOCK_SERVER, NOT_A_BLOCK },
@@ -172,6 +173,11 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
                     << "\" duplicated in context \"" << contextItem->name
                     << "\"" >>
           errorMsg;
+        throw ParserException(errorMsg);
+    }
+
+    if (ite->second.validator &&
+        !ite->second.validator(keyval.second, errorMsg)) {
         throw ParserException(errorMsg);
     }
 
