@@ -54,9 +54,8 @@ ConfigParser::lex(const std::string& data)
 ConfigItem*
 ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
-    ConfigItem *main = new ConfigItem, *current = main, *tmp = 0;
-    main->name = "GLOBAL";
-    main->blockType = BLOCK_GLOBAL;
+    ConfigItem *main = new ConfigItem("GLOBAL", BLOCK_GLOBAL, 0),
+               *current = main, *tmp = 0;
 
     std::pair<std::string, std::string> keyval;
 
@@ -78,12 +77,11 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
             case Lexer::BLOCK_START:
                 // TODO: add isBlock validation
                 tmp = makeConfigItem(keyval, current);
-                tmp->parent = current;
                 current->children.push_back(tmp);
                 current = tmp;
                 break;
             case Lexer::BLOCK_END:
-                current = current->parent;
+                current = current->getParent();
                 break;
             case Lexer::END_OF_FILE:
                 break;
@@ -111,8 +109,6 @@ ConfigParser::loadConfig(const char* configPath)
 
     ConfigItem* main = parse(lex(data));
 
-    printConfig(std::cout, main);
-
     return main;
 }
 
@@ -125,8 +121,9 @@ ConfigParser::loadConfig(const char* configPath)
 std::ostream&
 ConfigParser::printConfig(std::ostream& os, ConfigItem* main, size_t depth)
 {
-    std::cout << std::string(depth, '\t') << main->name << " " << main->value
-              << (main->blockType != NOT_A_BLOCK ? " {" : "") << "\n";
+    std::cout << std::string(depth, '\t') << main->getName() << " "
+              << main->getValue()
+              << (main->getType() != NOT_A_BLOCK ? " {" : "") << "\n";
 
     for (std::vector<ConfigItem*>::const_iterator ite = main->children.begin();
          ite != main->children.end();
@@ -134,7 +131,7 @@ ConfigParser::printConfig(std::ostream& os, ConfigItem* main, size_t depth)
         printConfig(os, *ite, depth + 1);
     }
 
-    if (main->blockType != NOT_A_BLOCK) {
+    if (main->getType() != NOT_A_BLOCK) {
         std::cout << std::string(depth, '\t') << "}\n";
     }
 
@@ -157,10 +154,10 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
     }
 
     if (!(ite->second.validBlockContext &
-          (!contextItem ? BLOCK_GLOBAL : contextItem->blockType))) {
+          (!contextItem ? BLOCK_GLOBAL : contextItem->getType()))) {
         Formatter() << "Name \"" << keyval.first
-                    << "\" is not allowed in context \"" << contextItem->name
-                    << "\"" >>
+                    << "\" is not allowed in context \""
+                    << contextItem->getName() << "\"" >>
           errorMsg;
         throw ParserException(errorMsg);
     }
@@ -171,7 +168,7 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
                      FindConfigItemPredicate(keyval.first)) !=
           contextItem->children.end()) {
         Formatter() << "Name \"" << keyval.first
-                    << "\" duplicated in context \"" << contextItem->name
+                    << "\" duplicated in context \"" << contextItem->getName()
                     << "\"" >>
           errorMsg;
         throw ParserException(errorMsg);
@@ -182,12 +179,8 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
         throw ParserException(errorMsg);
     }
 
-    ConfigItem* item = new ConfigItem;
-    item->name = keyval.first;
-    item->value = keyval.second;
-    item->blockType = ite->second.blockType;
-
-    return item;
+    return new ConfigItem(
+      keyval.first, ite->second.blockType, contextItem, keyval.second);
 }
 
 ConfigParser::ParserException::ParserException(const std::string& msg)

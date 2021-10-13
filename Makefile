@@ -1,10 +1,10 @@
 NAME		= webserv
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp)
+SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp)
 
 SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp)
 
-HEADER		= $(addprefix include/webserv/, Server.hpp config-parser/Lexer.hpp config-parser/ConfigParser.hpp config-parser/validator.hpp)
+HEADER		= $(addprefix include/webserv/, Server.hpp config-parser/Lexer.hpp config-parser/ConfigParser.hpp config-parser/validator.hpp config-parser/ConfigItem.hpp)
 HEADER		+= $(addprefix include/, utils/Formatter.hpp utils/string.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)

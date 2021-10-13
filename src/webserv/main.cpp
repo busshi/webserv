@@ -21,7 +21,15 @@ main(int ac, char** av)
 
         ConfigItem* config = cfgp.loadConfig("./asset/config/example1.conf");
 
-        /*j
+        /*
+        std::vector<ConfigItem*> civ = config->findBlocks("server");
+
+        for (size_t i = 0; i != civ.size(); ++i) {
+            std::cout << *(civ[i]) << "\n";
+        }
+        */
+
+        /*
 
         server.init(av[1]);
         server.start();

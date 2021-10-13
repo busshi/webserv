@@ -1,4 +1,5 @@
 #pragma once
+#include "webserv/config-parser/ConfigItem.hpp"
 #include "webserv/config-parser/Lexer.hpp"
 #include <map>
 #include <stdexcept>
@@ -6,37 +7,12 @@
 #include <string>
 #include <vector>
 
-enum BlockType
-{
-    NOT_A_BLOCK = 0,
-    BLOCK_SERVER = 1 << 0,
-    BLOCK_LOCATION = 1 << 1,
-    BLOCK_GLOBAL = 1 << 2
-};
-
 struct ConfigItemCaracteristics
 {
     std::string name;
     bool (*validator)(const std::string& value, std::string& errorMsg);
     uint8_t validBlockContext;
     BlockType blockType;
-};
-
-struct ConfigItem
-{
-    std::string name, value;
-    ConfigItem* parent;
-    BlockType blockType;
-    std::vector<ConfigItem*> children;
-};
-
-struct FindConfigItemPredicate
-{
-    std::string key;
-    FindConfigItemPredicate(const std::string& name)
-      : key(name)
-    {}
-    bool operator()(const ConfigItem* item) const { return item->name == key; }
 };
 
 std::ostream&
