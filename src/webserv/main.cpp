@@ -19,7 +19,7 @@ main(int ac, char** av)
 
         ConfigParser cfgp;
 
-        ConfigBlock* config = cfgp.loadConfig("./asset/config/example1.conf");
+        ConfigItem* config = cfgp.loadConfig("./asset/config/example1.conf");
 
         /*j
 
