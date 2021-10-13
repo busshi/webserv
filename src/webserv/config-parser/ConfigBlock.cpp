@@ -48,3 +48,8 @@ ConfigBlock::~ConfigBlock(void)
         delete *ite;
     }
 }
+
+void ConfigBlock::addDirective(const DirectiveMap::value_type& value)
+{
+    _directives.insert(value);
+}

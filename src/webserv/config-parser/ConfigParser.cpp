@@ -79,7 +79,6 @@ ConfigParser::lex(const std::string& data)
 ConfigBlock*
 ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
-    (void)tv;
     ConfigBlock *main = new ConfigBlock("GLOBAL", ConfigBlock::BLOCK_GLOBAL),
                 *current = main, *tmp;
     std::pair<std::string, std::string> keyval;
@@ -120,29 +119,6 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
     }
 
     return main;
-}
-
-bool
-ConfigParser::isValidDirective(const std::string& name) const
-{
-    return (_knownDirectives.find(name) != _knownDirectives.end());
-}
-
-bool
-ConfigParser::isValidDirectiveInBlock(const std::string& name,
-                                      ConfigBlock* block)
-{
-    std::map<std::string, DirectiveCaracteristics>::const_iterator ite =
-      _knownDirectives.find(name);
-
-    return (ite != _knownDirectives.end() &&
-            ite->second.validBlockContext & block->getType());
-}
-
-void
-ConfigBlock::addDirective(const DirectiveMap::value_type& value)
-{
-    _directives.insert(value);
 }
 
 ConfigBlock*

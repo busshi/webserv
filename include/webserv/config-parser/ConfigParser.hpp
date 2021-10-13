@@ -36,9 +36,6 @@ class ConfigParser
     std::vector<Lexer::Token> lex(const std::string& data);
     ConfigBlock* parse(const std::vector<Lexer::Token>& tv);
 
-    bool isValidDirective(const std::string& name) const;
-    bool isValidDirectiveInBlock(const std::string& name, ConfigBlock* block);
-
     /*
      * Ensure, given a directive name, that it is supported and valid in the
      * current block. If any, calls the associated validator method which
