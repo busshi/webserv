@@ -1,4 +1,5 @@
 #include "webserv/config-parser/Lexer.hpp"
+#include "utils/Formatter.hpp"
 #include <cctype>
 #include <iomanip>
 #include <iostream>
@@ -59,9 +60,9 @@ Lexer::skipSpace(void)
 void
 Lexer::skipComment(void)
 {
-        while (ch() && ch() != '\n') {
-            movePos(1);
-        }
+    while (ch() && ch() != '\n') {
+        movePos(1);
+    }
 }
 
 Lexer::Token
@@ -150,7 +151,9 @@ Lexer::next(void)
               _lineNb, _columnNb, "Unclosed block, missing closing brace");
         }
         if (_lastTokenType == KEY) {
-            throw LexerException(_lineNb, _columnNb, "Unexpected token");
+            std::string msg;
+            throw LexerException(
+              _lineNb, _columnNb, "Unterminated key: missing value");
         }
         return makeToken(END_OF_FILE, "EOF");
     }
