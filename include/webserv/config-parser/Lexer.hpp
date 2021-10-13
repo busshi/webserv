@@ -15,7 +15,6 @@ class Lexer
         VALUE,
         END_OF_FILE,
         SEMICOLON,
-        COMMENT,
     };
 
   public:
@@ -78,6 +77,7 @@ class Lexer
     TokenType _lastTokenType;
 
     void skipSpace(void);
+    void skipComment(void);
     Token makeToken(TokenType type, const std::string& value);
     Token getKey(void);
     Token getValue(void);

@@ -39,7 +39,7 @@ std::string
 Lexer::getTokenTypeAsString(TokenType type)
 {
     const char* types[] = { "UNKNOWN", "BLOCK_START", "BLOCK_END", "KEY",
-                            "VALUE",   "EOF",         "SEMICOLON", "COMMENT" };
+                            "VALUE",   "EOF",         "SEMICOLON" };
 
     return types[type];
 }
@@ -54,6 +54,14 @@ Lexer::skipSpace(void)
         }
         movePos(1);
     }
+}
+
+void
+Lexer::skipComment(void)
+{
+        while (ch() && ch() != '\n') {
+            movePos(1);
+        }
 }
 
 Lexer::Token
@@ -131,6 +139,11 @@ Lexer::next(void)
 {
     skipSpace();
 
+    while (ch() == '#') {
+        skipComment();
+        skipSpace();
+    }
+
     if (_pos == _s.size()) {
         if (_blockDepth > 0) {
             throw LexerException(
@@ -177,11 +190,6 @@ Lexer::next(void)
                   _lineNb, _columnNb, "Extraneous closing brace '}'");
             }
             return makeToken(BLOCK_END, "}");
-        case '#':
-            while (ch() && ch() != '\n') {
-                movePos(1);
-            }
-            return makeToken(COMMENT, "#");
     }
 
     return Token(UNKNOWN);
