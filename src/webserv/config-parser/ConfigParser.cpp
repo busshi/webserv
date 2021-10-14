@@ -162,18 +162,6 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
         throw ParserException(errorMsg);
     }
 
-    if (ite->second.blockType == NOT_A_BLOCK &&
-        std::find_if(contextItem->children.begin(),
-                     contextItem->children.end(),
-                     FindConfigItemPredicate(keyval.first)) !=
-          contextItem->children.end()) {
-        Formatter() << "Name \"" << keyval.first
-                    << "\" duplicated in context \"" << contextItem->getName()
-                    << "\"" >>
-          errorMsg;
-        throw ParserException(errorMsg);
-    }
-
     if (ite->second.validator &&
         !ite->second.validator(trim(keyval.second), errorMsg)) {
         throw ParserException(errorMsg);
