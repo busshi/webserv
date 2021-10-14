@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 class Lexer
 {
@@ -15,6 +16,7 @@ class Lexer
         VALUE,
         END_OF_FILE,
         SEMICOLON,
+		NEWLINE
     };
 
   public:
@@ -42,7 +44,7 @@ class Lexer
 
     ~Lexer(void);
 
-    Token next(void);
+    Token processOne(void);
 
     Lexer& operator=(const Lexer& other);
 
@@ -70,11 +72,15 @@ class Lexer
     };
 
   private:
+	std::vector<Token> _tokenHistory;
+
     std::string _s;
     std::string::size_type _pos;
     size_t _blockDepth;
     size_t _lineNb, _columnNb;
-    TokenType _lastTokenType;
+
+	TokenType nextTokenType(void);
+	TokenType getLastRealTokenType(void);
 
     void skipSpace(void);
     void skipComment(void);

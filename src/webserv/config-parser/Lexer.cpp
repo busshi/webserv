@@ -14,7 +14,7 @@ Lexer::iskeyc(unsigned char c) const
 bool
 Lexer::isreservedc(unsigned char c) const
 {
-    return c == '{' || c == '}' || c == ';' || c == '#';
+    return c == '{' || c == '}' || c == ';' || c == '#' || c == '\n';
 }
 
 bool
@@ -48,11 +48,7 @@ Lexer::getTokenTypeAsString(TokenType type)
 void
 Lexer::skipSpace(void)
 {
-    while (isspace(ch())) {
-        if (ch() == '\n') {
-            ++_lineNb;
-            _columnNb = 0;
-        }
+    while (ch() != '\n' && isspace(ch())) {
         movePos(1);
     }
 }
@@ -100,21 +96,69 @@ Lexer::getValue(void)
     return makeToken(VALUE, _s.substr(begPos, _pos - begPos));
 }
 
+Lexer::TokenType Lexer::nextTokenType(void)
+{
+	size_t save_pos = _pos;
+	TokenType type = UNKNOWN;
+
+	while (ch() != '\n' && isspace(ch())) {
+		++_pos;
+	}
+
+	if (_pos >= _s.size()) {
+	return END_OF_FILE;
+	}
+
+    if (!isreservedc(ch())) {
+	return _tokenHistory.back().getType() == KEY ? VALUE : KEY;
+	}
+
+	switch (ch()) {
+	case ';':
+		type = SEMICOLON;
+		break;
+	case '{':
+		type = BLOCK_START;
+		break;
+	case '}':
+		type = BLOCK_END;
+		break;
+	case '\n':
+		type = NEWLINE;
+		break;
+	}
+
+	_pos = save_pos;
+
+	return type;
+}
+
+Lexer::TokenType Lexer::getLastRealTokenType(void)
+{
+	for (std::vector<Token>::const_reverse_iterator rite = _tokenHistory.rbegin(); rite != _tokenHistory.rend(); ++rite) {
+		if (rite->getType() != NEWLINE) {
+			return rite->getType();
+		}
+	}
+	return UNKNOWN;
+}
+
 Lexer::Token
 Lexer::makeToken(TokenType type, const std::string& value = "")
 {
-    _lastTokenType = type;
+	_tokenHistory.push_back(Token(type, value));
     return Token(type, value);
 }
 
-Lexer::Lexer(const std::string& data)
-  : _s(data)
+Lexer::Lexer(const std::string& data):
+  _s(data)
   , _pos(0)
   , _blockDepth(0)
   , _lineNb(0)
   , _columnNb(0)
-  , _lastTokenType(Lexer::UNKNOWN)
-{}
+{
+	_tokenHistory.push_back(Token(UNKNOWN, "unknown"));
+}
 
 Lexer::Lexer(const Lexer& other)
 {
@@ -136,7 +180,7 @@ Lexer::operator=(const Lexer& rhs)
 Lexer::~Lexer(void) {}
 
 Lexer::Token
-Lexer::next(void)
+Lexer::processOne(void)
 {
     skipSpace();
 
@@ -150,7 +194,7 @@ Lexer::next(void)
             throw LexerException(
               _lineNb, _columnNb, "Unclosed block, missing closing brace");
         }
-        if (_lastTokenType == KEY) {
+        if (_tokenHistory.back().getType() == KEY) {
             std::string msg;
             throw LexerException(
               _lineNb, _columnNb, "Unterminated key: missing value");
@@ -158,20 +202,38 @@ Lexer::next(void)
         return makeToken(END_OF_FILE, "EOF");
     }
 
+	/* tokenize key-value pair */
+
     if (!isreservedc(ch())) {
-        if (_lastTokenType != KEY) {
+        if (_tokenHistory.back().getType() != KEY) {
             return getKey();
         } else {
             return getValue();
         }
     }
 
+	/* tokenize special char */
+
     char c = ch();
     movePos(1);
 
+	TokenType type;
+
     switch (c) {
+		case '\n':
+			type = _tokenHistory.back().getType();
+			if (type == VALUE && nextTokenType() != BLOCK_START) {
+                throw LexerException(
+                  _lineNb,
+                  _columnNb,
+                  "Unexpected line break, did you forget a ';' ?");
+			}
+			_columnNb = 0;
+			++_lineNb;
+			return makeToken(NEWLINE, "NL");
         case ';':
-            if (_lastTokenType != VALUE) {
+			type = _tokenHistory.back().getType();
+            if (type != VALUE) {
                 throw LexerException(
                   _lineNb,
                   _columnNb,
@@ -179,7 +241,8 @@ Lexer::next(void)
             }
             return makeToken(SEMICOLON, ";");
         case '{':
-            if (_lastTokenType != KEY && _lastTokenType != VALUE) {
+			type = getLastRealTokenType();
+            if (type != VALUE && type != KEY) {
                 throw LexerException(
                   _lineNb, _columnNb, "A block must have a name");
             }
@@ -290,7 +353,7 @@ Lexer::LexerException::getColumnNumber(void) const
 std::ostream&
 Lexer::LexerException::printFormatted(std::ostream& os)
 {
-    return os << "\033[1;31mLexing Error\033[0m at line " << _lineNb
+    return os << "\033[1;31mLexing Error\033[0m at line " << (_lineNb + 1)
               << ", column " << _columnNb << ": \033[1m" << _msg << "\033[0m";
 }
 

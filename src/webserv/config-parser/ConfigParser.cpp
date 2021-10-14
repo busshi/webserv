@@ -45,7 +45,7 @@ ConfigParser::lex(const std::string& data)
     Lexer lexer(data);
 
     do {
-        v.push_back(lexer.next());
+        v.push_back(lexer.processOne());
     } while (v.back().getType() != Lexer::END_OF_FILE);
 
     return v;
