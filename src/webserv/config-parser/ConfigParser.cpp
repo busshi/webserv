@@ -56,6 +56,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
     ConfigItem *main = new ConfigItem("GLOBAL", BLOCK_GLOBAL, 0),
                *current = main, *tmp = 0;
+	std::string errorMsg;
 
     std::pair<std::string, std::string> keyval;
 
@@ -70,13 +71,23 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 keyval.second = ite->getValue();
                 break;
             case Lexer::SEMICOLON:
-                current->children.push_back(makeConfigItem(keyval, current));
+				tmp = makeConfigItem(keyval, current);
+				if (tmp->getType() != NOT_A_BLOCK) {
+					Formatter() << "name \"" << keyval.first << "\" MUST be turned into a block\n"
+						>> errorMsg;
+					throw ParserException(errorMsg);
+				}
+                current->children.push_back(tmp);
                 keyval.first = "";
                 keyval.second = "";
                 break;
             case Lexer::BLOCK_START:
-                // TODO: add isBlock validation
                 tmp = makeConfigItem(keyval, current);
+				if (tmp->getType() == NOT_A_BLOCK) {
+					Formatter() << "name \"" << keyval.first << "\" CANNOT be turned into a block\n"
+						>> errorMsg;
+					throw ParserException(errorMsg);
+				}
                 current->children.push_back(tmp);
                 current = tmp;
                 break;

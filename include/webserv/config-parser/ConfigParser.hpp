@@ -39,8 +39,6 @@ class ConfigParser
     available atoms are stored in _knownConfigItems).
     ** - Whether or not the configuration atom is valid in the current context
     (also called block).
-    ** - Whether or not the configuration atom is duplicated in the current
-    context. Does not apply to blocks.
     **
     ** In case one of these checks returns false, a relevant `ParsingException`
     is thrown.
