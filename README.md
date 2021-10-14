@@ -5,11 +5,19 @@
 A tiny HTTP server implementation built with C++, for learning purpose.
 
 ## Documentation
-- Configuration file parsing
-  - File format
-    - Example configuration
-    - File format rules
-      - Lexer rules
+- [Configuration file parsing](#configuration-file-parsing)
+  - [File format](#file-format)
+    - [Example configuration](#example-configuration)
+    - [Lexer rules](#lexer-rules)
+    - [Configuration file is free form](#configuration-file-is-free-form)
+    - [Comments](#Comments)
+  - [How parsing is done, and data actually used](#how-parsing-is-done-and-data-actually-used)
+    - [Data representation](#data-representation)
+    - [Using the data](#using-the-data)
+    - [`findBlocks`](#findBlocks)
+    - [`findAtomInBlock`](#findatominblock)
+    - [`findNearestAtom`](#findnearestatom)
+
 
 
 # Configuration file parsing
@@ -119,3 +127,108 @@ is not, because the semicolon is not on the same line than the value.
 #### Comments
 
 When the `#` character is encountered, the remaining characters on the line are skipped.
+
+### How parsing is done, and data actually used
+
+#### Data representation
+
+Each configuration item (block or non-block) shares the same underlying structure, and is represented as a simple C++ class:
+
+```cpp
+struct ConfigItem {
+    std::string name;
+    std::string value;
+    std::vector<ConfigItem*> children;
+    BlockType type;
+}
+```
+> This is a highly simplified version, please see the corresponding header for more informations.
+
+As shown by the above structure, the block system is put in place by creating a vector of `ConfigItem` in each `ConfigItem`. If a `ConfigItem` has at least one child, then it means that it is a block, because only blocks are capable of holding other items. The `type` is used to know which block - if it is a block - it is.
+
+#### Using the data
+
+In reality, the `ConfigItem` is a way more complex class that bundles several methods in order to easily access its child or parent elements.
+
+First, the configuration is parsed from a file, using a `ConfigParser` object:
+
+```cpp
+ConfigParser cfgp;
+
+ConfigFile* global = cfgp.loadConfig("/path/to/config");
+```
+
+During the load process, a `Lexer::LexerException` or a `ConfigParser::ParserException` may be thrown if there is something wrong with the lexing or parsing processes.
+
+The returned `ConfigFile*` is a pointer to the global scope of the configuration, which therefore holds the whole configuration.
+
+##### findBlocks
+
+Helper method that returns a `ConfigItem*` vector holding all the blocks of a given type that are direct children of the current block. The `ConfigItem` on which this method is called must therefore be a block otherwise an exception is thrown.
+
+In the following example, `findBlocks` is used to process each `server` block from the global config scope, then each `location` block of each `server` block.
+
+```cpp
+std::vector<ConfigFile*> serverBlocks = global->findBlocks("server");
+
+for (std::vector<ConfigFile*>::const_iterator ite = serverBlocks.begin();
+    ite != serverBlocks.end(); ++ite) {
+        std::vector<ConfigFile*> locationBlocks = (*ite)->findBlocks("location");
+        // do something with each location of this server block
+}
+```
+
+##### findAtomInBlock
+
+Retrieve a given `ConfigItem*` inside the block item on which this method is called.
+
+```cpp
+ConfigItem* globalAutoindex = global->findAtomInBlock("autoindex");
+
+if (globalAutoindex) {
+    std::cout << globalAutoindex->name() << " = " << globalAutoindex->value();
+} else {
+    std::cout << "Did not found autoindex directly inside global scope\n";
+}
+```
+
+##### findNearestAtom
+
+Retrieve the *nearest* configuration item which may apply to the one on which this method is called.
+
+Given the following configuration:
+
+```nginx
+some_config 2;
+
+server {
+    some_config 1;
+    location / {
+        some_config 0;
+    }
+}
+```
+
+Assuming that `locationBlock` refers to the location configuration item as described by the configuration above:
+
+```cpp
+ConfigItem* someConfig = locationBlock->findNearestAtom("some_config");
+
+std::cout << someConfig->value() << "\n";
+```
+
+This code snippet will print `1` because it is the nearest value, starting at the scope of the location item itself.
+
+In case we edit the configuration file like so:
+
+```nginx
+some_config 2;
+
+server {
+    location / {
+        some_config 0;
+    }
+}
+```
+
+Then the printed value will be `2` as this is the nearest value now that `some_config` is no longer defined in the `server` block. This may become really handy for some configuration options that are able to defined at multiple scope levels.
