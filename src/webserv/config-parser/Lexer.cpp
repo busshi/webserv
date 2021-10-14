@@ -239,6 +239,9 @@ Lexer::processOne(void)
                   _columnNb,
                   "A semicolon is only valid after a directive's value");
             }
+			while (ch() == ';') {
+				movePos(1);
+			}
             return makeToken(SEMICOLON, ";");
         case '{':
 			type = getLastRealTokenType();

@@ -10,28 +10,11 @@
             "-Iinclude/webserv/",
             "-Iinclude",
             "-o",
-            "src/webserv/Server.o",
-            "src/webserv/Server.cpp"
+            "src/webserv/config-parser/ConfigBlock.o",
+            "src/webserv/config-parser/ConfigBlock.cpp"
         ],
         "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/Server.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/config-parser/ConfigParser.o",
-            "src/webserv/config-parser/ConfigParser.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/config-parser/ConfigParser.cpp"
+        "file": "src/webserv/config-parser/ConfigBlock.cpp"
     },
     {
         "arguments": [
@@ -61,10 +44,61 @@
             "-Iinclude/webserv/",
             "-Iinclude",
             "-o",
+            "src/utils/Formatter.o",
+            "src/utils/Formatter.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/utils/Formatter.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
             "src/webserv/config-parser/Lexer.o",
             "src/webserv/config-parser/Lexer.cpp"
         ],
         "directory": "/home/abrabant/Prog/webserv",
         "file": "src/webserv/config-parser/Lexer.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/config-parser/ConfigParser.o",
+            "src/webserv/config-parser/ConfigParser.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/config-parser/ConfigParser.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-std=c++98",
+            "-Iinclude/webserv/",
+            "-Iinclude",
+            "-o",
+            "src/webserv/Server.o",
+            "src/webserv/Server.cpp"
+        ],
+        "directory": "/home/abrabant/Prog/webserv",
+        "file": "src/webserv/Server.cpp"
     }
 ]
