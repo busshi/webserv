@@ -71,6 +71,7 @@ Lexer::getKey(void)
     }
 
     if (ch() != '{' && !isspace(ch())) {
+		std::cout << ch() << "\n";
         throw LexerException(
           _lineNb,
           _columnNb,
@@ -205,7 +206,7 @@ Lexer::processOne(void)
 	/* tokenize key-value pair */
 
     if (!isreservedc(ch())) {
-        if (_tokenHistory.back().getType() != KEY) {
+        if (getLastRealTokenType() != KEY) {
             return getKey();
         } else {
             return getValue();
