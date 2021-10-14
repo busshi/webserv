@@ -67,9 +67,11 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
             case Lexer::KEY:
                 keyval.first = ite->getValue();
                 break;
+
             case Lexer::VALUE:
                 keyval.second = ite->getValue();
                 break;
+
             case Lexer::SEMICOLON:
 				tmp = makeConfigItem(keyval, current);
 				if (tmp->getType() != NOT_A_BLOCK) {
@@ -81,6 +83,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 keyval.first = "";
                 keyval.second = "";
                 break;
+
             case Lexer::BLOCK_START:
                 tmp = makeConfigItem(keyval, current);
 				if (tmp->getType() == NOT_A_BLOCK) {

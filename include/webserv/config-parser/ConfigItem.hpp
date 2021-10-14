@@ -37,8 +37,29 @@ class ConfigItem
     const std::string& getName(void) const;
     const std::string& getValue(void) const;
 
+	/*
+	** Find the nearest configuration atom of type `key` that applies to `this`.
+	** Search starts in this->parent block, and ends when a config item of type `key`
+	** is found OR when global scope has been entirely searched.
+	**
+	** A pointer to the item is returned if any is found, NULL otherwise.
+	*/
+
     ConfigItem* findNearestAtom(const std::string& key) const;
-    ConfigItem* findAtom(const std::string& key);
+
+	/*
+	** Search a block config item for a configuration atom of type `key`.
+	** Nested blocks are not searched.
+	** If this function is called on a non-block configuration item, an exception is thrown.
+	*/
+
+    ConfigItem* findAtomInBlock(const std::string& key);
+
+	/*
+	** Search for all the configuration blocks of type `key` in `this`, which must be a
+	** block itself. If that's not the case, an exception is thrown.
+	*/
+
     std::vector<ConfigItem*> findBlocks(const std::string& key);
 };
 
