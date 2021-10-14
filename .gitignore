@@ -1,2 +1,4 @@
 /webserv
 *.o
+.cache
+*.swp

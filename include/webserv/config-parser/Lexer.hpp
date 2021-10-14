@@ -1,11 +1,14 @@
 #pragma once
+#include <iostream>
 #include <stdexcept>
 #include <string>
-#include <iostream>
+#include <vector>
 
-class Lexer {
+class Lexer
+{
   public:
-    enum TokenType {
+    enum TokenType
+    {
         UNKNOWN = 0,
         BLOCK_START,
         BLOCK_END,
@@ -13,11 +16,13 @@ class Lexer {
         VALUE,
         END_OF_FILE,
         SEMICOLON,
+		NEWLINE
     };
 
   public:
     // Lexer::Token {{{
-    class Token {
+    class Token
+    {
         TokenType _type;
         std::string _s;
 
@@ -39,18 +44,20 @@ class Lexer {
 
     ~Lexer(void);
 
-    Token next(void);
+    Token processOne(void);
 
     Lexer& operator=(const Lexer& other);
 
     static std::string getTokenTypeAsString(TokenType type);
 
-    class LexerException : public std::runtime_error {
+    class LexerException : public std::runtime_error
+    {
         const char* _msg;
         size_t _lineNb, _columnNb;
 
       public:
-        LexerException(size_t lineNb, size_t columnNb,
+        LexerException(size_t lineNb,
+                       size_t columnNb,
                        const char* msg = "Unknown error");
         LexerException(const LexerException& other);
 
@@ -65,16 +72,40 @@ class Lexer {
     };
 
   private:
+	std::vector<Token> _tokenHistory;
+
     std::string _s;
     std::string::size_type _pos;
     size_t _blockDepth;
-    size_t _lineNb;
-    TokenType _lastTokenType;
+    size_t _lineNb, _columnNb;
+
+	TokenType nextTokenType(void);
+	TokenType getLastRealTokenType(void);
 
     void skipSpace(void);
+    void skipComment(void);
     Token makeToken(TokenType type, const std::string& value);
     Token getKey(void);
     Token getValue(void);
+
+    bool iskeyc(unsigned char c) const;
+    bool isreservedc(unsigned char c) const;
+    bool isvaluec(unsigned char c) const;
+
+    /*
+     * Returns current character element.
+     * Shorthand for _s[_pos]
+     */
+    unsigned char ch(void) const;
+    
+    /*
+     * Move the cursor of n characters.
+     * Shortand for _pos += n
+     * Adds n to _columnNb
+     */
+    void movePos(size_t n);
+
 };
 
-std::ostream& operator<<(std::ostream& lhs, const Lexer::Token& rhs);
+std::ostream&
+operator<<(std::ostream& lhs, const Lexer::Token& rhs);
