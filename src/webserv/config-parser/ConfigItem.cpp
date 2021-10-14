@@ -1,4 +1,3 @@
-
 #include "webserv/config-parser/ConfigItem.hpp"
 #include <iomanip>
 #include <stdexcept>
@@ -13,7 +12,12 @@ ConfigItem::ConfigItem(const std::string& name,
   , _blockType(blockType)
 {}
 
-ConfigItem::~ConfigItem(void) {}
+ConfigItem::~ConfigItem(void)
+{
+	for (std::vector<ConfigItem*>::const_iterator ite = children.begin(); ite != children.end(); ++ite) {
+		delete *ite;
+	}
+}
 
 BlockType
 ConfigItem::getType(void) const
