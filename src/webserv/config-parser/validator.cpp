@@ -67,3 +67,13 @@ validateIndex(const std::string& value, std::string& errorMsg)
 
     return true;
 }
+
+bool
+validateRoot(const std::string& value, std::string& errorMsg)
+{
+    if (value[0] != '/') {
+        Formatter() << "Root must takes an absolute path as its argument" >> errorMsg;
+        return false;
+    }
+    return true;
+}
