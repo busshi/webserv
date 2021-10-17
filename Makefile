@@ -43,6 +43,6 @@ re:			fclean all
 
 run:		re
 		@echo "$(NAME) running..."
-		@./$(NAME) "./asset/config/example1.conf"
+		@./$(NAME) "./asset/config/simple.conf"
 
 .PHONY:	all clean fclean re run

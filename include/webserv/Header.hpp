@@ -14,11 +14,12 @@ class	Header {
 
 		std::string	getResponse( void ) ;
 
-		void		parseHeader( char buffer[] );
+		void		parseHeader( char buffer[], std::string rootPath );
 		void		setContentType( std::string );
 		void		createResponse( void );
 
 	private:
+		std::string	_rootPath;
 		std::string	_method;
 		std::string	_path;
 		std::string	_response;

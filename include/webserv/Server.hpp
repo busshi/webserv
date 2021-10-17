@@ -24,4 +24,5 @@ class Server
     int _socketFd;
     int _maxConnexion;
     int _connexion;
+	std::string	_rootPath;
 };

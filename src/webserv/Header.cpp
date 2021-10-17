@@ -20,6 +20,7 @@ Header &	Header::operator=( Header const & rhs ) {
 		_contentLen = rhs._contentLen;
 		_method = rhs._method;
 		_path = rhs._path;
+		_rootPath = rhs._rootPath;
 	}
 	return *this;
 }
@@ -36,7 +37,7 @@ void		Header::setContentType( std::string contentType ) {
 		_contentType = "text/plain";
 }
 
-void		Header::parseHeader(char buffer[]) {
+void		Header::parseHeader(char buffer[], std::string rootPath) {
 
     std::vector<std::string> strings;
     std::istringstream buf(buffer);
@@ -53,6 +54,7 @@ void		Header::parseHeader(char buffer[]) {
         if (id == 0)
             _method = *it;
         if (id == 1) {
+			_rootPath = rootPath;
             _path = *it;
             _path = _path.substr(1);
 
@@ -68,16 +70,16 @@ void    	Header::createResponse( void ) {
     std::string path;
 
     if (!_path.length())
-        path = "asset/index.html";
+        path = _rootPath + "index.html";
     else
-        path = "asset/" + _path;
+        path = _rootPath + _path;
 
     ifs.open(path.c_str());
     if (ifs)
 		_statusCode = "200 OK";
 	else {
 		_statusCode = "404 Not Found";
-		path = "asset/error_page.html";
+		path = "asset/default_404.html";
 		ifs.open(path.c_str());
 	}
 

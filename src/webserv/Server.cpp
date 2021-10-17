@@ -45,6 +45,12 @@ void Server::init( ConfigItem * global )
 				_port = atoi(port->getValue().c_str());
 				std::cout << "webserv listening on port " << _port << std::endl;
 			}
+
+			ConfigItem *	path = (*ite)->findAtomInBlock("root");
+			if (path)
+				_rootPath = path->getValue();
+			else
+				std::cout << "Error: No default path provided!" << std::endl;
 	}
 
     _maxConnexion = 10;
@@ -103,7 +109,7 @@ Server::start(void)
 
 		Header	header;
 
-        header.parseHeader(buffer);
+        header.parseHeader(buffer, _rootPath);
         header.createResponse();
         sendResponse(header);
         close(_connexion);
