@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include "config-parser/ConfigParser.hpp"
 #include "config-parser/ConfigItem.hpp"
 #include "Header.hpp"
@@ -19,8 +18,6 @@ class Server
   	void start(void);
     void sendResponse( Header header );
     void stop(void);
-
-    void display(void);
 
   private:
     int _port;

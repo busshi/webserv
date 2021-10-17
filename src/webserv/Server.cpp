@@ -99,7 +99,7 @@ Server::start(void)
         if (!bytesread)
             std::cout << "nothing received..." << std::endl;
 		else
-            std::cout << buffer << std::endl;
+            std::cout << "----- Received Header -----\n" << buffer << std::endl;
 
 		Header	header;
 
@@ -114,6 +114,11 @@ void
 Server::sendResponse( Header header )
 {
 	std::string	response = header.getResponse();
+
+	if (response.size() > 512)
+		std::cout << "----- Response Header -----" << std::endl << response.substr(0, 512) << "\n\n[ ...SNIP... ]" << std::endl;
+	else
+		std::cout << "----- Response Header -----" << std::endl << response << std::endl;
 
     //write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);

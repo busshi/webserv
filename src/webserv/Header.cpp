@@ -26,7 +26,17 @@ Header &	Header::operator=( Header const & rhs ) {
 
 std::string	Header::getResponse( void ) { return _response; }
 
-void	Header::parseHeader(char buffer[]) {
+void		Header::setContentType( std::string contentType ) {
+
+	if (contentType == "html" || contentType == "css" || contentType == "javascript" || contentType == "plain")
+		_contentType = "text/" + contentType;
+	else if (contentType == "jpeg" || contentType == "png" || contentType == "bmp")
+		_contentType = "image/" + _contentType;
+	else
+		_contentType = "text/plain";
+}
+
+void		Header::parseHeader(char buffer[]) {
 
     std::vector<std::string> strings;
     std::istringstream buf(buffer);
@@ -45,16 +55,15 @@ void	Header::parseHeader(char buffer[]) {
         if (id == 1) {
             _path = *it;
             _path = _path.substr(1);
+
 			std::size_t	found = _path.find_last_of('.');
 			if (found != std::string::npos)
-				_contentType = _path.substr(found + 1);
+				setContentType(_path.substr(found + 1));
         }
     }
-
-    display();
 }
 
-void    Header::createResponse( void ) {
+void    	Header::createResponse( void ) {
     std::ifstream ifs;
     std::string path;
 
@@ -64,33 +73,41 @@ void    Header::createResponse( void ) {
         path = "asset/" + _path;
 
     ifs.open(path.c_str());
-    if (ifs) {
-        std::string s;
-        std::string tmp;
+    if (ifs)
+		_statusCode = "200 OK";
+	else {
+		_statusCode = "404 Not Found";
+		path = "asset/error_page.html";
+		ifs.open(path.c_str());
+	}
 
-        while (getline(ifs, s)) {
-            tmp += s;
-            tmp += "\n";
-        }
-        ifs.close();
+	std::string s;
+    std::string tmp;
 
-        unsigned len = tmp.length();
-        std::ostringstream o;
-        o << len;
-        std::string convertedLen(o.str());
+    while (getline(ifs, s)) {
+        tmp += s;
+        tmp += "\n";
+    }
+    ifs.close();
 
-        ifs.open(path.c_str());
+    unsigned len = tmp.length();
+    std::ostringstream o;
+    o << len;
+    _contentLen = o.str();
+    ifs.open(path.c_str());
 
-        _response =
-          "HTTP/1.1 200 OK\nContent-Type: " + _contentType + ";charset=UTF-8\nContent-Length: ";
-        _response += convertedLen;
-        _response += "\n\n";
-        while (getline(ifs, s)) {
-            _response += s;
-            _response += "\n";
-        }
-        ifs.close();
-    } else {
+    _response =
+          "HTTP/1.1 " + _statusCode + "\n" + 
+		  "Content-Type: " + _contentType + ";charset=UTF-8\n" + 
+		  "Content-Length: " + _contentLen + "\n\n";
+
+    while (getline(ifs, s)) {
+        _response += s;
+        _response += "\n";
+    }
+
+    ifs.close();
+/*	{
 
         std::ifstream       ifs_error;
         std::stringstream   buf;
@@ -104,15 +121,5 @@ void    Header::createResponse( void ) {
         _response += "\n\n";
         _response += "NOT FOUND\n";
 //      _response += buf.str();
-    }
-}
-
-void	Header::display( void ) {
-
-	std::cout << "--------------------------" << std::endl;
-	std::cout << "Method: " << _method << std::endl;
-	std::cout << "Path: " << _path << std::endl;
-	std::cout << "Content: " << _contentType << std::endl;
-	std::cout << "Content-Lentgh: " << _contentLen << std::endl;
-	std::cout << "--------------------------" << std::endl;
+    }*/
 }

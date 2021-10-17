@@ -15,8 +15,8 @@ class	Header {
 		std::string	getResponse( void ) ;
 
 		void		parseHeader( char buffer[] );
+		void		setContentType( std::string );
 		void		createResponse( void );
-		void		display( void );
 
 	private:
 		std::string	_method;
