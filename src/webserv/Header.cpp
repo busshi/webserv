@@ -81,45 +81,18 @@ void    	Header::createResponse( void ) {
 		ifs.open(path.c_str());
 	}
 
-	std::string s;
-    std::string tmp;
-
-    while (getline(ifs, s)) {
-        tmp += s;
-        tmp += "\n";
-    }
+	std::stringstream	buf;
+    buf << ifs.rdbuf();
     ifs.close();
 
-    unsigned len = tmp.length();
-    std::ostringstream o;
-    o << len;
-    _contentLen = o.str();
-    ifs.open(path.c_str());
-
+	unsigned len = buf.str().size();
+	std::stringstream	tmp;
+	tmp << len;
+	_contentLen = tmp.str();
+	
     _response =
           "HTTP/1.1 " + _statusCode + "\n" + 
 		  "Content-Type: " + _contentType + ";charset=UTF-8\n" + 
-		  "Content-Length: " + _contentLen + "\n\n";
-
-    while (getline(ifs, s)) {
-        _response += s;
-        _response += "\n";
-    }
-
-    ifs.close();
-/*	{
-
-        std::ifstream       ifs_error;
-        std::stringstream   buf;
-
-        ifs_error.open("asset/error_page.html", std::ifstream::in);
-        buf << ifs_error.rdbuf();
-        ifs_error.close();
-
-        _response = "HTTP/1.1 404 Not Found\nContent-Type: text/html;charset=UTF-8\nContent-Length: ";
-        _response += buf.str().size();
-        _response += "\n\n";
-        _response += "NOT FOUND\n";
-//      _response += buf.str();
-    }*/
+		  "Content-Length: " + _contentLen + "\n\n" + 
+		  buf.str();
 }
