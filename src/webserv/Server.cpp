@@ -1,17 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/06 02:09:54 by aldubar          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -46,10 +33,22 @@ Server::operator=(Server const& rhs)
     return *this;
 }
 
-void
-Server::init(char const* argv)
+void Server::init( ConfigItem * global )
 {
-    _port = atoi(argv);
+	std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
+
+	for (std::vector<ConfigItem*>::const_iterator ite = serverBlocks.begin();
+	    ite != serverBlocks.end(); ++ite) {
+			
+			ConfigItem *	port = (*ite)->findAtomInBlock("listen");
+		
+			if (port) {
+
+				_port = atoi(port->getValue().c_str());
+				std::cout << "webserv listening on port " << _port << std::endl;
+			}
+	}
+
     _maxConnexion = 10;
 }
 
@@ -106,6 +105,7 @@ Server::start(void)
                       << "---------------------" << std::endl;
 
         parseHeader(buffer);
+        createResponse();
         sendResponse();
         close(_connexion);
     }
@@ -131,6 +131,9 @@ Server::parseHeader(char buffer[])
         if (id == 1) {
             _path = *it;
             _path = _path.substr(1);
+			std::size_t	found = _path.find_last_of('.');
+			if (found != std::string::npos)
+				_content = _path.substr(found + 1);
         }
     }
 
@@ -142,12 +145,19 @@ Server::display(void)
 {
     std::cout << "method: " << _method << std::endl;
     std::cout << "path: " << _path << std::endl;
+    std::cout << "Content: " << _content << std::endl;
+	std::cout << "--------------------------" << std::endl;
 }
 
+
 void
-Server::sendResponse(void)
+Server::sendResponse( void )
 {
-    std::string response;
+    //write(_connexion, response.c_str(), response.length());
+    send(_connexion, _response.c_str(), _response.size(), 0);
+}
+
+void	Server::createResponse( void ) {
     std::ifstream ifs;
     std::string path;
 
@@ -173,21 +183,31 @@ Server::sendResponse(void)
         std::string convertedLen(o.str());
 
         ifs.open(path.c_str());
-        response =
-          "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
-        response += convertedLen;
-        response += "\n\n";
+
+		_response =
+          "HTTP/1.1 200 OK\nContent-Type: " + _content + ";charset=UTF-8\nContent-Length: ";
+        _response += convertedLen;
+        _response += "\n\n";
         while (getline(ifs, s)) {
-            response += s;
-            response += "\n";
+            _response += s;
+            _response += "\n";
         }
         ifs.close();
-    } else
-        response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: "
-                   "16\n\n404 NOT FOUND!!!";
+    } else {
+		
+		std::ifstream		ifs_error;
+		std::stringstream	buf;
 
-    write(_connexion, response.c_str(), response.length());
-    //		send(connexion, response.c_str(), response.size(), 0);
+		ifs_error.open("asset/error_page.html", std::ifstream::in);
+		buf << ifs_error.rdbuf();
+		ifs_error.close();
+
+		_response = "HTTP/1.1 404 Not Found\nContent-Type: text/html;charset=UTF-8\nContent-Length: ";
+		_response += buf.str().size();
+		_response += "\n\n";
+		_response += "NOT FOUND\n";
+//		_response += buf.str();
+	}
 }
 
 void

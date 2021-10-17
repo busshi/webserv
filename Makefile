@@ -42,7 +42,7 @@ fclean:		clean
 re:			fclean all
 
 run:		re
-		@echo "Running $(NAME) on port 80..."
-		@./$(NAME) 80
+		@echo "$(NAME) running..."
+		@./$(NAME) "./asset/config/example1.conf"
 
 .PHONY:	all clean fclean re run

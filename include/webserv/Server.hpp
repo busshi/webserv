@@ -1,20 +1,9 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: aldubar <aldubar@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/10/05 11:04:48 by aldubar           #+#    #+#             */
-/*   Updated: 2021/10/05 18:10:18 by aldubar          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#pragma once
 
 #include <string>
 #include <vector>
+#include "config-parser/ConfigParser.hpp"
+#include "config-parser/ConfigItem.hpp"
 
 class Server
 {
@@ -25,9 +14,11 @@ class Server
 
     Server& operator=(Server const& rhs);
 
-    void init(char const* argv);
-    void start(void);
+//    void init(std::vector<ConfigItem*>);
+  	void init( ConfigItem * global );
+  	void start(void);
     void parseHeader(char buffer[]);
+    void createResponse(void);
     void sendResponse(void);
     void stop(void);
 
@@ -41,6 +32,6 @@ class Server
 
     std::string _method;
     std::string _path;
+    std::string _content;
+    std::string _response;
 };
-
-#endif
