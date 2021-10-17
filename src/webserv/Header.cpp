@@ -32,7 +32,7 @@ void		Header::setContentType( std::string contentType ) {
 	if (contentType == "html" || contentType == "css" || contentType == "javascript" || contentType == "plain")
 		_contentType = "text/" + contentType;
 	else if (contentType == "jpeg" || contentType == "png" || contentType == "bmp")
-		_contentType = "image/" + _contentType;
+		_contentType = "image/" + contentType;
 	else
 		_contentType = "text/plain";
 }
@@ -81,6 +81,7 @@ void    	Header::createResponse( void ) {
 		_statusCode = "404 Not Found";
 		path = "asset/default_404.html";
 		ifs.open(path.c_str());
+		_contentType = "text/html";
 	}
 
 	std::stringstream	buf;
