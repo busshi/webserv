@@ -1,4 +1,5 @@
 ![build](https://github.com/busshi/webserv/actions/workflows/compil.yml/badge.svg)
+[![aldubar's 42Project Score](https://badge42.herokuapp.com/api/project/aldubar/webserv)](https://github.com/JaeSeoKim/badge42)
 
 # Webserv
 
@@ -169,11 +170,11 @@ Helper method that returns a `ConfigItem*` vector holding all the blocks of a gi
 In the following example, `findBlocks` is used to process each `server` block from the global config scope, then each `location` block of each `server` block.
 
 ```cpp
-std::vector<ConfigFile*> serverBlocks = global->findBlocks("server");
+std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
-for (std::vector<ConfigFile*>::const_iterator ite = serverBlocks.begin();
+for (std::vector<ConfigItem*>::const_iterator ite = serverBlocks.begin();
     ite != serverBlocks.end(); ++ite) {
-        std::vector<ConfigFile*> locationBlocks = (*ite)->findBlocks("location");
+        std::vector<ConfigItem*> locationBlocks = (*ite)->findBlocks("location");
         // do something with each location of this server block
 }
 ```
