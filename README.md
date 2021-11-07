@@ -20,8 +20,6 @@ A tiny HTTP server implementation built with C++, for learning purpose.
     - [`findAtomInBlock`](#findatominblock)
     - [`findNearestAtom`](#findnearestatom)
 
-
-
 # Configuration file parsing
 
 Such as any HTTP server, our `webserv` needs a configuration file to operate.
@@ -157,12 +155,12 @@ First, the configuration is parsed from a file, using a `ConfigParser` object:
 ```cpp
 ConfigParser cfgp;
 
-ConfigFile* global = cfgp.loadConfig("/path/to/config");
+ConfigItem* global = cfgp.loadConfig("/path/to/config");
 ```
 
 During the load process, a `Lexer::LexerException` or a `ConfigParser::ParserException` may be thrown if there is something wrong with the lexing or parsing processes.
 
-The returned `ConfigFile*` is a pointer to the global scope of the configuration, which therefore holds the whole configuration.
+The returned `ConfigItem*` is a pointer to the global scope of the configuration, which therefore holds the whole configuration.
 
 ##### findBlocks
 
