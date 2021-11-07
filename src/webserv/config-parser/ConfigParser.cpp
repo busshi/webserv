@@ -14,9 +14,9 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "server", NULL, BLOCK_GLOBAL, BLOCK_SERVER },
 
     /* NON-BLOCK */
-    { "root", NULL, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
-    { "index", NULL, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
-    { "method", NULL, BLOCK_SERVER, NOT_A_BLOCK },
+    { "root", validateRoot, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
+    { "index", validateIndex, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
+    { "method", validateMethod, BLOCK_SERVER, NOT_A_BLOCK },
     { "listen", NULL, BLOCK_SERVER, NOT_A_BLOCK },
     { "autoindex", validateAutoindex, ~0, NOT_A_BLOCK },
     { "file_upload", NULL, ~0, NOT_A_BLOCK },
