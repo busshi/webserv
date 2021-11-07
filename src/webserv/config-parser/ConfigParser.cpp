@@ -56,7 +56,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 {
     ConfigItem *main = new ConfigItem("GLOBAL", BLOCK_GLOBAL, 0),
                *current = main, *tmp = 0;
-	std::string errorMsg;
+    std::string errorMsg;
 
     std::pair<std::string, std::string> keyval;
 
@@ -69,16 +69,17 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 break;
 
             case Lexer::VALUE:
-                keyval.second = ite->getValue();
+                keyval.second = expandVar(ite->getValue());
                 break;
 
             case Lexer::SEMICOLON:
-				tmp = makeConfigItem(keyval, current);
-				if (tmp->getType() != NOT_A_BLOCK) {
-					Formatter() << "name \"" << keyval.first << "\" MUST be turned into a block\n"
-						>> errorMsg;
-					throw ParserException(errorMsg);
-				}
+                tmp = makeConfigItem(keyval, current);
+                if (tmp->getType() != NOT_A_BLOCK) {
+                    Formatter() << "name \"" << keyval.first
+                                << "\" MUST be turned into a block\n" >>
+                      errorMsg;
+                    throw ParserException(errorMsg);
+                }
                 current->children.push_back(tmp);
                 keyval.first = "";
                 keyval.second = "";
@@ -86,11 +87,12 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
 
             case Lexer::BLOCK_START:
                 tmp = makeConfigItem(keyval, current);
-				if (tmp->getType() == NOT_A_BLOCK) {
-					Formatter() << "name \"" << keyval.first << "\" CANNOT be turned into a block\n"
-						>> errorMsg;
-					throw ParserException(errorMsg);
-				}
+                if (tmp->getType() == NOT_A_BLOCK) {
+                    Formatter() << "name \"" << keyval.first
+                                << "\" CANNOT be turned into a block\n" >>
+                      errorMsg;
+                    throw ParserException(errorMsg);
+                }
                 current->children.push_back(tmp);
                 current = tmp;
                 break;

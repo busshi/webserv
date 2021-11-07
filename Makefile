@@ -2,7 +2,7 @@ NAME		= webserv
 
 SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp Header.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp)
 
-SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp)
+SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp utils/expand_var.cpp)
 
 HEADER		= $(addprefix include/webserv/, Server.hpp Header.hpp config-parser/Lexer.hpp config-parser/ConfigParser.hpp config-parser/validator.hpp config-parser/ConfigItem.hpp)
 HEADER		+= $(addprefix include/, utils/Formatter.hpp utils/string.hpp)
