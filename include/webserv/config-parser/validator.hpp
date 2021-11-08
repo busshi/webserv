@@ -12,3 +12,6 @@ validateIndex(const std::string& value, std::string& errorMsg);
 
 bool
 validateRoot(const std::string& value, std::string& errorMsg);
+
+bool
+validateListen(const std::string& value, std::string& errorMsg);

@@ -1,6 +1,7 @@
 #include "utils/string.hpp"
 #include <cctype>
 #include <cstdlib>
+#include <sstream>
 #include <string>
 
 std::vector<std::string>
@@ -72,4 +73,31 @@ expandVar(const std::string& path)
     expanded += path.substr(pos, path.size() - pos);
 
     return expanded;
+}
+
+bool
+isIPv4(const std::string& s)
+{
+    std::vector<std::string> ss = split(s, '.');
+    std::istringstream iss;
+
+    if (ss.size() != 4) {
+        return false;
+    }
+
+    for (std::vector<std::string>::const_iterator cit = ss.begin();
+         cit != ss.end();
+         ++cit) {
+        int n = 0;
+
+        iss.str(*cit);
+        iss >> n;
+        iss.clear();
+
+        if (n > 255) {
+            return false;
+        }
+    }
+
+    return true;
 }
