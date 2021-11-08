@@ -1,8 +1,4 @@
 #include "Header.hpp"
-#include <iostream>
-#include <vector>
-#include "fstream"
-#include "sstream"
 
 Header::Header( void ) {}
 
@@ -15,73 +11,123 @@ Header &	Header::operator=( Header const & rhs ) {
 	if (this != & rhs) {
 
 		_response = rhs._response;
-		_statusCode = rhs._statusCode;
-		_contentType = rhs._contentType;
-		_contentLen = rhs._contentLen;
-		_method = rhs._method;
-		_path = rhs._path;
-		_rootPath = rhs._rootPath;
+		_headerParam = rhs._headerParam;
 	}
 	return *this;
 }
 
 std::string	Header::getResponse( void ) { return _response; }
 
-void		Header::setContentType( std::string contentType ) {
+std::string	Header::_setContentType( std::string contentType ) {
 
 	if (contentType == "html" || contentType == "css" || contentType == "javascript" || contentType == "plain")
-		_contentType = "text/" + contentType;
+		return "text/" + contentType;
 	else if (contentType == "jpeg" || contentType == "png" || contentType == "bmp")
-		_contentType = "image/" + contentType;
+		return "image/" + contentType;
 	else
-		_contentType = "text/plain";
+		return "text/plain";
+}
+
+std::string	Header::_setParam( std::string s ) {
+
+	unsigned start = s.find(' ') + 1;
+//	unsigned stop = 0;
+
+//	unsigned found = s.find('\r');
+//	if (found == s.length() - 1)
+//		stop = found - 1;
+
+//	if (trim == true)
+//		stop++;
+//	return (stop ? s.substr(start, stop) : s.substr(start));
+	return s.substr(start);
+}
+
+void		Header::_parseFirstLine( std::string s, std::string root ) {
+
+	unsigned pos = s.find(' ');
+	_headerParam["Method"] = s.substr(0, pos);
+
+	_headerParam["Root"] = root;
+			
+	unsigned pos2 = s.find(' ', pos + 1);
+	_headerParam["Path"] = s.substr(pos + 1, pos2 - pos - 1);
+
+	std::size_t	found = _headerParam["Path"].find_last_of('.');
+	if (found != std::string::npos)
+		_headerParam["Content-Type"] = _setContentType(_headerParam["Path"].substr(found + 1));
+
+	_headerParam["HTTP"] = s.substr(pos2 + 1, s.length() - pos2 - 2);
 }
 
 void		Header::parseHeader(char buffer[], std::string rootPath) {
 
-    std::vector<std::string> strings;
+    std::vector<std::string> lines;
     std::istringstream buf(buffer);
     std::string s;
 
-    while (getline(buf, s, ' '))
-        strings.push_back(s);
+	while (getline(buf, s))
+		lines.push_back(s);
 
-    for (std::vector<std::string>::iterator it = strings.begin();
-         it != strings.end();
+    for (std::vector<std::string>::iterator it = lines.begin();
+         it != lines.end();
          it++) {
-        unsigned id = it - strings.begin();
+        unsigned line = it - lines.begin();
 
-        if (id == 0)
-            _method = *it;
-        if (id == 1) {
-			_rootPath = rootPath;
-            _path = *it;
-            _path = _path.substr(1);
+        if (line == 0)
+			_parseFirstLine(*it, rootPath);
+		else if (line == 1)
+			_headerParam["Host"] = _setParam(*it);
+		else if (line == 2)
+			_headerParam["User-Agent"] = _setParam(*it);
+		else if (line == 3)
+			_headerParam["Accept"] = _setParam(*it);
+		else if (line == 4)
+			_headerParam["Accept-Language"] = _setParam(*it);
+		else if (line == 5)
+			_headerParam["Accept-Encoding"] = _setParam(*it);
+		else if (line == 7)
+			_headerParam["Connection"] = _setParam(*it);
+		else if (line == 8)
+			_headerParam["Referer"] = _setParam(*it);
+	}
+/*	std::cout << "host[" << _headerParam["Host"] << "]" << std::endl;
+	std::cout << "agent[" << _headerParam["User-Agent"] << "]" << std::endl;
+	std::cout << "accept[" << _headerParam["Accept"] << "]" << std::endl;
+	std::cout << "language[" << _headerParam["Accept-Language"] << "]" << std::endl;
+	std::cout << "encoding[" << _headerParam["Accept-Encoding"] << "]" << std::endl;
+	std::cout << "connection[" << _headerParam["Connection"] << "]" << std::endl;
+	std::cout << "referer[" << _headerParam["Referer"] << "]" << std::endl;*/
+}
 
-			std::size_t	found = _path.find_last_of('.');
-			if (found != std::string::npos)
-				setContentType(_path.substr(found + 1));
-        }
-    }
+std::string	Header::_getDate( void ) {
+
+	time_t			now = time(0);
+	struct tm		*date;
+	char			buffer[29];
+
+	date = gmtime(&now);
+	strftime(buffer, 29, "%a, %d %b %Y %H:%M:%S GMT", date);
+	return std::string(buffer);
 }
 
 void    	Header::createResponse( void ) {
     std::ifstream ifs;
-    std::string path;
+    std::string path = _headerParam["Root"];
 
-    if (!_path.length())
-        path = _rootPath + "index.html";
+	if (_headerParam["Path"] == "/")
+		path += "index.html";
     else
-        path = _rootPath + _path;
+		path += _headerParam["Path"].substr(1);
 
     ifs.open(path.c_str());
     if (ifs)
-		_statusCode = "200 OK";
+		_headerParam["Status-Code"] = "200 OK";
 	else {
-		_statusCode = "404 Not Found";
+		_headerParam["Status-Code"] = "404 Not Found";
 		path = "asset/default_404.html";
 		ifs.open(path.c_str());
-		_contentType = "text/html";
+		_headerParam["Content-Type"] = "text/html";
 	}
 
 	std::stringstream	buf;
@@ -91,11 +137,11 @@ void    	Header::createResponse( void ) {
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
-	_contentLen = tmp.str();
+	_headerParam["Content-Length"] = tmp.str();
 	
     _response =
-          "HTTP/1.1 " + _statusCode + "\n" + 
-		  "Content-Type: " + _contentType + ";charset=UTF-8\n" + 
-		  "Content-Length: " + _contentLen + "\n\n" + 
+          _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\n" + 
+		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\n" + 
+		  "Content-Length: " + _headerParam["Content-Length"] + "\n" + "Date: " + _getDate() + "\n\n" + 
 		  buf.str();
 }

@@ -1,6 +1,12 @@
 #pragma once
 
 #include <string>
+#include <iostream>
+#include <map>
+#include <vector>
+#include "fstream"
+#include "sstream"
+#include <sys/time.h>
 
 class	Header {
 
@@ -14,16 +20,15 @@ class	Header {
 
 		std::string	getResponse( void ) ;
 
-		void		parseHeader( char buffer[], std::string rootPath );
-		void		setContentType( std::string );
+		void		parseHeader( char buffer[], std::string );
 		void		createResponse( void );
 
 	private:
-		std::string	_rootPath;
-		std::string	_method;
-		std::string	_path;
+		void		_parseFirstLine( std::string, std::string );
+		std::string _setParam( std::string ) ;
+		std::string	_setContentType( std::string );
+		std::string	_getDate( void );
+
+		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;
-		std::string	_statusCode;
-		std::string	_contentType;
-		std::string	_contentLen;
 };
