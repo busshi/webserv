@@ -13,6 +13,7 @@ A tiny HTTP server implementation built with C++, for learning purpose.
     - [Lexer rules](#lexer-rules)
     - [Configuration file is free form](#configuration-file-is-free-form)
     - [Comments](#Comments)
+    - Environment variables
   - [How parsing is done, and data actually used](#how-parsing-is-done-and-data-actually-used)
     - [Data representation](#data-representation)
     - [Using the data](#using-the-data)
@@ -128,6 +129,23 @@ is not, because the semicolon is not on the same line than the value.
 
 When the `#` character is encountered, the remaining characters on the line are skipped.
 
+#### Environment variables
+
+Environment variables are accepted as directive values. To use them, the standard shell notation can be used:
+
+```nginx
+server {
+  listen 80;
+  server_name $SERVER_NAME;
+  root $HOME/.local/var/www/html;
+
+  location / {
+  }
+}
+```
+
+Environment variables are **NOT** expanded in any other context.
+
 ### How parsing is done, and data actually used
 
 #### Data representation
@@ -161,6 +179,7 @@ ConfigItem* global = cfgp.loadConfig("/path/to/config");
 During the load process, a `Lexer::LexerException` or a `ConfigParser::ParserException` may be thrown if there is something wrong with the lexing or parsing processes.
 
 The returned `ConfigItem*` is a pointer to the global scope of the configuration, which therefore holds the whole configuration.
+
 
 ##### findBlocks
 
