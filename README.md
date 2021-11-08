@@ -13,7 +13,7 @@ A tiny HTTP server implementation built with C++, for learning purpose.
     - [Lexer rules](#lexer-rules)
     - [Configuration file is free form](#configuration-file-is-free-form)
     - [Comments](#Comments)
-    - Environment variables
+    - [Environment variables](#environment-variables)
   - [How parsing is done, and data actually used](#how-parsing-is-done-and-data-actually-used)
     - [Data representation](#data-representation)
     - [Using the data](#using-the-data)
@@ -131,7 +131,7 @@ When the `#` character is encountered, the remaining characters on the line are 
 
 #### Environment variables
 
-Environment variables are accepted as directive values. To use them, the standard shell notation can be used:
+Environment variables are accepted as part of directive values. To use them, the standard shell notation can be used:
 
 ```nginx
 server {
@@ -143,8 +143,13 @@ server {
   }
 }
 ```
-
 Environment variables are **NOT** expanded in any other context.
+
+One convenient way to start webserv with a given set of environment variable would be:
+
+```sh
+ROOT_S1=/var/www/html/portfolio; ROOT_S2=/var/www/html/blog ./webserv ./asset/config/example1.conf
+```
 
 ### How parsing is done, and data actually used
 
