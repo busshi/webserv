@@ -39,30 +39,50 @@ void		Header::setContentType( std::string contentType ) {
 
 void		Header::parseHeader(char buffer[], std::string rootPath) {
 
-    std::vector<std::string> strings;
+    std::vector<std::string> lines;
     std::istringstream buf(buffer);
     std::string s;
 
-    while (getline(buf, s, ' '))
-        strings.push_back(s);
+	while (getline(buf, s))
+		lines.push_back(s);
 
-    for (std::vector<std::string>::iterator it = strings.begin();
-         it != strings.end();
+    for (std::vector<std::string>::iterator it = lines.begin();
+         it != lines.end();
          it++) {
-        unsigned id = it - strings.begin();
+        unsigned line = it - lines.begin();
 
-        if (id == 0)
-            _method = *it;
-        if (id == 1) {
+        if (line == 0) {
+
+			unsigned pos = (*it).find(' ');
+			_method = (*it).substr(0, pos);
+
 			_rootPath = rootPath;
-            _path = *it;
-            _path = _path.substr(1);
+			
+			unsigned pos2 = (*it).find(' ', pos + 1);
+			_path = (*it).substr(pos + 1, pos2 - pos - 1);
+			_path = _path.substr(1);
 
 			std::size_t	found = _path.find_last_of('.');
 			if (found != std::string::npos)
 				setContentType(_path.substr(found + 1));
-        }
-    }
+
+			_http = (*it).substr(pos2 + 1);
+		}
+		else if (line == 1)
+			_host = (*it).substr(6);
+		else if (line == 2)
+			_userAgent = (*it).substr(12);
+		else if (line == 3)
+			_accept = (*it).substr(8);
+		else if (line == 4)
+			_acceptLanguage = (*it).substr(17);
+		else if (line == 5)
+			_acceptEncoding = (*it).substr(16);
+		else if (line == 7)
+			_connection = (*it).substr(12);
+		else if (line == 8)
+			_referer = (*it).substr(9);
+	}
 }
 
 void    	Header::createResponse( void ) {

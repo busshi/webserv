@@ -26,4 +26,12 @@ class	Header {
 		std::string	_statusCode;
 		std::string	_contentType;
 		std::string	_contentLen;
+		std::string	_http;
+		std::string	_host;
+		std::string	_userAgent;
+		std::string	_accept;
+		std::string	_acceptLanguage;
+		std::string	_acceptEncoding;
+		std::string	_connection;
+		std::string	_referer;
 };
