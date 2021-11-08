@@ -23,6 +23,6 @@ class	Header {
 		std::string _setParam( std::string ) ;
 		std::string	_setContentType( std::string );
 
-		std::map<std::string, std::string>	_headerMap;
+		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;
 };

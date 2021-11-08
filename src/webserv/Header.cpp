@@ -15,7 +15,7 @@ Header &	Header::operator=( Header const & rhs ) {
 	if (this != & rhs) {
 
 		_response = rhs._response;
-		_headerMap = rhs._headerMap;
+		_headerParam = rhs._headerParam;
 	}
 	return *this;
 }
@@ -35,27 +35,25 @@ std::string	Header::_setContentType( std::string contentType ) {
 std::string	Header::_setParam( std::string s ) {
 
 	unsigned start = s.find(' ') + 1;
-	std::string res = s.substr(start);
-	std::cout << "[" << res << "]" << std::endl;
-	return res;
+
+	return s.substr(start);
 }
 
 void		Header::_parseFirstLine( std::string s, std::string rootPath ) {
 
 	unsigned pos = s.find(' ');
-	_headerMap["method"] = s.substr(0, pos);
+	_headerParam["method"] = s.substr(0, pos);
 
-	_headerMap["rootPath"] = rootPath;
+	_headerParam["rootPath"] = rootPath;
 			
 	unsigned pos2 = s.find(' ', pos + 1);
-	std::string	tmp = s.substr(pos + 1, pos2 - pos - 1);
-	_headerMap["path"] = tmp;
+	_headerParam["path"] = s.substr(pos + 1, pos2 - pos - 1);
 
-	std::size_t	found = tmp.find_last_of('.');
+	std::size_t	found = _headerParam["path"].find_last_of('.');
 	if (found != std::string::npos)
-		_headerMap["contentType"] = _setContentType(_headerMap["path"].substr(found + 1));
+		_headerParam["contentType"] = _setContentType(_headerParam["path"].substr(found + 1));
 
-	_headerMap["http"] = s.substr(pos2 + 1);
+	_headerParam["http"] = s.substr(pos2 + 1);
 }
 
 void		Header::parseHeader(char buffer[], std::string rootPath) {
@@ -75,39 +73,40 @@ void		Header::parseHeader(char buffer[], std::string rootPath) {
         if (line == 0)
 			_parseFirstLine(*it, rootPath);
 		else if (line == 1)
-			_headerMap["host"] = _setParam(*it);
+			_headerParam["host"] = _setParam(*it);
 		else if (line == 2)
-			_headerMap["userAgent"] = _setParam(*it);
+			_headerParam["userAgent"] = _setParam(*it);
 		else if (line == 3)
-			_headerMap["accept"] = _setParam(*it);
+			_headerParam["accept"] = _setParam(*it);
 		else if (line == 4)
-			_headerMap["acceptLanguage"] = _setParam(*it);
+			_headerParam["acceptLanguage"] = _setParam(*it);
 		else if (line == 5)
-			_headerMap["acceptEncoding"] = _setParam(*it);
+			_headerParam["acceptEncoding"] = _setParam(*it);
 		else if (line == 7)
-			_headerMap["connection"] = _setParam(*it);
+			_headerParam["connection"] = _setParam(*it);
 		else if (line == 8)
-			_headerMap["referer"] = _setParam(*it);
+			_headerParam["referer"] = _setParam(*it);
 	}
 }
 
 void    	Header::createResponse( void ) {
     std::ifstream ifs;
-    std::string path = _headerMap["rootPath"];;
+    std::string path = _headerParam["rootPath"];
+	std::cout << "PATH" << path << std::endl;
 
-	if (!_headerMap["path"].length())
+	if (_headerParam["path"] == "/")
 		path += "index.html";
     else
-		path += _headerMap["path"];
+		path += _headerParam["path"].substr(1);
 
     ifs.open(path.c_str());
     if (ifs)
-		_headerMap["statusCode"] = "200 OK";
+		_headerParam["statusCode"] = "200 OK";
 	else {
-		_headerMap["statusCode"] = "404 Not Found";
+		_headerParam["statusCode"] = "404 Not Found";
 		path = "asset/default_404.html";
 		ifs.open(path.c_str());
-		_headerMap["contentType"] = "text/html";
+		_headerParam["contentType"] = "text/html";
 	}
 
 	std::stringstream	buf;
@@ -117,11 +116,11 @@ void    	Header::createResponse( void ) {
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
-	_headerMap["contentLen"] = tmp.str();
+	_headerParam["contentLen"] = tmp.str();
 	
     _response =
-          "HTTP/1.1 " + _headerMap["statusCode"] + "\n" + 
-		  "Content-Type: " + _headerMap["contentType"] + ";charset=UTF-8\n" + 
-		  "Content-Length: " + _headerMap["contentLen"] + "\n\n" + 
+          "HTTP/1.1 " + _headerParam["statusCode"] + "\n" + 
+		  "Content-Type: " + _headerParam["contentType"] + ";charset=UTF-8\n" + 
+		  "Content-Length: " + _headerParam["contentLen"] + "\n\n" + 
 		  buf.str();
 }
