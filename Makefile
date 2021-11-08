@@ -1,6 +1,6 @@
 NAME		= webserv
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp Header.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp)
+SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp Header.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
 
 SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp)
 
