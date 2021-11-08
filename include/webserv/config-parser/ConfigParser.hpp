@@ -71,3 +71,16 @@ class ConfigParser
                               ConfigItem* main,
                               size_t depth = 0);
 };
+
+/* Parse utils */
+
+struct ListenData
+{
+    std::string v4; /* [IPv4:]port */
+    uint16_t port;
+    bool isDefault;
+};
+
+ListenData
+parseListen(const std::string& listenDirective);
+
