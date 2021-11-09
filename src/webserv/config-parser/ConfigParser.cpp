@@ -26,6 +26,13 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
 };
 
+static void
+abortParsing(ConfigItem* main, const std::string& errorMsg)
+{
+    delete main;
+    throw ConfigParser::ParserException(errorMsg);
+}
+
 ConfigParser::ConfigParser(void)
 {
     for (size_t i = 0;
@@ -74,12 +81,12 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 break;
 
             case Lexer::SEMICOLON:
-                tmp = makeConfigItem(keyval, current);
+                tmp = makeConfigItem(keyval, current, main);
                 if (tmp->getType() != NOT_A_BLOCK) {
                     Formatter() << "name \"" << keyval.first
                                 << "\" MUST be turned into a block\n" >>
                       errorMsg;
-                    throw ParserException(errorMsg);
+                    abortParsing(main, errorMsg);
                 }
                 current->children.push_back(tmp);
                 keyval.first = "";
@@ -87,12 +94,12 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 break;
 
             case Lexer::BLOCK_START:
-                tmp = makeConfigItem(keyval, current);
+                tmp = makeConfigItem(keyval, current, main);
                 if (tmp->getType() == NOT_A_BLOCK) {
                     Formatter() << "name \"" << keyval.first
                                 << "\" CANNOT be turned into a block\n" >>
                       errorMsg;
-                    throw ParserException(errorMsg);
+                    abortParsing(main, errorMsg);
                 }
                 current->children.push_back(tmp);
                 current = tmp;
@@ -157,7 +164,9 @@ ConfigParser::printConfig(std::ostream& os, ConfigItem* main, size_t depth)
 
 ConfigItem*
 ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
-                             ConfigItem* contextItem)
+                             ConfigItem* contextItem,
+                             ConfigItem* const main)
+
 {
     std::string errorMsg;
     std::map<std::string, ConfigItemCaracteristics>::const_iterator ite =
@@ -167,7 +176,7 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
         Formatter() << "\"" << keyval.first
                     << "\" does not refer to a valid configuration property." >>
           errorMsg;
-        throw ParserException(errorMsg);
+        abortParsing(main, errorMsg);
     }
 
     if (!(ite->second.validBlockContext &
@@ -176,12 +185,12 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
                     << "\" is not allowed in context \""
                     << contextItem->getName() << "\"" >>
           errorMsg;
-        throw ParserException(errorMsg);
+        abortParsing(main, errorMsg);
     }
 
     if (ite->second.validator &&
         !ite->second.validator(trim(keyval.second), errorMsg)) {
-        throw ParserException(errorMsg);
+        abortParsing(main, errorMsg);
     }
 
     return new ConfigItem(

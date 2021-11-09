@@ -47,7 +47,8 @@ class ConfigParser
     */
 
     ConfigItem* makeConfigItem(std::pair<std::string, std::string> keyval,
-                               ConfigItem* contextItem);
+                               ConfigItem* contextItem,
+                               ConfigItem* const main);
 
   public:
     class ParserException : public std::runtime_error
