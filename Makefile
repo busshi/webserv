@@ -11,7 +11,7 @@ OBJS		= $(SRCS:.cpp=.o)
 
 FLAGS		= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude
 
-CC			= @clang++
+CC			= @c++
 
 RM			= @rm -f
 

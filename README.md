@@ -12,7 +12,7 @@ More details about the project can be found in the [wiki](https://github.com/bus
 
 ### Prerequisites
 
-- A C++ compiler, preferably clang++ (not well tested with g++)
+- A C++ compiler, preferably clang++ (g++ should work too though)
 - A UNIX-based operating system: the web server has been mainly built to work on Linux but should also work on MacOS.
 - `make`
 
