@@ -21,7 +21,8 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "autoindex", validateAutoindex, ~0, NOT_A_BLOCK },
     { "file_upload", NULL, ~0, NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },
-    { "client_body_maxsize", NULL, BLOCK_SERVER, NOT_A_BLOCK },
+    { "client_body_maxsize", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
+    { "upload_max_size", validateSize, ~0, NOT_A_BLOCK },
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
 };
 
