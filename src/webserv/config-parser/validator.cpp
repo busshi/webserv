@@ -125,3 +125,41 @@ validateListen(const std::string& value, std::string& errorMsg)
 
     return true;
 }
+
+bool
+validateSize(const std::string& value, std::string& errorMsg)
+{
+    const char units[] = { 'k', 'm' };
+    std::istringstream iss(value);
+    unsigned long long n;
+
+    if (!(iss >> n)) {
+        Formatter() << "Could not parse size \"" << value
+                    << "\": invalid integer part" >>
+          errorMsg;
+    }
+
+    std::string unit;
+    iss >> unit;
+
+    if (!unit.empty()) {
+        for (unsigned i = 0; i != sizeof(units) / sizeof(*units); ++i) {
+            for (unsigned i = 0; i != sizeof(units) / sizeof(*units); ++i) {
+                if (tolower(unit[0]) == units[i] &&
+                    ((unit.size() == 2 && tolower(unit[1]) == 'b') ||
+                     unit.size() == 1)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (!unit.empty()) {
+        Formatter() << "Invalid unit \"" << unit
+                    << "\" Available units are: k[b],m[b]" >>
+          errorMsg;
+        return false;
+    }
+
+    return true;
+}

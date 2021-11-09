@@ -1,5 +1,6 @@
 #include "utils/string.hpp"
 #include "webserv/config-parser/ConfigParser.hpp"
+#include <cmath>
 #include <sstream>
 
 /*
@@ -33,4 +34,30 @@ parseListen(const std::string& listenDirective)
     data.isDefault = w == "default_server";
 
     return data;
+}
+
+/*
+ * Returns the number of byte corresponding to the passed size expression.
+ * For example, "100kb" will return "100000".
+ */
+
+unsigned long long
+parseSize(const std::string& size)
+{
+    const char units[] = { 'k', 'm' };
+    std::istringstream iss(size);
+    unsigned long long n = 0;
+    std::string unit;
+
+    iss >> n >> unit;
+
+    for (unsigned i = 0; i != sizeof(units) / sizeof(*units); ++i) {
+        if (tolower(unit[0]) == units[i] &&
+            ((unit.size() == 2 && tolower(unit[1]) == 'b') ||
+             unit.size() == 1)) {
+            return n * (1 << (10 * (i + 1)));
+        }
+    }
+
+    return n;
 }

@@ -84,3 +84,5 @@ struct ListenData
 ListenData
 parseListen(const std::string& listenDirective);
 
+unsigned long long
+parseSize(const std::string& size);
