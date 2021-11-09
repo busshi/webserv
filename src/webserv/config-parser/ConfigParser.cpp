@@ -19,9 +19,9 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "method", validateMethod, BLOCK_SERVER, NOT_A_BLOCK },
     { "listen", validateListen, BLOCK_SERVER, NOT_A_BLOCK },
     { "autoindex", validateAutoindex, static_cast<uint8_t>(~0), NOT_A_BLOCK },
-    { "file_upload", NULL, static_cast<uint8_t>(~0), NOT_A_BLOCK },
+    { "file_upload_dir", NULL, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },
-    { "client_body_maxsize", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
+    { "client_body_max_size", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
     { "upload_max_size", validateSize, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
 };
