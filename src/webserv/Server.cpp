@@ -1,14 +1,13 @@
 #include "Server.hpp"
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <unistd.h>
-
+#include <sys/select.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <vector>
 
+#include <stdio.h>
 Server::Server(void) {}
 
 Server::Server(Server const& src)
@@ -38,12 +37,21 @@ void Server::init( ConfigItem * global )
 	for (std::vector<ConfigItem*>::const_iterator ite = serverBlocks.begin();
 	    ite != serverBlocks.end(); ++ite) {
 			
+//			std::vector<ConfigItem*>	listens = (*ite)->findBlocks("listen");
+
+//			for (size_t i = 0; i != listens.size(); i++) {
+
+//				ListenData	data = parseListen(listens[i]->getValue());
+//				_port = data.port;
+//				std::cout << _port << std::endl;
+//			}
+
 			ConfigItem *	port = (*ite)->findAtomInBlock("listen");
 		
 			if (port) {
 
 				_port = atoi(port->getValue().c_str());
-				std::cout << "webserv listening on port " << _port << std::endl;
+//				std::cout << "webserv listening on port " << _port << std::endl;
 			}
 
 			ConfigItem *	path = (*ite)->findAtomInBlock("root");
@@ -56,63 +64,128 @@ void Server::init( ConfigItem * global )
     _maxConnexion = 10;
 }
 
-void
-Server::start(void)
-{
-    _socketFd = socket(AF_INET, SOCK_STREAM, 0);
+int		Server::_createSocket( void ) {
 
-    if (_socketFd == -1) {
+    int	socketFd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (socketFd == -1) {
         std::cout << "Failed to create socket. errno: " << errno << " "
                   << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
     }
+	return socketFd;
+}
 
-    sockaddr_in sockaddr;
+sockaddr_in	Server::_bindPort( int socketFd, int port ) {
+
+	sockaddr_in	sockaddr;
 
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_addr.s_addr = INADDR_ANY;
-    sockaddr.sin_port = htons(_port);
+    sockaddr.sin_port = htons(port);
 
-    if (bind(_socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        std::cout << "Failed to bind to port " << _port << ": " << errno << " "
+    if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
+        std::cout << "Failed to bind to port " << port << ": " << errno << " "
                   << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
     }
+	else
+		std::cout << "webserv listening on port " << port << std::endl;
+	
+	return sockaddr;
+}
 
-    if (listen(_socketFd, _maxConnexion) < 0) {
+void		Server::_listenSocket( int socketFd, int maxConnexion ) {
+
+    if (listen(socketFd, maxConnexion) < 0) {
         std::cout << "Failed to listen on socket. errno: " << errno << " "
                   << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
-    }
+	}
+}
 
-    int addrlen = sizeof(sockaddr);
+int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
 
-    while (1) {
-        _connexion =
-          accept(_socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+        int connexion =
+          accept(socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
 
-        if (_connexion < 0) {
+        if (connexion < 0) {
             std::cout << "Failed to grab connection. errno: " << errno
                       << std::endl;
             exit(EXIT_FAILURE);
         }
+		
+		return connexion;
+}
 
-        char buffer[1024];
-        bzero(buffer, 1024);
+void
+Server::start(void)
+{
+	_socketFd = _createSocket();
+    sockaddr_in sockaddr = _bindPort(_socketFd, _port);
+	_listenSocket(_socketFd, _maxConnexion);
 
-        int bytesread = read(_connexion, &buffer, 1024);
+	int	socketFd2 = _createSocket();
+	sockaddr_in	sockaddr2 = _bindPort(socketFd2, 9090);
+	_listenSocket(socketFd2, _maxConnexion);
 
-        if (!bytesread)
-            std::cout << "nothing received..." << std::endl;
-		else
-            std::cout << "----- Received Header -----\n" << buffer << std::endl;
+   	int addrlen = sizeof(sockaddr);
+    int addrlen2 = sizeof(sockaddr2);
 
-		Header	header;
+    while (1) {
 
-        header.parseHeader(buffer, _rootPath);
-        header.createResponse();
-        sendResponse(header);
-        close(_connexion);
+		fd_set			readfds;
+//		fd_set			writefds;
+
+		struct timeval	timeout;
+
+		int				ret = 0;
+		int				i = 0;
+
+		while (!ret) {
+
+			int	nfds = _maxConnexion;
+
+			timeout.tv_sec = 1;
+			timeout.tv_usec = 0;
+			
+			FD_ZERO(&readfds);
+			FD_SET(_socketFd, &readfds);
+			FD_SET(socketFd2, &readfds);
+
+			std::cout << "\rWaiting for connection..." << i++ << std::flush;
+
+			ret = select(nfds, &readfds, NULL, NULL, &timeout);
+		}
+
+		if (ret > 0) {	
+
+			std::cout << std::endl << "Connexion received." << std::endl;
+
+			if (FD_ISSET(_socketFd, &readfds))				
+				_connexion = _accept(_socketFd, sockaddr, addrlen);
+
+			if (FD_ISSET(socketFd2, &readfds))
+				_connexion = _accept(socketFd2, sockaddr2, addrlen2);
+				
+
+        	char buffer[1024];
+        	bzero(buffer, 1024);
+
+        	int bytesread = read(_connexion, &buffer, 1024);
+
+        	if (!bytesread)
+        	    std::cout << "nothing received..." << std::endl;
+			else
+        	    std::cout << "----- Received Header -----\n" << buffer << std::endl;
+
+			Header	header;
+
+        	header.parseHeader(buffer, _rootPath);
+        	header.createResponse();
+        	sendResponse(header);
+        	close(_connexion);
+		}
     }
 }
 
