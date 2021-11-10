@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
 #include "config-parser/ConfigParser.hpp"
 #include "config-parser/ConfigItem.hpp"
 #include "Header.hpp"
@@ -25,4 +28,9 @@ class Server
     int _maxConnexion;
     int _connexion;
 	std::string	_rootPath;
+
+	int			_createSocket( void );
+	sockaddr_in	_bindPort( int socketFd, int port );
+	void		_listenSocket( int socketFd, int maxConnexion );
+	int			_accept( int socketFd, sockaddr_in sockaddr, int addrlen );
 };

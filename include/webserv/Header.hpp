@@ -6,7 +6,6 @@
 #include <vector>
 #include "fstream"
 #include "sstream"
-#include <sys/time.h>
 
 class	Header {
 
