@@ -111,12 +111,14 @@ std::string	Header::_getDate( void ) {
 	return std::string(buffer);
 }
 
-void		Header::_runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std::string s2) {
+std::string		Header::_replace(std::string in, std::string s1, std::string s2) {
 
+	std::string		out;
 	std::string		line;
 	size_t			len = s1.size();
+	std::istringstream	iss(in);
 
-	while (getline(ifs, line)) {
+	while (getline(iss, line)) {
 
 		for (size_t i = 0; i < line.size(); i++) {
 				
@@ -124,7 +126,7 @@ void		Header::_runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, st
 
 				if (found == std::string::npos) {
 
-					ofs << &line[i];
+					out += &line[i];
 					break;
 				}
 				else {
@@ -132,38 +134,41 @@ void		Header::_runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, st
 					if (found > i) {
 
 						std::string	subLine = line.substr(i, found - i);
-						ofs << subLine;
+						out += subLine;
 						i += subLine.size();
 					}
-					ofs << s2;
+					out += s2;
 					i += len - 1;
 				}
 		}
-		if (!ifs.eof())
-			ofs << std::endl;
+		out += "\n";
 	}
-
+	return out;
 }
 
-void		Header::_prepareSed( std::string file, std::string code, std::string msg, std::string sentence ) {
+void		Header::_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence ) {
 
 	std::ifstream	ifs(file.c_str());
-	std::ofstream	ofs("asset/error_page.html");
-	_runSed(ifs, ofs, "ERROR_CODE", code);
+	std::string		res;
+	std::string		line;
+	std::string		out;
+
+	while (getline(ifs, line)) {
+
+		res += line;
+		res += "\n";
+	}
+
 	ifs.close();
+
+	out = _replace(res, "ERROR_CODE", code);
+	out = _replace(out, "ERROR_MESSAGE", msg);
+	out = _replace(out, "ERROR_SENTENCE", sentence);
+
+	
+	std::ofstream	ofs("asset/error_page.html");
+	ofs << out;
 	ofs.close();
-
-	std::ifstream	ifs2("asset/error_page.html");
-	std::ofstream	ofs2("asset/error_tmp.html");
-	_runSed(ifs2, ofs2, "ERROR_MESSAGE", msg);
-	ifs2.close();
-	ofs2.close();
-
-	std::ifstream	ifs3("asset/error_tmp.html");
-	std::ofstream	ofs3("asset/error_page.html");
-	_runSed(ifs3, ofs3, "ERROR_SENTENCE", sentence);
-	ifs3.close();
-	ofs3.close();
 }
 
 void    	Header::createResponse( void ) {
@@ -185,14 +190,14 @@ void    	Header::createResponse( void ) {
 		if (_headerParam["Root"] == "none") {
 		
 			_headerParam["Status-Code"] = "500 Internal Server Error";
-			_prepareSed("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
+			_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
 			path = "asset/error_page.html";
 
 		}
 		else {
 
 			_headerParam["Status-Code"] = "404 Not Found";
-			_prepareSed("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
+			_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
 			path = "asset/error_page.html";
 		}
 		
