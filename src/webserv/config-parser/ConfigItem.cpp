@@ -43,10 +43,11 @@ ConfigItem::getParent(void) const
     return _parent;
 }
 
-ConfigItem*
-ConfigItem::findNearestAtom(const std::string& key) const
+
+const ConfigItem*
+ConfigItem::findNearest(const std::string& key) const
 {
-    ConfigItem *current = getParent(), *atom = 0;
+    const ConfigItem *current = getType() == NOT_A_BLOCK ? getParent() : this, *atom = 0;
 
     while (current) {
         atom = current->findAtomInBlock(key);
@@ -59,7 +60,13 @@ ConfigItem::findNearestAtom(const std::string& key) const
 }
 
 ConfigItem*
-ConfigItem::findAtomInBlock(const std::string& key)
+ConfigItem::findNearest(const std::string& key)
+{
+    return const_cast<ConfigItem*>(static_cast<const ConfigItem*>(this)->findNearest(key));
+}
+
+const ConfigItem*
+ConfigItem::findAtomInBlock(const std::string& key) const
 {
     if (getType() == NOT_A_BLOCK) {
         throw std::runtime_error("findAtomInBlock can only be used on config blocks");
@@ -72,10 +79,37 @@ ConfigItem::findAtomInBlock(const std::string& key)
             return *ite;
         }
     }
+
     return 0;
 }
 
-std::vector<ConfigItem*>
+ConfigItem*
+ConfigItem::findAtomInBlock(const std::string& key)
+{
+    return const_cast<ConfigItem*>(static_cast<const ConfigItem*>(this)->findAtomInBlock(key));
+}
+
+const std::vector<const ConfigItem*>
+ConfigItem::findBlocks(const std::string& key) const
+{
+    std::vector<const ConfigItem*> blocks;
+
+	if (getType() == NOT_A_BLOCK) {
+        throw std::runtime_error("findBlocks can only be used on config blocks");
+	}
+
+    for (std::vector<ConfigItem*>::const_iterator ite = children.begin();
+         ite != children.end();
+         ++ite) {
+        if ((*ite)->getName() == key) {
+            blocks.push_back(*ite);
+        }
+    }
+
+    return blocks;
+}
+
+const std::vector<ConfigItem*>
 ConfigItem::findBlocks(const std::string& key)
 {
     std::vector<ConfigItem*> blocks;
