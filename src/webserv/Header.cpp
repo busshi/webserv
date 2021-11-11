@@ -111,6 +111,66 @@ std::string	Header::_getDate( void ) {
 	return std::string(buffer);
 }
 
+std::string		Header::_replace(std::string in, std::string s1, std::string s2) {
+
+	std::string		out;
+	std::string		line;
+	size_t			len = s1.size();
+	std::istringstream	iss(in);
+
+	while (getline(iss, line)) {
+
+		for (size_t i = 0; i < line.size(); i++) {
+				
+				size_t	found = line.find(s1, i);
+
+				if (found == std::string::npos) {
+
+					out += &line[i];
+					break;
+				}
+				else {
+
+					if (found > i) {
+
+						std::string	subLine = line.substr(i, found - i);
+						out += subLine;
+						i += subLine.size();
+					}
+					out += s2;
+					i += len - 1;
+				}
+		}
+		out += "\n";
+	}
+	return out;
+}
+
+void		Header::_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence ) {
+
+	std::ifstream	ifs(file.c_str());
+	std::string		res;
+	std::string		line;
+	std::string		out;
+
+	while (getline(ifs, line)) {
+
+		res += line;
+		res += "\n";
+	}
+
+	ifs.close();
+
+	out = _replace(res, "ERROR_CODE", code);
+	out = _replace(out, "ERROR_MESSAGE", msg);
+	out = _replace(out, "ERROR_SENTENCE", sentence);
+
+	
+	std::ofstream	ofs("asset/error_page.html");
+	ofs << out;
+	ofs.close();
+}
+
 void    	Header::createResponse( void ) {
     std::ifstream ifs;
     std::string path = _headerParam["Root"];
@@ -125,25 +185,23 @@ void    	Header::createResponse( void ) {
     if (ifs)
 		_headerParam["Status-Code"] = "200 OK";
 
-	else if (_headerParam["Root"] == "none") {
-		_headerParam["Status-Code"] = "500 Internal Server Error";
-		path = "asset/default_500.html";
-		ifs.open(path.c_str());
-		_headerParam["Content-Type"] = "text/html";
-	}
-
 	else {
 	
 		if (_headerParam["Root"] == "none") {
 		
 			_headerParam["Status-Code"] = "500 Internal Server Error";
-			path = "asset/default_500.html";
+			_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
+			path = "asset/error_page.html";
+
 		}
 		else {
 
 			_headerParam["Status-Code"] = "404 Not Found";
-			path = "asset/default_404.html";
+			_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
+			path = "asset/error_page.html";
 		}
+		
+		path = "asset/error_page.html";
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
 	}

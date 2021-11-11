@@ -8,13 +8,7 @@
 #include "config-parser/ConfigParser.hpp"
 #include "config-parser/ConfigItem.hpp"
 #include "Header.hpp"
-
-#define RED		"\033[31m"
-#define GREEN	"\033[32m"
-#define ORANGE	"\033[33m"
-#define PURPLE	"\033[35m"
-#define BOLD	"\033[1m"
-#define CLR		"\033[0m"
+#include "Constants.hpp"
 
 class Server
 {
