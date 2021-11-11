@@ -47,7 +47,7 @@ void Server::init( ConfigItem * global )
 				_sockets[port].maxConnexion = 10;
 			}
 
-			ConfigItem *	path = (*ite)->findNearestAtom("root");
+			ConfigItem *	path = (*ite)->findNearest("root");
 
 			if (path)
 				_sockets[port].root = path->getValue();

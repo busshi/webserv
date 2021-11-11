@@ -111,6 +111,61 @@ std::string	Header::_getDate( void ) {
 	return std::string(buffer);
 }
 
+void		Header::runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std::string s2) {
+
+	std::string		line;
+	size_t			len = s1.size();
+
+	while (getline(ifs, line)) {
+
+		for (size_t i = 0; i < line.size(); i++) {
+				
+				size_t	found = line.find(s1, i);
+
+				if (found == std::string::npos) {
+
+					ofs << &line[i];
+					break;
+
+				}
+				else {
+
+					if (found > i) {
+
+						std::string	subLine = line.substr(i, found - i);
+						ofs << subLine;
+						i += subLine.size();
+					}
+					ofs << s2;
+					i += len - 1;
+
+				}
+		}
+
+		if (!ifs.eof())
+			ofs << std::endl;
+	}
+
+}
+
+void		Header::prepareSed( char *file, char *code, char *msg, char *sentence ) {
+
+	std::ifstream	ifs(file);
+//	if (!ifs)
+//		return error("input", file);
+
+	std::ofstream	ofs("error_page.html");
+//	if (!ofs)
+//		return error("output", file + extension);
+
+	runSed(ifs, ofs, "ERROR_CODE", code);
+	runSed(ifs, ofs, "ERROR_MESSAGE", msg);
+	runSed(ifs, ofs, "ERROR_SENTENCE", sentence);
+
+	ifs.close();
+	ofs.close();
+}
+
 void    	Header::createResponse( void ) {
     std::ifstream ifs;
     std::string path = _headerParam["Root"];
@@ -125,25 +180,22 @@ void    	Header::createResponse( void ) {
     if (ifs)
 		_headerParam["Status-Code"] = "200 OK";
 
-	else if (_headerParam["Root"] == "none") {
-		_headerParam["Status-Code"] = "500 Internal Server Error";
-		path = "asset/default_500.html";
-		ifs.open(path.c_str());
-		_headerParam["Content-Type"] = "text/html";
-	}
-
 	else {
 	
 		if (_headerParam["Root"] == "none") {
 		
 			_headerParam["Status-Code"] = "500 Internal Server Error";
-			path = "asset/default_500.html";
+			//path = "asset/default_500.html";
+			prepareSed("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error.");
+			path = "asset/error_page.html";
+
 		}
 		else {
 
 			_headerParam["Status-Code"] = "404 Not Found";
 			path = "asset/default_404.html";
 		}
+
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
 	}
