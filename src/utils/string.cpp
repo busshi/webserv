@@ -101,3 +101,14 @@ isIPv4(const std::string& s)
 
     return true;
 }
+
+std::string dirname(const std::string& s)
+{
+    std::string::size_type f = s.find_last_of('/');
+
+    if (f != std::string::npos) {
+        return s.substr(0, f);
+    }
+
+    return "";
+}
