@@ -131,7 +131,7 @@ Server::start(void)
     while (1) {
 
 		fd_set			readfds;
-//		fd_set			writefds;
+		//fd_set			writefds;
 
 		struct timeval	timeout;
 
