@@ -2,6 +2,8 @@
 #include "webserv/config-parser/ConfigParser.hpp"
 #include <cmath>
 #include <sstream>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  ** Parsing utilities to make our life easier.
@@ -13,12 +15,12 @@
 ListenData
 parseListen(const std::string& listenDirective)
 {
-    ListenData data = { .v4 = "0.0.0.0", .port = 0, .isDefault = false };
+    ListenData data = { .v4 = 0, .port = 0, .isDefault = false };
 
     std::string::size_type f = listenDirective.find(':');
 
     if (f != std::string::npos && f > 0) {
-        data.v4 = listenDirective.substr(0, f);
+        data.v4 = inet_addr(listenDirective.substr(0, f).c_str());
     }
 
     std::istringstream iss(
