@@ -21,9 +21,6 @@ Server::operator=(Server const& rhs)
 {
     if (this != &rhs) {
 		this->_sockets = rhs._sockets;
-//        this->_port = rhs._port;
-  //      this->_socketFd = rhs._socketFd;
-    //    this->_maxConnexion = rhs._maxConnexion;
         this->_connexion = rhs._connexion;
     }
 
@@ -37,36 +34,26 @@ void Server::init( ConfigItem * global )
 	for (std::vector<ConfigItem*>::const_iterator ite = serverBlocks.begin();
 	    ite != serverBlocks.end(); ++ite) {
 			
-//			std::vector<ConfigItem*>	listens = (*ite)->findBlocks("listen");
+		std::vector<ConfigItem*>	listens = (*ite)->findBlocks("listen");
 
-//			for (size_t i = 0; i != listens.size(); i++) {
+		for (size_t i = 0; i != listens.size(); i++) {
 
-//				ListenData	data = parseListen(listens[i]->getValue());
-//				_port = data.port;
-//				std::cout << _port << std::endl;
-//			}
-
-			ConfigItem *	port = (*ite)->findAtomInBlock("listen");
-			unsigned short	p;		
+			ListenData	data = parseListen(listens[i]->getValue());
+			unsigned short	port = data.port;
 
 			if (port) {
 
-				p = atoi(port->getValue().c_str());
-				_sockets[p].socket = -1;
-//				_port = atoi(port->getValue().c_str());
-//				std::cout << "webserv listening on port " << _port << std::endl;
-				_sockets[p].maxConnexion = 10;
+				_sockets[port].socket = -1;
+				_sockets[port].maxConnexion = 10;
 			}
 
-			ConfigItem *	path = (*ite)->findAtomInBlock("root");
+			ConfigItem *	path = (*ite)->findNearestAtom("root");
 			if (path)
-				_sockets[p].root = path->getValue();
-				//_rootPath = path->getValue();
+				_sockets[port].root = path->getValue();
 			else
 				std::cout << RED << "Error: No default path provided!" << CLR << std::endl;
+		}
 	}
-	
-    //_maxConnexion = 10;
 }
 
 int		Server::_createSocket( void ) {
@@ -134,18 +121,7 @@ Server::start(void)
 		_sockets[it->first].sockaddr = _bindPort(_sockets[it->first].socket, it->first);
 		_listenSocket(_sockets[it->first].socket, _sockets[it->first].maxConnexion);
 		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
-
-		//_socketFd = _createSocket();
-	    //sockaddr_in sockaddr = _bindPort(_socketFd, _port);
-		//_listenSocket(_socketFd, _maxConnexion);
 	}
-
-	//int	socketFd2 = _createSocket();
-	//sockaddr_in	sockaddr2 = _bindPort(socketFd2, 9090);
-	//_listenSocket(socketFd2, _maxConnexion);
-
-  // 	int addrlen = sizeof(sockaddr);
-  //  int addrlen2 = sizeof(sockaddr2);
 
     while (1) {
 
@@ -170,9 +146,6 @@ Server::start(void)
 			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 			for (it = _sockets.begin(); it != ite; it++)
 				FD_SET(_sockets[it->first].socket, &readfds);
-
-//			FD_SET(_socketFd, &readfds);
-//			FD_SET(socketFd2, &readfds);
 
 			std::cout << "\rWaiting for connection" << array[i++] << std::flush;
 
@@ -210,30 +183,6 @@ Server::start(void)
         			close(_connexion);
 				}
 			}
-
-//				if (FD_ISSET(_socketFd, &readfds))				
-//					_connexion = _accept(_socketFd, sockaddr, addrlen);
-
-//			if (FD_ISSET(socketFd2, &readfds))
-//				_connexion = _accept(socketFd2, sockaddr2, addrlen2);
-				
-/*
-        	char buffer[1024];
-        	bzero(buffer, 1024);
-
-        	int bytesread = read(_connexion, &buffer, 1024);
-
-        	if (!bytesread)
-        	    std::cout << "nothing received..." << std::endl;
-			else
-        	    std::cout << PURPLE << "----- Received Header -----\n" << CLR << buffer << std::endl;
-
-			Header	header;
-
-        	header.parseHeader(buffer, _rootPath);
-        	header.createResponse();
-        	sendResponse(header);
-        	close(_connexion);*/
 		}
     }
 }
