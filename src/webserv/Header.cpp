@@ -111,7 +111,7 @@ std::string	Header::_getDate( void ) {
 	return std::string(buffer);
 }
 
-void		Header::runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std::string s2) {
+void		Header::_runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std::string s2) {
 
 	std::string		line;
 	size_t			len = s1.size();
@@ -126,7 +126,6 @@ void		Header::runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std
 
 					ofs << &line[i];
 					break;
-
 				}
 				else {
 
@@ -138,32 +137,33 @@ void		Header::runSed(std::ifstream &ifs, std::ofstream &ofs, std::string s1, std
 					}
 					ofs << s2;
 					i += len - 1;
-
 				}
 		}
-
 		if (!ifs.eof())
 			ofs << std::endl;
 	}
 
 }
 
-void		Header::prepareSed( char *file, char *code, char *msg, char *sentence ) {
+void		Header::_prepareSed( std::string file, std::string code, std::string msg, std::string sentence ) {
 
-	std::ifstream	ifs(file);
-//	if (!ifs)
-//		return error("input", file);
-
-	std::ofstream	ofs("error_page.html");
-//	if (!ofs)
-//		return error("output", file + extension);
-
-	runSed(ifs, ofs, "ERROR_CODE", code);
-	runSed(ifs, ofs, "ERROR_MESSAGE", msg);
-	runSed(ifs, ofs, "ERROR_SENTENCE", sentence);
-
+	std::ifstream	ifs(file.c_str());
+	std::ofstream	ofs("asset/error_tmp.html");
+	_runSed(ifs, ofs, "ERROR_CODE", code);
 	ifs.close();
 	ofs.close();
+
+	std::ifstream	ifs2("asset/error_tmp.html");
+	std::ofstream	ofs2("asset/error_tmp2.html");
+	_runSed(ifs2, ofs2, "ERROR_MESSAGE", msg);
+	ifs2.close();
+	ofs2.close();
+
+	std::ifstream	ifs3("asset/error_tmp2.html");
+	std::ofstream	ofs3("asset/error_page.html");
+	_runSed(ifs3, ofs3, "ERROR_SENTENCE", sentence);
+	ifs3.close();
+	ofs3.close();
 }
 
 void    	Header::createResponse( void ) {
@@ -185,17 +185,18 @@ void    	Header::createResponse( void ) {
 		if (_headerParam["Root"] == "none") {
 		
 			_headerParam["Status-Code"] = "500 Internal Server Error";
-			//path = "asset/default_500.html";
-			prepareSed("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error.");
+			_prepareSed("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
 			path = "asset/error_page.html";
 
 		}
 		else {
 
 			_headerParam["Status-Code"] = "404 Not Found";
-			path = "asset/default_404.html";
+			_prepareSed("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
+			path = "asset/error_page.html";
 		}
-
+		
+		path = "asset/error_page.html";
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
 	}
