@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 
-#include <stdio.h>
 Server::Server(void) {}
 
 Server::Server(Server const& src)
@@ -21,9 +20,10 @@ Server&
 Server::operator=(Server const& rhs)
 {
     if (this != &rhs) {
-        this->_port = rhs._port;
-        this->_socketFd = rhs._socketFd;
-        this->_maxConnexion = rhs._maxConnexion;
+		this->_sockets = rhs._sockets;
+//        this->_port = rhs._port;
+  //      this->_socketFd = rhs._socketFd;
+    //    this->_maxConnexion = rhs._maxConnexion;
         this->_connexion = rhs._connexion;
     }
 
@@ -47,21 +47,26 @@ void Server::init( ConfigItem * global )
 //			}
 
 			ConfigItem *	port = (*ite)->findAtomInBlock("listen");
-		
+			unsigned short	p;		
+
 			if (port) {
 
-				_port = atoi(port->getValue().c_str());
+				p = atoi(port->getValue().c_str());
+				_sockets[p].socket = -1;
+//				_port = atoi(port->getValue().c_str());
 //				std::cout << "webserv listening on port " << _port << std::endl;
+				_sockets[p].maxConnexion = 10;
 			}
 
 			ConfigItem *	path = (*ite)->findAtomInBlock("root");
 			if (path)
-				_rootPath = path->getValue();
+				_sockets[p].root = path->getValue();
+				//_rootPath = path->getValue();
 			else
-				std::cout << "Error: No default path provided!" << std::endl;
+				std::cout << RED << "Error: No default path provided!" << CLR << std::endl;
 	}
-
-    _maxConnexion = 10;
+	
+    //_maxConnexion = 10;
 }
 
 int		Server::_createSocket( void ) {
@@ -69,14 +74,14 @@ int		Server::_createSocket( void ) {
     int	socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socketFd == -1) {
-        std::cout << "Failed to create socket. errno: " << errno << " "
-                  << strerror(errno) << std::endl;
+        std::cout << RED << "Failed to create socket. errno: " << errno << " "
+                  << strerror(errno) << CLR << std::endl;
         exit(EXIT_FAILURE);
     }
 	return socketFd;
 }
 
-sockaddr_in	Server::_bindPort( int socketFd, int port ) {
+sockaddr_in	Server::_bindPort( int socketFd, unsigned short port ) {
 
 	sockaddr_in	sockaddr;
 
@@ -85,12 +90,12 @@ sockaddr_in	Server::_bindPort( int socketFd, int port ) {
     sockaddr.sin_port = htons(port);
 
     if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        std::cout << "Failed to bind to port " << port << ": " << errno << " "
-                  << strerror(errno) << std::endl;
+        std::cout << RED << "Failed to bind to port " << port << ": [" << errno << "] "
+                  << strerror(errno) << CLR << std::endl;
         exit(EXIT_FAILURE);
     }
 	else
-		std::cout << "webserv listening on port " << port << std::endl;
+		std::cout << GREEN << "webserv listening on port " << BOLD << port << CLR << std::endl;
 	
 	return sockaddr;
 }
@@ -98,8 +103,8 @@ sockaddr_in	Server::_bindPort( int socketFd, int port ) {
 void		Server::_listenSocket( int socketFd, int maxConnexion ) {
 
     if (listen(socketFd, maxConnexion) < 0) {
-        std::cout << "Failed to listen on socket. errno: " << errno << " "
-                  << strerror(errno) << std::endl;
+        std::cout << RED << "Failed to listen on socket. errno: [" << errno << "] "
+                  << strerror(errno) << CLR << std::endl;
         exit(EXIT_FAILURE);
 	}
 }
@@ -110,8 +115,8 @@ int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
           accept(socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
 
         if (connexion < 0) {
-            std::cout << "Failed to grab connection. errno: " << errno
-                      << std::endl;
+            std::cout << RED << "Failed to grab connection. errno: [" << errno << "] "
+                      << strerror(errno) << CLR << std::endl;
             exit(EXIT_FAILURE);
         }
 		
@@ -121,16 +126,26 @@ int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
 void
 Server::start(void)
 {
-	_socketFd = _createSocket();
-    sockaddr_in sockaddr = _bindPort(_socketFd, _port);
-	_listenSocket(_socketFd, _maxConnexion);
+	std::map<unsigned short, Socket>::iterator	it, ite = _sockets.end();
 
-	int	socketFd2 = _createSocket();
-	sockaddr_in	sockaddr2 = _bindPort(socketFd2, 9090);
-	_listenSocket(socketFd2, _maxConnexion);
+	for (it = _sockets.begin(); it != ite; it++) {
+		
+		_sockets[it->first].socket = _createSocket();
+		_sockets[it->first].sockaddr = _bindPort(_sockets[it->first].socket, it->first);
+		_listenSocket(_sockets[it->first].socket, _sockets[it->first].maxConnexion);
+		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
 
-   	int addrlen = sizeof(sockaddr);
-    int addrlen2 = sizeof(sockaddr2);
+		//_socketFd = _createSocket();
+	    //sockaddr_in sockaddr = _bindPort(_socketFd, _port);
+		//_listenSocket(_socketFd, _maxConnexion);
+	}
+
+	//int	socketFd2 = _createSocket();
+	//sockaddr_in	sockaddr2 = _bindPort(socketFd2, 9090);
+	//_listenSocket(socketFd2, _maxConnexion);
+
+  // 	int addrlen = sizeof(sockaddr);
+  //  int addrlen2 = sizeof(sockaddr2);
 
     while (1) {
 
@@ -141,34 +156,68 @@ Server::start(void)
 
 		int				ret = 0;
 		int				i = 0;
+		std::string		array[] = {".    ", "..   ", "...  ", ".... ", "....."};
 
 		while (!ret) {
 
-			int	nfds = _maxConnexion;
+			int	nfds = 1024;
 
 			timeout.tv_sec = 1;
 			timeout.tv_usec = 0;
 			
 			FD_ZERO(&readfds);
-			FD_SET(_socketFd, &readfds);
-			FD_SET(socketFd2, &readfds);
 
-			std::cout << "\rWaiting for connection..." << i++ << std::flush;
+			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+			for (it = _sockets.begin(); it != ite; it++)
+				FD_SET(_sockets[it->first].socket, &readfds);
+
+//			FD_SET(_socketFd, &readfds);
+//			FD_SET(socketFd2, &readfds);
+
+			std::cout << "\rWaiting for connection" << array[i++] << std::flush;
+
+			if (i == 5)
+				i = 0;
 
 			ret = select(nfds, &readfds, NULL, NULL, &timeout);
 		}
 
 		if (ret > 0) {	
 
-			std::cout << std::endl << "Connexion received." << std::endl;
+			std::cout << ORANGE << "\n\nConnexion received.\n" << CLR << std::endl;
 
-			if (FD_ISSET(_socketFd, &readfds))				
-				_connexion = _accept(_socketFd, sockaddr, addrlen);
+			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+			for (it = _sockets.begin(); it != ite; it++) {
+				if (FD_ISSET(_sockets[it->first].socket, &readfds))	{
 
-			if (FD_ISSET(socketFd2, &readfds))
-				_connexion = _accept(socketFd2, sockaddr2, addrlen2);
+					_connexion = _accept(_sockets[it->first].socket, _sockets[it->first].sockaddr, _sockets[it->first].addrlen);
+        	
+					char buffer[1024];
+        			bzero(buffer, 1024);
+
+        			int bytesread = read(_connexion, &buffer, 1024);
+
+        			if (!bytesread)
+        	    		std::cout << "nothing received..." << std::endl;
+					else
+        	    		std::cout << PURPLE << "----- Received Header -----\n" << CLR << buffer << std::endl;
+
+					Header	header;
+
+        			header.parseHeader(buffer, _sockets[it->first].root);
+        			header.createResponse();
+        			sendResponse(header);
+        			close(_connexion);
+				}
+			}
+
+//				if (FD_ISSET(_socketFd, &readfds))				
+//					_connexion = _accept(_socketFd, sockaddr, addrlen);
+
+//			if (FD_ISSET(socketFd2, &readfds))
+//				_connexion = _accept(socketFd2, sockaddr2, addrlen2);
 				
-
+/*
         	char buffer[1024];
         	bzero(buffer, 1024);
 
@@ -177,14 +226,14 @@ Server::start(void)
         	if (!bytesread)
         	    std::cout << "nothing received..." << std::endl;
 			else
-        	    std::cout << "----- Received Header -----\n" << buffer << std::endl;
+        	    std::cout << PURPLE << "----- Received Header -----\n" << CLR << buffer << std::endl;
 
 			Header	header;
 
         	header.parseHeader(buffer, _rootPath);
         	header.createResponse();
         	sendResponse(header);
-        	close(_connexion);
+        	close(_connexion);*/
 		}
     }
 }
@@ -195,9 +244,9 @@ Server::sendResponse( Header header )
 	std::string	response = header.getResponse();
 
 	if (response.size() > 512)
-		std::cout << "----- Response Header -----" << std::endl << response.substr(0, 512) << "\n\n[ ...SNIP... ]" << std::endl;
+		std::cout << PURPLE << "----- Response Header -----" << CLR << std::endl << response.substr(0, 512) << "\n\n[ ...SNIP... ]" << std::endl;
 	else
-		std::cout << "----- Response Header -----" << std::endl << response << std::endl;
+		std::cout << PURPLE << "----- Response Header -----" << CLR << std::endl << response << std::endl;
 
     //write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
@@ -206,5 +255,11 @@ Server::sendResponse( Header header )
 void
 Server::stop(void)
 {
-    close(_socketFd);
+	std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+
+	for (it = _sockets.begin(); it != ite; it++) {
+    	
+		if (_sockets[it->first].socket > 0)
+			close(_sockets[it->first].socket);
+	}
 }
