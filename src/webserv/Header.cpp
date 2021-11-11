@@ -104,10 +104,10 @@ std::string	Header::_getDate( void ) {
 
 	time_t			now = time(0);
 	struct tm		*date;
-	char			buffer[29];
+	char			buffer[30];
 
 	date = gmtime(&now);
-	strftime(buffer, 29, "%a, %d %b %Y %H:%M:%S GMT", date);
+	strftime(buffer, 30, "%a, %d %b %Y %H:%M:%S GMT", date);
 	return std::string(buffer);
 }
 
