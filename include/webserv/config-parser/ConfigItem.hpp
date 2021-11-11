@@ -45,7 +45,8 @@ class ConfigItem
 	** A pointer to the item is returned if any is found, NULL otherwise.
 	*/
 
-    ConfigItem* findNearestAtom(const std::string& key) const;
+    ConfigItem* findNearest(const std::string& key);
+    const ConfigItem* findNearest(const std::string& key) const;
 
 	/*
 	** Search a block config item for a configuration atom of type `key`.
@@ -54,13 +55,15 @@ class ConfigItem
 	*/
 
     ConfigItem* findAtomInBlock(const std::string& key);
+    const ConfigItem* findAtomInBlock(const std::string& key) const;
 
 	/*
 	** Search for all the configuration blocks of type `key` in `this`, which must be a
 	** block itself. If that's not the case, an exception is thrown.
 	*/
 
-    std::vector<ConfigItem*> findBlocks(const std::string& key);
+    const std::vector<ConfigItem*> findBlocks(const std::string& key);
+    const std::vector<const ConfigItem*> findBlocks(const std::string& key) const;
 };
 
 std::ostream&
