@@ -48,10 +48,15 @@ void Server::init( ConfigItem * global )
 			}
 
 			ConfigItem *	path = (*ite)->findNearestAtom("root");
+
 			if (path)
 				_sockets[port].root = path->getValue();
-			else
+			
+			else {
+				
+				_sockets[port].root = "none";
 				std::cout << RED << "Error: No default path provided!" << CLR << std::endl;
+			}
 		}
 	}
 }

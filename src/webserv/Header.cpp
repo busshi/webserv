@@ -121,11 +121,29 @@ void    	Header::createResponse( void ) {
 		path += _headerParam["Path"].substr(1);
 
     ifs.open(path.c_str());
+
     if (ifs)
 		_headerParam["Status-Code"] = "200 OK";
+
+	else if (_headerParam["Root"] == "none") {
+		_headerParam["Status-Code"] = "500 Internal Server Error";
+		path = "asset/default_500.html";
+		ifs.open(path.c_str());
+		_headerParam["Content-Type"] = "text/html";
+	}
+
 	else {
-		_headerParam["Status-Code"] = "404 Not Found";
-		path = "asset/default_404.html";
+	
+		if (_headerParam["Root"] == "none") {
+		
+			_headerParam["Status-Code"] = "500 Internal Server Error";
+			path = "asset/default_500.html";
+		}
+		else {
+
+			_headerParam["Status-Code"] = "404 Not Found";
+			path = "asset/default_404.html";
+		}
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
 	}
