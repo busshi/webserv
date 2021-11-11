@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/select.h>
 #include <cerrno>
 #include <cstdlib>
@@ -70,6 +71,8 @@ int		Server::_createSocket( void ) {
                   << strerror(errno) << CLR << std::endl;
         exit(EXIT_FAILURE);
     }
+	fcntl(socketFd, F_SETFL, O_NONBLOCK);
+
 	return socketFd;
 }
 
@@ -213,7 +216,7 @@ Server::stop(void)
 
 	for (it = _sockets.begin(); it != ite; it++) {
     	
-		if (_sockets[it->first].socket > 0)
+		if (_sockets[it->first].socket != -1)
 			close(_sockets[it->first].socket);
 	}
 }

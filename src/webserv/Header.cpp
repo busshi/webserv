@@ -31,16 +31,10 @@ std::string	Header::_setContentType( std::string contentType ) {
 std::string	Header::_setParam( std::string s ) {
 
 	unsigned start = s.find(' ') + 1;
-//	unsigned stop = 0;
 
-//	unsigned found = s.find('\r');
-//	if (found == s.length() - 1)
-//		stop = found - 1;
+	unsigned found = s.find("\r");
 
-//	if (trim == true)
-//		stop++;
-//	return (stop ? s.substr(start, stop) : s.substr(start));
-	return s.substr(start);
+	return s.substr(start, found - start);
 }
 
 void		Header::_parseFirstLine( std::string s, std::string root ) {
@@ -91,13 +85,6 @@ void		Header::parseHeader(char buffer[], std::string rootPath) {
 		else if (line == 8)
 			_headerParam["Referer"] = _setParam(*it);
 	}
-/*	std::cout << "host[" << _headerParam["Host"] << "]" << std::endl;
-	std::cout << "agent[" << _headerParam["User-Agent"] << "]" << std::endl;
-	std::cout << "accept[" << _headerParam["Accept"] << "]" << std::endl;
-	std::cout << "language[" << _headerParam["Accept-Language"] << "]" << std::endl;
-	std::cout << "encoding[" << _headerParam["Accept-Encoding"] << "]" << std::endl;
-	std::cout << "connection[" << _headerParam["Connection"] << "]" << std::endl;
-	std::cout << "referer[" << _headerParam["Referer"] << "]" << std::endl;*/
 }
 
 std::string	Header::_getDate( void ) {
@@ -108,6 +95,7 @@ std::string	Header::_getDate( void ) {
 
 	date = gmtime(&now);
 	strftime(buffer, 30, "%a, %d %b %Y %H:%M:%S GMT", date);
+	
 	return std::string(buffer);
 }
 
@@ -218,6 +206,10 @@ void    	Header::createResponse( void ) {
     _response =
           _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\n" + 
 		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\n" + 
-		  "Content-Length: " + _headerParam["Content-Length"] + "\n" + "Date: " + _getDate() + "\n\n" + 
+		  "Content-Length: " + _headerParam["Content-Length"] + "\n" +
+			"Date: " + _getDate() + "\n" +
+			"Last-Modified: " + _getDate() + "\n" +
+			"Location: " + _headerParam["Referer"] + "\n" +
+			"Server: webserv©" + "\n\n" + 
 		  buf.str();
 }
