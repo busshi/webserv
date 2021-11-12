@@ -1,5 +1,6 @@
 #include "Header.hpp"
 #include <sys/stat.h>
+#include <dirent.h>
 
 Header::Header( void ) {}
 
@@ -90,12 +91,10 @@ void		Header::parseHeader(char buffer[], std::string rootPath) {
 
 std::string	Header::_getDate( time_t timestamp ) {
 
-//	time_t			now = time(0);
 	struct tm		*date;
 	char			buffer[30];
 
 	date = gmtime(&timestamp);
-//	date = gmtime(&now);
 	strftime(buffer, 30, "%a, %d %b %Y %H:%M:%S GMT", date);
 	
 	return std::string(buffer);
@@ -171,18 +170,13 @@ void		Header::_genErrorPage( std::string file, std::string code, std::string msg
 	ofs.close();
 }
 
-void    	Header::createResponse( void ) {
-    std::ifstream ifs;
-    std::string path = _headerParam["Root"];
+void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf ) {
 
-	if (_headerParam["Path"] == "/")
-		path += "index.html";
-    else
-		path += _headerParam["Path"].substr(1);
+	std::ifstream		ifs;
 
-    ifs.open(path.c_str());
+  	ifs.open(path.c_str());
 
-    if (ifs)
+ 	if (ifs)
 		_headerParam["Status-Code"] = "200 OK";
 
 	else {
@@ -205,17 +199,55 @@ void    	Header::createResponse( void ) {
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
 	}
-
-	std::stringstream	buf;
+	
     buf << ifs.rdbuf();
     ifs.close();
+}
+
+void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
+
+	path = path.substr(0, path.find_last_of('/'));
+
+	std::cout << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << std::endl;
+
+	DIR *				folder = opendir(path.c_str());
+		
+	if (folder) {
+			
+		struct dirent *	dir;
+
+		while ((dir = readdir(folder)) != NULL) {
+				
+			buf << dir->d_name << std::endl;
+			std::cout << dir->d_name << std::endl;
+		}
+
+		std::cout << std::endl;
+		closedir(folder);
+	}
+}
+
+void    	Header::createResponse( std::string autoindex ) {
+
+	std::stringstream	buf;
+    std::string 		path = _headerParam["Root"];
+
+	if (_headerParam["Path"] == "/")
+		path += "index.html";
+    else
+		path += _headerParam["Path"].substr(1);
+
+	if (autoindex == "off")
+	_noAutoIndexResponse(path, buf);
+	else
+		_autoIndexResponse(path, buf);
 
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
 	_headerParam["Content-Length"] = tmp.str();
-	
-    _response =
+    
+	_response =
           _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\n" + 
 		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\n" + 
 		  "Content-Length: " + _headerParam["Content-Length"] + "\n" +
