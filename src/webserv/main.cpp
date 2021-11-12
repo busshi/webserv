@@ -1,5 +1,8 @@
 #include "Server.hpp"
 #include <iostream>
+#include "logger/Logger.hpp"
+
+Logger glogger("logs", "log.txt");
 
 int
 main(int ac, char** av)
