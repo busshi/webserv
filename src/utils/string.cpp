@@ -112,3 +112,14 @@ std::string dirname(const std::string& s)
 
     return "";
 }
+
+std::string toLowerCase(const std::string& s)
+{
+    std::string ls(s);
+
+    for (std::string::iterator it = ls.begin(); it != ls.end(); ++it) {
+        *it = tolower(*it);
+    }
+
+    return ls;
+}

@@ -20,6 +20,16 @@ main(int ac, char** av)
 
         //ConfigItem* config = cfgp.loadConfig("./asset/config/example1.conf");
         ConfigItem* config = cfgp.loadConfig(av[1]);
+        ConfigItem* log_level = config->findNearest("log_level");
+        
+        if (log_level) {
+            glogger.setWebservLogLevel(Logger::parseLogLevel(log_level->getValue()));
+        }
+
+        glogger << Logger::ERROR << "Error log\n";
+        glogger << Logger::WARNING << "Warning log\n";
+        glogger << Logger::INFO << "Info log\n";
+        glogger << Logger::DEBUG << "Debug log\n";
 
         // cfgp.printConfig(std::cout, config);
 
@@ -33,13 +43,9 @@ main(int ac, char** av)
         //    }
        // }
 
-        
-
         server.init(config);
         server.start();
         server.stop();
-
-        
 
         delete config;
     } catch (Lexer::LexerException& e) {

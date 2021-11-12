@@ -13,3 +13,6 @@ expandVar(const std::string& path);
 
 bool
 isIPv4(const std::string& s);
+
+std::string
+toLowerCase(const std::string& s);

@@ -18,3 +18,6 @@ validateListen(const std::string& value, std::string& errorMsg);
 
 bool
 validateSize(const std::string& value, std::string& errorMsg);
+
+bool
+validateLogLevel(const std::string& value, std::string& errorMsg);

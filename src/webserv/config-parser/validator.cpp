@@ -163,3 +163,24 @@ validateSize(const std::string& value, std::string& errorMsg)
 
     return true;
 }
+
+bool validateLogLevel(const std::string& value, std::string& errorMsg)
+{
+    std::string levelAsStr = toLowerCase(value);
+    std::string levels[] = {
+        "debug",
+        "info",
+        "warning",
+        "error"
+    };
+
+    for (unsigned i = 0; i != sizeof(levels) / sizeof(*levels); ++i) {
+        if (levelAsStr == levels[i]) {
+            return true;
+        }
+    }
+
+    Formatter() << "Unknown log level \"" << levelAsStr << "\"" >> errorMsg;
+
+    return false;
+}
