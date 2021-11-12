@@ -17,7 +17,7 @@ class Logger
   public:
       Logger(const std::string& logDir = "./logs", const std::string& logFile = "log.txt");
 
-      static std::string printTime(void);
+      static std::string getTimestamp(void);
 
   template <typename T>
   Logger& operator<<(const T& t)
