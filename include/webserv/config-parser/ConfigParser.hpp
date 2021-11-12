@@ -77,7 +77,7 @@ class ConfigParser
 
 struct ListenData
 {
-    std::string v4; /* [IPv4:]port */
+    uint32_t v4; /* [IPv4:]port */
     uint16_t port;
     bool isDefault;
 };
