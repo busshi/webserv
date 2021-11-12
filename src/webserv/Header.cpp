@@ -211,24 +211,34 @@ void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf ) {
 
 void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
 
-	path = path.substr(0, path.find_last_of('/'));
+	struct stat	s;
 
-	std::cout << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << std::endl;
+	if (stat(path.c_str(), &s) == 0) {
 
-	DIR *				folder = opendir(path.c_str());
+		if (s.st_mode & S_IFDIR) {
+
+			path = path.substr(0, path.find_last_of('/'));
+
+			std::cout << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << std::endl;
+
+			DIR *				folder = opendir(path.c_str());
 		
-	if (folder) {
+			if (folder) {
 			
-		struct dirent *	dir;
+				struct dirent *	dir;
 
-		while ((dir = readdir(folder)) != NULL) {
+				while ((dir = readdir(folder)) != NULL) {
 				
-			buf << dir->d_name << std::endl;
-			std::cout << dir->d_name << std::endl;
-		}
+					buf << "<a href=\"http://" << _headerParam["Host"] << "/" << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
+					std::cout << dir->d_name << std::endl;
+				}
 
-		std::cout << std::endl;
-		closedir(folder);
+				std::cout << std::endl;
+				closedir(folder);
+			}
+		}
+		else
+			_noAutoIndexResponse(path, buf);
 	}
 }
 
@@ -242,8 +252,9 @@ void    	Header::createResponse( std::string autoindex ) {
     else
 		path += _headerParam["Path"].substr(1);
 
+	std::cout << "PAAAAAAAAAAAAATH=>" << path << std::endl;
 	if (autoindex == "off")
-	_noAutoIndexResponse(path, buf);
+		_noAutoIndexResponse(path, buf);
 	else
 		_autoIndexResponse(path, buf);
 
