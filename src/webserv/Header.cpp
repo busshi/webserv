@@ -1,4 +1,5 @@
 #include "Header.hpp"
+#include <sys/stat.h>
 
 Header::Header( void ) {}
 
@@ -87,16 +88,27 @@ void		Header::parseHeader(char buffer[], std::string rootPath) {
 	}
 }
 
-std::string	Header::_getDate( void ) {
+std::string	Header::_getDate( time_t timestamp ) {
 
-	time_t			now = time(0);
+//	time_t			now = time(0);
 	struct tm		*date;
 	char			buffer[30];
 
-	date = gmtime(&now);
+	date = gmtime(&timestamp);
+//	date = gmtime(&now);
 	strftime(buffer, 30, "%a, %d %b %Y %H:%M:%S GMT", date);
 	
 	return std::string(buffer);
+}
+
+std::string	Header::_getLastModified( std::string path ) {
+
+	struct stat	res;
+
+	if (stat(path.c_str(), &res) == 0)
+		return _getDate(res.st_mtime);
+	else
+		return _getDate(time(0));
 }
 
 std::string		Header::_replace(std::string in, std::string s1, std::string s2) {
@@ -207,8 +219,8 @@ void    	Header::createResponse( void ) {
           _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\n" + 
 		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\n" + 
 		  "Content-Length: " + _headerParam["Content-Length"] + "\n" +
-			"Date: " + _getDate() + "\n" +
-			"Last-Modified: " + _getDate() + "\n" +
+			"Date: " + _getDate(time(0)) + "\n" +
+			"Last-Modified: " + _getLastModified(path) + "\n" +
 			"Location: " + _headerParam["Referer"] + "\n" +
 			"Server: webserv©" + "\n\n" + 
 		  buf.str();
