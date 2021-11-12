@@ -42,11 +42,10 @@ void Server::init( ConfigItem * global )
 			ListenData	data = parseListen(listens[i]->getValue());
 			unsigned short	port = data.port;
 
-			if (port) {
-
-				_sockets[port].socket = -1;
-				_sockets[port].maxConnexion = 10;
-			}
+			_sockets[port].socket = -1;
+			_sockets[port].ipv4 = data.v4;
+			_sockets[port].maxConnexion = 10;
+	
 
 			ConfigItem *	path = (*ite)->findNearest("root");
 
@@ -76,12 +75,12 @@ int		Server::_createSocket( void ) {
 	return socketFd;
 }
 
-sockaddr_in	Server::_bindPort( int socketFd, unsigned short port ) {
+sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 ) {
 
 	sockaddr_in	sockaddr;
 
     sockaddr.sin_family = AF_INET;
-    sockaddr.sin_addr.s_addr = INADDR_ANY;
+   	sockaddr.sin_addr.s_addr = ipv4;
     sockaddr.sin_port = htons(port);
 
     if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
@@ -126,7 +125,7 @@ Server::start(void)
 	for (it = _sockets.begin(); it != ite; it++) {
 		
 		_sockets[it->first].socket = _createSocket();
-		_sockets[it->first].sockaddr = _bindPort(_sockets[it->first].socket, it->first);
+		_sockets[it->first].sockaddr = _bindPort(_sockets[it->first].socket, it->first, _sockets[it->first].ipv4);
 		_listenSocket(_sockets[it->first].socket, _sockets[it->first].maxConnexion);
 		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
 	}
