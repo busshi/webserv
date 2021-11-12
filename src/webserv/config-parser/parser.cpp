@@ -15,7 +15,7 @@
 ListenData
 parseListen(const std::string& listenDirective)
 {
-    ListenData data = { .v4 = 0, .port = 0, .isDefault = false };
+    ListenData data = { .v4 = INADDR_ANY, .port = 0, .isDefault = false };
 
     std::string::size_type f = listenDirective.find(':');
 
