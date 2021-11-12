@@ -32,10 +32,10 @@ void Server::init( ConfigItem * global )
 {
 	std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
-	for (std::vector<ConfigItem*>::const_iterator ite = serverBlocks.begin();
-	    ite != serverBlocks.end(); ++ite) {
+	for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin();
+	    it != serverBlocks.end(); ++it) {
 			
-		std::vector<ConfigItem*>	listens = (*ite)->findBlocks("listen");
+		std::vector<ConfigItem*>	listens = (*it)->findBlocks("listen");
 
 		for (size_t i = 0; i != listens.size(); i++) {
 
@@ -45,9 +45,15 @@ void Server::init( ConfigItem * global )
 			_sockets[port].socket = -1;
 			_sockets[port].ipv4 = data.v4;
 			_sockets[port].maxConnexion = 10;
+
+			ConfigItem *	autoindex = (*it)->findNearest("autoindex");
+			if (autoindex)
+				_sockets[port].autoindex = autoindex->getValue();
+			else
+				_sockets[port].autoindex = "off";
 	
 
-			ConfigItem *	path = (*ite)->findNearest("root");
+			ConfigItem *	path = (*it)->findNearest("root");
 
 			if (path)
 				_sockets[port].root = path->getValue();
@@ -164,10 +170,11 @@ Server::start(void)
 
 		if (ret > 0) {	
 
-			std::cout << ORANGE << "\n\nConnexion received.\n" << CLR << std::endl;
+			std::cout << GREEN << "\n\nConnexion received.\n" << CLR << std::endl;
 
 			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 			for (it = _sockets.begin(); it != ite; it++) {
+
 				if (FD_ISSET(_sockets[it->first].socket, &readfds))	{
 
 					_connexion = _accept(_sockets[it->first].socket, _sockets[it->first].sockaddr, _sockets[it->first].addrlen);
@@ -178,16 +185,19 @@ Server::start(void)
         			int bytesread = read(_connexion, &buffer, 1024);
 
         			if (!bytesread)
-        	    		std::cout << "nothing received..." << std::endl;
-					else
+        	    		std::cout << RED << "Nothing received..." << CLR << std::endl;
+					else {
+
         	    		std::cout << PURPLE << "----- Received Header -----\n" << CLR << buffer << std::endl;
+					
+						Header	header;
 
-					Header	header;
-
-        			header.parseHeader(buffer, _sockets[it->first].root);
-        			header.createResponse();
-        			sendResponse(header);
-        			close(_connexion);
+	        			header.parseHeader(buffer, _sockets[it->first].root);
+	        			header.createResponse(_sockets[it->first].autoindex);
+	        			sendResponse(header);
+	        		//	close(_connexion);
+					}
+	        		close(_connexion);
 				}
 			}
 		}

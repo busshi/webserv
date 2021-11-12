@@ -6,4 +6,3 @@
 #define PURPLE	"\033[35m"
 #define BOLD	"\033[1m"
 #define CLR		"\033[0m"
-

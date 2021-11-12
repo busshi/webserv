@@ -34,6 +34,7 @@ class Server
 		sockaddr_in		sockaddr;
 		int				addrlen;
 		std::string		root;
+		std::string		autoindex;
 		//std::vector<ConfigItem*>	items;
 	};
 
