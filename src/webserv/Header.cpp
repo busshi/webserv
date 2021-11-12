@@ -213,11 +213,12 @@ void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
 
 	struct stat	s;
 
+	std::cout << "PAAAAAAAAAAAAATH=>" << path << std::endl;
 	if (stat(path.c_str(), &s) == 0) {
 
 		if (s.st_mode & S_IFDIR) {
 
-			path = path.substr(0, path.find_last_of('/'));
+	//		path = path.substr(0, path.find_last_of('/'));
 
 			std::cout << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << std::endl;
 
@@ -252,7 +253,6 @@ void    	Header::createResponse( std::string autoindex ) {
     else
 		path += _headerParam["Path"].substr(1);
 
-	std::cout << "PAAAAAAAAAAAAATH=>" << path << std::endl;
 	if (autoindex == "off")
 		_noAutoIndexResponse(path, buf);
 	else
