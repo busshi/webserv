@@ -21,7 +21,7 @@ Logger::Logger(const std::string& logDir, const std::string& logFile): _logDir(l
 	}
 }
 
-std::string Logger::printTime(void)
+std::string Logger::getTimestamp(void)
 {
 	time_t rawTime;
 	char buf[1024];
