@@ -1,12 +1,7 @@
 #pragma once
 
 #include <string>
-#include <iostream>
 #include <map>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include "Constants.hpp"
 
 class	Header {
 

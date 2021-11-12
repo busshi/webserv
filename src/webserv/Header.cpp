@@ -1,6 +1,11 @@
 #include "Header.hpp"
+#include "Constants.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 Header::Header( void ) {}
 
