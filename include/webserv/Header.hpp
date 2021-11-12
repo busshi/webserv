@@ -26,7 +26,8 @@ class	Header {
 		void		_parseFirstLine( std::string, std::string );
 		std::string _setParam( std::string ) ;
 		std::string	_setContentType( std::string );
-		std::string	_getDate( void );
+		std::string	_getDate( time_t timestamp );
+		std::string	_getLastModified( std::string path );
 		std::string _replace(std::string in, std::string s1, std::string s2);
 		void        _genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
 
