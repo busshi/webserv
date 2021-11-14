@@ -3,7 +3,7 @@
 #include <vector>
 
 std::vector<std::string>
-split(const std::string& s, unsigned char c);
+split(const std::string& s, const std::string& set = "\t\n\r\v ");
 
 std::string
 trim(const std::string& s);
