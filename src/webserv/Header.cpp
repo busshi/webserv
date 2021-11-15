@@ -176,82 +176,56 @@ void		Header::_genErrorPage( std::string file, std::string code, std::string msg
 	ofs.close();
 }
 
-void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex ) {
+void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf ) {
 
 	std::ifstream		ifs;
 
   	ifs.open(path.c_str());
+	if (ifs)
+		_headerParam["Status-Code"] = "200 OK";
 
-	if (_headerParam["Path"] == "/" && autoindex == "off") {
+	else {
+	
+		if (_headerParam["Root"] == "none") {
+		
+			_headerParam["Status-Code"] = "500 Internal Server Error";
+			_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
 
-		_headerParam["Status-Code"] = "403 Forbidden";
-		_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
+		}
+		else {
+
+			_headerParam["Status-Code"] = "404 Not Found";
+			_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
+		}
+		
 		path = "asset/error_page.html";
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
-	}
- 	else {
-
-		if (ifs)
-			_headerParam["Status-Code"] = "200 OK";
-
-		else {
-	
-			if (_headerParam["Root"] == "none") {
-		
-				_headerParam["Status-Code"] = "500 Internal Server Error";
-				_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
-
-			}
-			else {
-
-				_headerParam["Status-Code"] = "404 Not Found";
-				_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
-			}
-		
-			path = "asset/error_page.html";
-			ifs.open(path.c_str());
-			_headerParam["Content-Type"] = "text/html";
-		}
 	}
 	
     buf << ifs.rdbuf();
     ifs.close();
 }
 
-void	Header::_autoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex ) {
+void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
 
-	struct stat	s;
+	glogger << Logger::DEBUG << PURPLE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
 
-	if (stat(path.c_str(), &s) == 0) {
-
-		if (s.st_mode & S_IFDIR) {
-
-	//		path = path.substr(0, path.find_last_of('/'));
-
-			glogger << Logger::DEBUG << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
-
-			DIR *				folder = opendir(path.c_str());
+	DIR *				folder = opendir(path.c_str());
 		
-			if (folder) {
+	if (folder) {
 			
-				struct dirent *	dir;
+		struct dirent *	dir;
 
-				while ((dir = readdir(folder)) != NULL) {
+		while ((dir = readdir(folder)) != NULL) {
 				
-					buf << "<a href=\"http://" << _headerParam["Host"] << "/" << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
-					glogger << Logger::DEBUG << dir->d_name << "\n";
-				}
-
-				glogger << Logger::DEBUG << "\n";
-				closedir(folder);
-			}
+			buf << "<a href=\"http://" << _headerParam["Host"] << "/" << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
+			glogger << Logger::DEBUG << dir->d_name << "\n";
 		}
-		else
-			_noAutoIndexResponse(path, buf, autoindex);
+
+		glogger << Logger::DEBUG << "\n";
+		closedir(folder);
 	}
-	else
-		_noAutoIndexResponse(path, buf, autoindex);
 }
 
 std::string	Header::_getIndex( std::string path, std::vector<std::string> indexes ) {
@@ -273,21 +247,52 @@ std::string	Header::_getIndex( std::string path, std::vector<std::string> indexe
 	return index;
 }
 
+bool		Header::_checkFolder( std::string path) {
+
+	struct stat	s;
+
+	if (stat(path.c_str(), &s) == 0) {
+
+		if (s.st_mode & S_IFDIR)
+			return true;
+	}
+	return false;
+}
+
 void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes ) {
 
 	std::stringstream	buf;
     std::string 		path = _headerParam["Root"];
 
-	if (_headerParam["Path"] == "/" && autoindex == "off") {
-		path += _getIndex(path, indexes);
-	}
- 	else
-		path += _headerParam["Path"].substr(1);
+	path += _headerParam["Path"].substr(1);
 
-	if (autoindex == "off")
-		_noAutoIndexResponse(path, buf, autoindex);
+	if (_checkFolder(path) == true) {
+
+		path += _getIndex(path, indexes);
+
+		if (_checkFolder(path) == true) {
+
+			if (autoindex == "on")
+				_autoIndexResponse(path, buf);
+
+			else {
+
+				_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
+
+				std::ifstream		ifs;
+				ifs.open("asset/error_page.html");
+    			buf << ifs.rdbuf();
+    			ifs.close();
+
+				_headerParam["Status-Code"] = "403 Forbidden";
+				_headerParam["Content-Type"] = "text/html";
+			}
+		}
+		else
+			_noAutoIndexResponse(path, buf);
+	}
 	else
-		_autoIndexResponse(path, buf, autoindex);
+		_noAutoIndexResponse(path, buf);
 
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;

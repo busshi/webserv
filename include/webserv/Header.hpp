@@ -28,8 +28,9 @@ class	Header {
 		std::string			_replace( std::string in, std::string s1, std::string s2 );
 		std::string			_getIndex( std::string path, std::vector<std::string> indexes );
 		void        		_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
-		void			   	_noAutoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex );
-		void				_autoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex );
+		void			   	_noAutoIndexResponse( std::string path, std::stringstream & buf );
+		void				_autoIndexResponse( std::string path, std::stringstream & buf );
+		bool        		_checkFolder( std::string path);
 
 		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;
