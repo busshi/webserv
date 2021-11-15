@@ -74,6 +74,7 @@ namespace HTTP {
     };
 
     StatusCode toStatusCode(unsigned intStatusCode);
+    unsigned toStatusCode(StatusCode statusCode);
     std::string toStatusCodeString(StatusCode statusCode);
     std::string toStatusCodeString(unsigned intStatusCode);
 }

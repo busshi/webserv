@@ -114,6 +114,11 @@ HTTP::StatusCode HTTP::toStatusCode(unsigned intStatusCode)
     return static_cast<HTTP::StatusCode>(intStatusCode);
 }
 
+unsigned HTTP::toStatusCode(HTTP::StatusCode statusCode)
+{
+    return static_cast<int>(statusCode);
+}
+
 std::string HTTP::toStatusCodeString(HTTP::StatusCode statusCode)
 {   
     size_t typeIndex = static_cast<int>(statusCode) / 100 - 1;
