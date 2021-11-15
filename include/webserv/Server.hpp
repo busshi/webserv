@@ -39,12 +39,17 @@ class Server
 		//std::vector<ConfigItem*>	items;
 	};
 
+
 	std::map<unsigned short, Socket>	_sockets;
 
     int _connexion;
+	
+	ConfigItem* _config;
 
 	int			_createSocket( void );
 	sockaddr_in	_bindPort( int socketFd, unsigned short port, uint32_t ipv4 );
 	void		_listenSocket( int socketFd, int maxConnexion );
 	int			_accept( int socketFd, sockaddr_in sockaddr, int addrlen );
 };
+
+extern bool isWebservAlive;

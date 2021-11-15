@@ -1,24 +1,32 @@
 #include "Server.hpp"
 #include <iostream>
+#include <signal.h>
+#include <cstdlib>
 #include "logger/Logger.hpp"
 
 Logger glogger("logs", "log.txt");
+
+bool isWebservAlive = true;
+
+static void handleSIGINT(int)
+{
+    std::cout << "Bye bye!\n";
+    isWebservAlive = false;
+}
 
 int
 main(int ac, char** av)
 {
     if (ac != 2) {
         std::cout << "Usage: ./webserv [path to config file]" << std::endl;
-        //std::cout << "Usage: ./webserv [port to bind]" << std::endl;
-        return 0;
+        return EXIT_FAILURE;
     }
 
-    Server server;
+    signal(SIGINT, handleSIGINT);
 
     try {
         ConfigParser cfgp;
 
-        //ConfigItem* config = cfgp.loadConfig("./asset/config/example1.conf");
         ConfigItem* config = cfgp.loadConfig(av[1]);
         ConfigItem* log_level = config->findNearest("log_level");
         
@@ -26,28 +34,11 @@ main(int ac, char** av)
             glogger.setWebservLogLevel(Logger::parseLogLevel(log_level->getValue()));
         }
 
-        glogger << Logger::ERROR << "Error log\n";
-        glogger << Logger::WARNING << "Warning log\n";
-        glogger << Logger::INFO << "Info log\n";
-        glogger << Logger::DEBUG << "Debug log\n";
-
-        // cfgp.printConfig(std::cout, config);
-
-        std::vector<ConfigItem*> civ = config->findBlocks("server");
-
-//        for (size_t i = 0; i != civ.size(); ++i) {
-  //          std::vector<ConfigItem*> civ2 = civ[i]->findBlocks("location");
-
-    //        for (size_t j = 0; j != civ2.size(); ++j) {
-      //          std::cout << *(civ2[j]) << "\n";
-        //    }
-       // }
+        Server server;
 
         server.init(config);
         server.start();
         server.stop();
-
-        delete config;
     } catch (Lexer::LexerException& e) {
         e.printFormatted(std::cerr) << "\n";
     } catch (ConfigParser::ParserException& e) {
