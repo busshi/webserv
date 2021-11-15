@@ -6,9 +6,13 @@ SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp)
 
 SRCS		+= $(addprefix src/logger/, Logger.cpp)
 
+SRCS		+= $(addprefix src/http/, status.cpp)
+
 HEADER		= $(addprefix include/webserv/, Server.hpp Header.hpp config-parser/Lexer.hpp config-parser/ConfigParser.hpp config-parser/validator.hpp config-parser/ConfigItem.hpp)
 HEADER		+= $(addprefix include/, utils/Formatter.hpp utils/string.hpp)
 HEADER		+=  $(addprefix include/logger/, Logger.hpp)
+
+HEADER		+= $(addprefix include/http/, status.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
