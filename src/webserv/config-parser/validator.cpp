@@ -25,7 +25,7 @@ validateMethod(const std::string& value, std::string& errorMsg)
     bool seen[sizeof(availableMethods) / sizeof(char*)] = { false };
     size_t n = sizeof(availableMethods) / sizeof(char*);
 
-    std::vector<std::string> vs = split(value, ' ');
+    std::vector<std::string> vs = split(value);
 
     for (std::vector<std::string>::const_iterator ite = vs.begin();
          ite != vs.end();
@@ -55,7 +55,7 @@ validateMethod(const std::string& value, std::string& errorMsg)
 bool
 validateIndex(const std::string& value, std::string& errorMsg)
 {
-    std::vector<std::string> vs = split(value, ' ');
+    std::vector<std::string> vs = split(value);
     std::vector<std::string> seen;
 
     for (std::vector<std::string>::const_iterator ite = vs.begin();
@@ -162,4 +162,25 @@ validateSize(const std::string& value, std::string& errorMsg)
     }
 
     return true;
+}
+
+bool validateLogLevel(const std::string& value, std::string& errorMsg)
+{
+    std::string levelAsStr = toLowerCase(value);
+    std::string levels[] = {
+        "debug",
+        "info",
+        "warning",
+        "error"
+    };
+
+    for (unsigned i = 0; i != sizeof(levels) / sizeof(*levels); ++i) {
+        if (levelAsStr == levels[i]) {
+            return true;
+        }
+    }
+
+    Formatter() << "Unknown log level \"" << levelAsStr << "\"" >> errorMsg;
+
+    return false;
 }

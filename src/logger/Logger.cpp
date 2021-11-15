@@ -1,9 +1,12 @@
 #include "logger/Logger.hpp"
+#include "utils/string.hpp"
+#include "utils/Formatter.hpp"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <iostream>
 
-Logger::Logger(const std::string& logDir, const std::string& logFile): _logDir(logDir), _logFile(logFile)
+Logger::Logger(const std::string& logDir, const std::string& logFile, Logger::LogLevel webservLogLevel): _logDir(logDir), _logFile(logFile),
+	_webservLogLevel(webservLogLevel), _currentLogLevel(INFO)
 {
 	struct stat info;
 
@@ -33,4 +36,35 @@ std::string Logger::getTimestamp(void)
 	buf[strftime(buf + 1, 1024, "%Y-%m-%e-%H-%M-%S", timeinfo) + 1] = ']';
 
 	return buf;
+}
+
+Logger::LogLevel Logger::parseLogLevel(const std::string& s)
+{
+	std::string levelAsStr = toLowerCase(s);
+    std::string levels[] = {
+        "debug",
+        "info",
+        "warning",
+        "error"
+    };
+
+    for (unsigned i = 0; i != sizeof(levels) / sizeof(*levels); ++i) {
+        if (levelAsStr == levels[i]) {
+            return static_cast<LogLevel>(i);
+        }
+    }
+
+	return UNKNOWN;
+}
+
+Logger& Logger::operator<<(LogLevel logLevel)
+{
+	_currentLogLevel = logLevel;
+
+	return *this;
+}
+
+void Logger::setWebservLogLevel(Logger::LogLevel logLevel)
+{
+	_webservLogLevel = logLevel;
 }

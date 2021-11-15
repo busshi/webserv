@@ -4,20 +4,48 @@
 #include <sstream>
 #include <string>
 
+/**
+ * @brief Helper method for working with split. Returns the index where any of the characters in set first occurs in s.
+ * 
+ * @param s The string to search in
+ * @param set A set of characters that are matchable
+ * @param pos The position to start the search at in s
+ * @return std::string::size_type the index where the first occurence of any character in set is found, std::string::npos is there is not.
+ */
+
+static std::string::size_type splitFindOneOfSet(const std::string& s, const std::string& set, std::string::size_type pos = 0)
+{
+    for (std::string::size_type i = pos; i != s.size(); ++i) {
+        if (set.find(s[i]) != std::string::npos) {
+            return i;
+        }
+    }
+
+    return std::string::npos;
+}
+
+/**
+ * @brief splits a std::string into one or several strings, each character of set being a possible delimiter.
+ * 
+ * @param s The string to split
+ * @param set A string which each of its characters can be a delimiter to split s
+ * @return std::vector<std::string>  A vector of string that holds the split.
+ */
+
 std::vector<std::string>
-split(const std::string& s, unsigned char c)
+split(const std::string& s, const std::string& set)
 {
     std::vector<std::string> v;
     std::string::size_type bpos = 0, fpos = 0;
 
     while (bpos < s.size()) {
-        while (s[bpos] == c) {
+        while (set.find(s[bpos]) != std::string::npos) {
             ++bpos;
         }
         if (bpos == s.size()) {
             break;
         }
-        fpos = s.find(c, bpos);
+        fpos = splitFindOneOfSet(s, set, bpos);
         if (fpos == std::string::npos) {
             fpos = s.size();
         }
@@ -78,7 +106,7 @@ expandVar(const std::string& path)
 bool
 isIPv4(const std::string& s)
 {
-    std::vector<std::string> ss = split(s, '.');
+    std::vector<std::string> ss = split(s, ".");
     std::istringstream iss;
 
     if (ss.size() != 4) {
@@ -111,4 +139,15 @@ std::string dirname(const std::string& s)
     }
 
     return "";
+}
+
+std::string toLowerCase(const std::string& s)
+{
+    std::string ls(s);
+
+    for (std::string::iterator it = ls.begin(); it != ls.end(); ++it) {
+        *it = tolower(*it);
+    }
+
+    return ls;
 }
