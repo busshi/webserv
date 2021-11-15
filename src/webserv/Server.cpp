@@ -1,4 +1,6 @@
 #include "Server.hpp"
+#include "logger/Logger.hpp"
+#include "utils/string.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/select.h>
@@ -61,8 +63,13 @@ void Server::init( ConfigItem * global )
 			else {
 				
 				_sockets[port].root = "none";
-				std::cout << RED << "Error: No default path provided!" << CLR << std::endl;
+				glogger << Logger::WARNING << RED << "Error: No default path provided!\n" << CLR;
 			}
+
+			ConfigItem *	index = (*it)->findNearest("index");
+
+			if (index)	
+				_sockets[port].indexes = split(index->getValue());
 		}
 	}
 }
@@ -72,8 +79,8 @@ int		Server::_createSocket( void ) {
     int	socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socketFd == -1) {
-        std::cout << RED << "Failed to create socket. errno: " << errno << " "
-                  << strerror(errno) << CLR << std::endl;
+        glogger << Logger::ERROR << RED << "Failed to create socket. errno: " << errno << " "
+                  << strerror(errno) << CLR << "\n";
         exit(EXIT_FAILURE);
     }
 	fcntl(socketFd, F_SETFL, O_NONBLOCK);
@@ -90,12 +97,12 @@ sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 
     sockaddr.sin_port = htons(port);
 
     if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        std::cout << RED << "Failed to bind to port " << port << ": [" << errno << "] "
-                  << strerror(errno) << CLR << std::endl;
+        glogger << Logger::ERROR << RED << "Failed to bind to port " << port << ": [" << errno << "] "
+                  << strerror(errno) << CLR << "\n";
         exit(EXIT_FAILURE);
     }
 	else
-		std::cout << GREEN << "webserv listening on port " << BOLD << port << CLR << std::endl;
+		glogger << Logger::INFO << GREEN << "webserv listening on port " << BOLD << port << CLR << "\n";
 	
 	return sockaddr;
 }
@@ -103,8 +110,8 @@ sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 
 void		Server::_listenSocket( int socketFd, int maxConnexion ) {
 
     if (listen(socketFd, maxConnexion) < 0) {
-        std::cout << RED << "Failed to listen on socket. errno: [" << errno << "] "
-                  << strerror(errno) << CLR << std::endl;
+        glogger << Logger::ERROR << RED << "Failed to listen on socket. errno: [" << errno << "] "
+                  << strerror(errno) << CLR << "\n";
         exit(EXIT_FAILURE);
 	}
 }
@@ -115,8 +122,8 @@ int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
           accept(socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
 
         if (connexion < 0) {
-            std::cout << RED << "Failed to grab connection. errno: [" << errno << "] "
-                      << strerror(errno) << CLR << std::endl;
+            glogger << Logger::ERROR << RED << "Failed to grab connection. errno: [" << errno << "] "
+                      << strerror(errno) << CLR << "\n";
             exit(EXIT_FAILURE);
         }
 		
@@ -136,18 +143,18 @@ Server::start(void)
 		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
 	}
 
+	std::cout << "webserv is running\nHit Ctrl-C or Ctrl-D to exit." << std::endl;
+
     while (1) {
 
 		fd_set			readfds;
-		//fd_set			writefds;
+		fd_set			writefds;
 
 		struct timeval	timeout;
 
-		int				ret = 0;
-		int				i = 0;
-		std::string		array[] = {".    ", "..   ", "...  ", ".... ", "....."};
+		int				ready = 0;
 
-		while (!ret) {
+		while (!ready) {
 
 			int	nfds = 1024;
 
@@ -155,22 +162,20 @@ Server::start(void)
 			timeout.tv_usec = 0;
 			
 			FD_ZERO(&readfds);
+			FD_ZERO(&writefds);
 
 			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
-			for (it = _sockets.begin(); it != ite; it++)
+			for (it = _sockets.begin(); it != ite; it++){
+
 				FD_SET(_sockets[it->first].socket, &readfds);
-
-			std::cout << "\rWaiting for connection" << array[i++] << std::flush;
-
-			if (i == 5)
-				i = 0;
-
-			ret = select(nfds, &readfds, NULL, NULL, &timeout);
+				FD_SET(_sockets[it->first].socket, &writefds);
+			}
+			ready = select(nfds, &readfds, &writefds, NULL, &timeout);
 		}
 
-		if (ret > 0) {	
+		if (ready > 0) {	
 
-			std::cout << GREEN << "\n\nConnexion received.\n" << CLR << std::endl;
+			glogger << Logger::INFO << GREEN << "\n\nConnexion received.\n\n" << CLR;
 
 			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 			for (it = _sockets.begin(); it != ite; it++) {
@@ -185,18 +190,20 @@ Server::start(void)
         			int bytesread = read(_connexion, &buffer, 1024);
 
         			if (!bytesread)
-        	    		std::cout << RED << "Nothing received..." << CLR << std::endl;
+        	    		glogger << Logger::WARNING << ORANGE << "Nothing received..." << CLR << "\n";
 					else {
 
-        	    		std::cout << PURPLE << "----- Received Header -----\n" << CLR << buffer << std::endl;
+        	    		glogger << Logger::DEBUG << PURPLE << "----- Received Header -----\n" << CLR << buffer << "\n";
 					
 						Header	header;
 
 	        			header.parseHeader(buffer, _sockets[it->first].root);
-	        			header.createResponse(_sockets[it->first].autoindex);
+	        			header.createResponse(_sockets[it->first].autoindex, _sockets[it->first].indexes);
 	        			sendResponse(header);
 	        		//	close(_connexion);
 					}
+					FD_CLR(_sockets[it->first].socket, &readfds);
+					FD_CLR(_sockets[it->first].socket, &writefds);
 	        		close(_connexion);
 				}
 			}
@@ -210,9 +217,9 @@ Server::sendResponse( Header header )
 	std::string	response = header.getResponse();
 
 	if (response.size() > 512)
-		std::cout << PURPLE << "----- Response Header -----" << CLR << std::endl << response.substr(0, 512) << "\n\n[ ...SNIP... ]" << std::endl;
+		glogger << Logger::DEBUG << PURPLE << "\n----- Response Header -----\n" << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
 	else
-		std::cout << PURPLE << "----- Response Header -----" << CLR << std::endl << response << std::endl;
+		glogger << Logger::DEBUG << PURPLE << "\n----- Response Header -----\n" << CLR << response << "\n";
 
     //write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
