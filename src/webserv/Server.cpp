@@ -34,6 +34,8 @@ void Server::init( ConfigItem * global )
 {
 	std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
+	_config = global;
+
 	for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin();
 	    it != serverBlocks.end(); ++it) {
 			
@@ -145,7 +147,7 @@ Server::start(void)
 
 	std::cout << "webserv is running\nHit Ctrl-C or Ctrl-D to exit." << std::endl;
 
-    while (1) {
+    while (isWebservAlive) {
 
 		fd_set			readfds;
 		fd_set			writefds;
@@ -154,24 +156,21 @@ Server::start(void)
 
 		int				ready = 0;
 
-		while (!ready) {
+		int	nfds = 1024;
 
-			int	nfds = 1024;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds);
 
-			timeout.tv_sec = 1;
-			timeout.tv_usec = 0;
-			
-			FD_ZERO(&readfds);
-			FD_ZERO(&writefds);
+		std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+		for (it = _sockets.begin(); it != ite; it++){
 
-			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
-			for (it = _sockets.begin(); it != ite; it++){
-
-				FD_SET(_sockets[it->first].socket, &readfds);
-				FD_SET(_sockets[it->first].socket, &writefds);
-			}
-			ready = select(nfds, &readfds, &writefds, NULL, &timeout);
+			FD_SET(_sockets[it->first].socket, &readfds);
+			FD_SET(_sockets[it->first].socket, &writefds);
 		}
+		ready = select(nfds, &readfds, &writefds, NULL, &timeout);
 
 		if (ready > 0) {	
 
@@ -235,4 +234,6 @@ Server::stop(void)
 		if (_sockets[it->first].socket != -1)
 			close(_sockets[it->first].socket);
 	}
+
+	delete _config;
 }
