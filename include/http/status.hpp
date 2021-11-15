@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace HTTP {
     enum StatusCode {
@@ -6,7 +7,6 @@ namespace HTTP {
         /* 100 - INFO */
         CONTINUE = 100,
         SWITCHING_PROTOCOLS = 101,
-        PROCESSING = 102,
         EARLY_HINTS = 103,
 
         /* 200 - SUCCESS */
@@ -17,10 +17,6 @@ namespace HTTP {
         NO_CONTENT = 204,
         RESET_CONTENT = 205,
         PARTIAL_CONTENT = 206,
-        MULTI_STATUS = 207,
-        ALREADY_REPORTED = 208,
-        CONTENT_DIFFERENT = 210,
-        IM_USED = 226,
 
         /* 300 - REDIRECTION */
         MULTIPLE_CHOICES = 300,
@@ -48,15 +44,13 @@ namespace HTTP {
         GONE = 410,
         LENGTH_REQUIRED = 411,
         PRECONDITION_FAILED = 412,
-        REQUEST_ENTITY_TOO_LARGE = 413,
+        REQUEST_PAYLOAD_TOO_LARGE = 413,
         REQUEST_URI_TOO_LONG = 414,
         UNSUPPORTED_MEDIA_TYPE = 415,
         REQUESTED_RANGE_UNSATISFIABLE = 416,
         EXPECTATION_FAILED = 417,
-        BAD_MAPPING = 421,
+        MISDIRECTED_REQUEST = 421,
         UNPROCESSABLE_ENTITY = 422,
-        LOCKED = 423,
-        METHOD_FAILURE = 424,
         TOO_EARLY = 425,
         UPGRADE_REQUIRED = 426,
         PRECONDITON_REQUIRED = 428,
@@ -74,12 +68,12 @@ namespace HTTP {
         GATEWAY_TIMEOUT = 504,
         HTTP_VERSION_NOT_SUPPORTED = 505,
         VARIANT_ALSO_NEGOTIATES = 506,
-        INSUFFICIENT_STORAGE = 507,
-        LOOP_DETECTED = 508,
         BANDWIDTH_LIMIT_EXCEEDED = 509,
         NOT_EXTENDED = 510,
         NET_AUTH_REQUIRED = 511,
     };
-    
-    StatusCode toStatusCode(unsigned int intStatusCode);
+
+    StatusCode toStatusCode(unsigned intStatusCode);
+    std::string toStatusCodeString(StatusCode statusCode);
+    std::string toStatusCodeString(unsigned intStatusCode);
 }
