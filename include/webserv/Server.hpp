@@ -35,6 +35,7 @@ class Server
 		int				addrlen;
 		std::string		root;
 		std::string		autoindex;
+		std::vector<std::string>		indexes;
 		//std::vector<ConfigItem*>	items;
 	};
 

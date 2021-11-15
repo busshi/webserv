@@ -1,4 +1,5 @@
 #include "Header.hpp"
+#include "logger/Logger.hpp"
 #include "Constants.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
@@ -175,52 +176,60 @@ void		Header::_genErrorPage( std::string file, std::string code, std::string msg
 	ofs.close();
 }
 
-void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf ) {
+void	Header::_noAutoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex ) {
 
 	std::ifstream		ifs;
 
   	ifs.open(path.c_str());
 
- 	if (ifs)
-		_headerParam["Status-Code"] = "200 OK";
+	if (_headerParam["Path"] == "/" && autoindex == "off") {
 
-	else {
-	
-		if (_headerParam["Root"] == "none") {
-		
-			_headerParam["Status-Code"] = "500 Internal Server Error";
-			_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
-			path = "asset/error_page.html";
-
-		}
-		else {
-
-			_headerParam["Status-Code"] = "404 Not Found";
-			_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
-			path = "asset/error_page.html";
-		}
-		
+		_headerParam["Status-Code"] = "403 Forbidden";
+		_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
 		path = "asset/error_page.html";
 		ifs.open(path.c_str());
 		_headerParam["Content-Type"] = "text/html";
+	}
+ 	else {
+
+		if (ifs)
+			_headerParam["Status-Code"] = "200 OK";
+
+		else {
+	
+			if (_headerParam["Root"] == "none") {
+		
+				_headerParam["Status-Code"] = "500 Internal Server Error";
+				_genErrorPage("asset/sample_error.html", "500", "Internal Server Error", "the server encountered an internal error");
+
+			}
+			else {
+
+				_headerParam["Status-Code"] = "404 Not Found";
+				_genErrorPage("asset/sample_error.html", "404", "Not Found", "the page you are looking for doesn't exist");
+			}
+		
+			path = "asset/error_page.html";
+			ifs.open(path.c_str());
+			_headerParam["Content-Type"] = "text/html";
+		}
 	}
 	
     buf << ifs.rdbuf();
     ifs.close();
 }
 
-void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
+void	Header::_autoIndexResponse( std::string path, std::stringstream & buf, std::string autoindex ) {
 
 	struct stat	s;
 
-	std::cout << "PAAAAAAAAAAAAATH=>" << path << std::endl;
 	if (stat(path.c_str(), &s) == 0) {
 
 		if (s.st_mode & S_IFDIR) {
 
 	//		path = path.substr(0, path.find_last_of('/'));
 
-			std::cout << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << std::endl;
+			glogger << Logger::DEBUG << ORANGE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
 
 			DIR *				folder = opendir(path.c_str());
 		
@@ -231,32 +240,54 @@ void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
 				while ((dir = readdir(folder)) != NULL) {
 				
 					buf << "<a href=\"http://" << _headerParam["Host"] << "/" << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
-					std::cout << dir->d_name << std::endl;
+					glogger << Logger::DEBUG << dir->d_name << "\n";
 				}
 
-				std::cout << std::endl;
+				glogger << Logger::DEBUG << "\n";
 				closedir(folder);
 			}
 		}
 		else
-			_noAutoIndexResponse(path, buf);
+			_noAutoIndexResponse(path, buf, autoindex);
 	}
+	else
+		_noAutoIndexResponse(path, buf, autoindex);
 }
 
-void    	Header::createResponse( std::string autoindex ) {
+std::string	Header::_getIndex( std::string path, std::vector<std::string> indexes ) {
+
+	std::string	index = "";
+	std::string	file = "";
+	struct stat	s;
+
+	std::vector<std::string>::iterator	it, ite = indexes.end();
+	
+	for (it = indexes.begin(); it != ite; it++) {
+
+		file = path + *it;
+
+		if (stat(file.c_str(), &s) == 0)
+			return *it;
+	}
+
+	return index;
+}
+
+void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes ) {
 
 	std::stringstream	buf;
     std::string 		path = _headerParam["Root"];
 
-	if (_headerParam["Path"] == "/")
-		path += "index.html";
-    else
+	if (_headerParam["Path"] == "/" && autoindex == "off") {
+		path += _getIndex(path, indexes);
+	}
+ 	else
 		path += _headerParam["Path"].substr(1);
 
 	if (autoindex == "off")
-		_noAutoIndexResponse(path, buf);
+		_noAutoIndexResponse(path, buf, autoindex);
 	else
-		_autoIndexResponse(path, buf);
+		_autoIndexResponse(path, buf, autoindex);
 
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
@@ -264,12 +295,12 @@ void    	Header::createResponse( std::string autoindex ) {
 	_headerParam["Content-Length"] = tmp.str();
     
 	_response =
-          _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\n" + 
-		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\n" + 
-		  "Content-Length: " + _headerParam["Content-Length"] + "\n" +
-			"Date: " + _getDate(time(0)) + "\n" +
-			"Last-Modified: " + _getLastModified(path) + "\n" +
-			"Location: " + _headerParam["Referer"] + "\n" +
-			"Server: webserv©" + "\n\n" + 
+          _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\r\n" + 
+		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\r\n" + 
+		  "Content-Length: " + _headerParam["Content-Length"] + "\r\n" +
+			"Date: " + _getDate(time(0)) + "\r\n" +
+			"Last-Modified: " + _getLastModified(path) + "\r\n" +
+			"Location: " + _headerParam["Referer"] + "\r\n" +
+			"Server: webserv©" + "\r\n\r\n" + 
 		  buf.str();
 }
