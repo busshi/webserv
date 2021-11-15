@@ -1,10 +1,5 @@
 #include "http/status.hpp"
 
-HTTP::StatusCode HTTP::toStatusCode(unsigned intStatusCode)
-{
-    return static_cast<HTTP::StatusCode>(intStatusCode);
-}
-
 static std::string codeStrings[][100] = {
     /* 1xx */
     {
@@ -114,8 +109,13 @@ static std::string codeStrings[][100] = {
     }
 };
 
-std::string HTTP::toStatusCodeString(HTTP::StatusCode statusCode)
+HTTP::StatusCode HTTP::toStatusCode(unsigned intStatusCode)
 {
+    return static_cast<HTTP::StatusCode>(intStatusCode);
+}
+
+std::string HTTP::toStatusCodeString(HTTP::StatusCode statusCode)
+{   
     size_t typeIndex = static_cast<int>(statusCode) / 100 - 1;
 
     return codeStrings[typeIndex][static_cast<int>(statusCode) - (typeIndex + 1) * 100];
