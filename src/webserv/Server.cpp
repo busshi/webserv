@@ -69,7 +69,7 @@ void Server::init( ConfigItem * global )
 			ConfigItem *	index = (*it)->findNearest("index");
 
 			if (index)	
-				_sockets[port].indexes = split(index->getValue(), ' ');
+				_sockets[port].indexes = split(index->getValue());
 		}
 	}
 }
