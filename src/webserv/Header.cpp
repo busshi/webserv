@@ -47,13 +47,10 @@ std::string	Header::_setParam( std::string s ) {
 }
 
 void		Header::_parseFirstLine( std::string s ) {
-//void		Header::_parseFirstLine( std::string s, std::string root ) {
 
 	unsigned pos = s.find(' ');
 	_headerParam["Method"] = s.substr(0, pos);
 
-//	_headerParam["Root"] = root;
-			
 	unsigned pos2 = s.find(' ', pos + 1);
 	_headerParam["Path"] = s.substr(pos + 1, pos2 - pos - 1);
 
@@ -64,7 +61,6 @@ void		Header::_parseFirstLine( std::string s ) {
 	_headerParam["HTTP"] = s.substr(pos2 + 1, s.length() - pos2 - 2);
 }
 
-//void		Header::parseHeader(char buffer[], std::string rootPath) {
 void		Header::parseHeader(char buffer[]) {
 
     std::vector<std::string> lines;
@@ -80,7 +76,6 @@ void		Header::parseHeader(char buffer[]) {
         unsigned line = it - lines.begin();
 
         if (line == 0)
-			//_parseFirstLine(*it, rootPath);
 			_parseFirstLine(*it);
 		else if (line == 1)
 			_headerParam["Host"] = _setParam(*it);
@@ -282,85 +277,75 @@ bool		Header::_haveLocation( std::string requestPath, std::string location ) {
 	}
 }
 
-//void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes, std::string location ) {
+Header::Direc	Header::_getDirectives(ConfigItem * item, std::string suffix ) {
+
+	Direc	directives;
+
+	ConfigItem* rootItem = item->findNearest("root");
+	if (rootItem) {
+
+	directives.root = rootItem->getValue();
+	directives.path = directives.root.substr(0, directives.root.length() - 1) + suffix;
+	}
+	else {			
+		directives.root = "none";
+		glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+	}
+
+	ConfigItem* autoindexItem = item->findNearest("autoindex");
+	if (autoindexItem)
+		directives.autoindex = autoindexItem->getValue();
+	else
+		directives.autoindex = "off";
+
+	ConfigItem *    index = item->findNearest("index");
+   	if (index)  
+         		directives.indexes = split(index->getValue());
+
+	return directives;
+}
+
 void    	Header::createResponse( ConfigItem * item ) {
 
+	Direc			directives;
 	std::stringstream	buf;
 	std::string			location;
-	std::string			root;
-	std::string			path;
-	std::string			autoindex;
-	std::vector<std::string>	indexes;
 	bool		haveLoc = false;
 
 	std::vector<ConfigItem *>	locations = item->findBlocks("location");
 
 	for (std::vector<ConfigItem*>::iterator it = locations.begin(); it != locations.end(); it++) {
 
-		std::string tmp = (*it)->getValue();
-		location = tmp.substr(0, tmp.length() - 1);
+		location = (*it)->getValue();
 
 		if ((haveLoc = _haveLocation(_headerParam["Path"] + "/", location)) == true) {
 			glogger << Logger::DEBUG << "haveLoc is true\n";
+			directives = _getDirectives(*it, location);
 
-			ConfigItem*	rootItem = (*it)->findNearest("root");
-			root = rootItem->getValue();
-			path = root.substr(0, root.length() - 1) + location;
-			
-			ConfigItem* autoindexItem = (*it)->findNearest("autoindex");
-			if (autoindexItem)
-				autoindex = autoindexItem->getValue();
-			else
-				autoindex = "off";
-
-			ConfigItem *    index = (*it)->findNearest("index");
-   			if (index)  
-        	   		indexes = split(index->getValue());
 		}
 	}
 
 	if (haveLoc == false) {
 
 		glogger << Logger::DEBUG << "haveLoc is false\n";
-
-		ConfigItem* rootItem = item->findNearest("root");
-		if (rootItem) {
-
-			root = rootItem->getValue();
-	//		path = root;
-			path = root.substr(0, root.length() - 1) + _headerParam["Path"];
-		}
-		else {			
-			root = "none";
-			glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
-		}
-
-		ConfigItem* autoindexItem = item->findNearest("autoindex");
-		if (autoindexItem)
-			autoindex = autoindexItem->getValue();
-		else
-			autoindex = "off";
-
-		ConfigItem *    index = item->findNearest("index");
-   		if (index)  
-           		indexes = split(index->getValue());
+		directives = _getDirectives(item, _headerParam["Path"]);
 	}
 
 	glogger << Logger::DEBUG << "_headerParam[\"Path\"] [" << _headerParam["Path"] << "]\n";
-	glogger << Logger::DEBUG << "Root [" << root << "]\n";
-	glogger << Logger::DEBUG << "Path [" << path << "]\n";
+	glogger << Logger::DEBUG << "Root [" << directives.root << "]\n";
+	glogger << Logger::DEBUG << "Path [" << directives.path << "]\n";
 	glogger << Logger::DEBUG << "Location [" << location << "]\n";
-	glogger << Logger::DEBUG << "Autoindex [" << autoindex << "]\n";
+	glogger << Logger::DEBUG << "Autoindex [" << directives.autoindex << "]\n";
 
-	if (_isFolder(path) == true) {
+	if (_isFolder(directives.path) == true) {
 		glogger << Logger::DEBUG << "IS FOLDER\n";
-		path += _getIndex(path, indexes);
+		directives.path += _getIndex(directives.path, directives.indexes);
 
-		glogger << Logger :: DEBUG << "Path+index [" << path << "]\n";
-		if (_isFolder(path) == true) {
+		glogger << Logger :: DEBUG << "Path+index [" << directives.path << "]\n";
+		if (_isFolder(directives.path) == true) {
 
-			if (autoindex == "on")
-				_autoIndexResponse(path, buf);
+			if (directives.autoindex == "on")
+				_autoIndexResponse(directives.path, buf);
 			else {
 
 				_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
@@ -374,15 +359,11 @@ void    	Header::createResponse( ConfigItem * item ) {
 				_headerParam["Content-Type"] = "text/html";
 			}
 		}
-		else {
-
-	//		path += _headerParam["Path"];
-			_noAutoIndexResponse(path, buf);
-		}	
+		else
+			_noAutoIndexResponse(directives.path, buf);
 	}
 	else {
-	//	path += _headerParam["Path"];
-		_noAutoIndexResponse(path, buf);
+		_noAutoIndexResponse(directives.path, buf);
 	}
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
@@ -394,7 +375,7 @@ void    	Header::createResponse( ConfigItem * item ) {
 		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\r\n" + 
 		  "Content-Length: " + _headerParam["Content-Length"] + "\r\n" +
 			"Date: " + _getDate(time(0)) + "\r\n" +
-			"Last-Modified: " + _getLastModified(path) + "\r\n" +
+			"Last-Modified: " + _getLastModified(directives.path) + "\r\n" +
 			"Location: " + _headerParam["Referer"] + "\r\n" +
 			"Server: webserv©" + "\r\n\r\n" + 
 		  buf.str();

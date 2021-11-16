@@ -17,12 +17,17 @@ class	Header {
 
 		std::string	getResponse( void ) ;
 
-		//void		parseHeader( char buffer[], std::string );
-	//	void		createResponse( std::string autoindex, std::vector<std::string> indexes, std::string location );
 		void		parseHeader( char buffer[] );
 		void		createResponse( ConfigItem * item );
 
-	private:
+		struct Direc {
+			std::string	root;
+			std::string 	path;
+			std::string	autoindex;
+			std::vector<std::string>	indexes;
+		};
+
+private:
 		void				_parseFirstLine( std::string, std::string );
 		void				_parseFirstLine( std::string );
 		std::string			_setParam( std::string ) ;
@@ -36,6 +41,7 @@ class	Header {
 		void				_autoIndexResponse( std::string path, std::stringstream & buf );
 		bool        		_isFolder( std::string path );
 		bool        		_haveLocation( std::string requestPath, std::string location);
+		Header::Direc	_getDirectives(ConfigItem * item, std::string suffix);
 
 		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;
