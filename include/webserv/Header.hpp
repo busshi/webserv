@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "config-parser/ConfigItem.hpp"
 
 class	Header {
 
@@ -16,11 +17,14 @@ class	Header {
 
 		std::string	getResponse( void ) ;
 
-		void		parseHeader( char buffer[], std::string );
-		void		createResponse( std::string autoindex, std::vector<std::string> indexes );
+		//void		parseHeader( char buffer[], std::string );
+	//	void		createResponse( std::string autoindex, std::vector<std::string> indexes, std::string location );
+		void		parseHeader( char buffer[] );
+		void		createResponse( ConfigItem * item );
 
 	private:
 		void				_parseFirstLine( std::string, std::string );
+		void				_parseFirstLine( std::string );
 		std::string			_setParam( std::string ) ;
 		std::string			_setContentType( std::string );
 		std::string			_getDate( time_t timestamp );
@@ -30,7 +34,7 @@ class	Header {
 		void        		_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
 		void			   	_noAutoIndexResponse( std::string path, std::stringstream & buf );
 		void				_autoIndexResponse( std::string path, std::stringstream & buf );
-		bool        		_checkFolder( std::string path);
+		bool        		_isFolder( std::string path);
 
 		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;

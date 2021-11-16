@@ -9,29 +9,10 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 
-Server::Server(void) {}
+Server::Server( ConfigItem * global ) {
 
-Server::Server(Server const& src)
-{
-    *this = src;
-}
-
-Server::~Server(void) {}
-
-Server&
-Server::operator=(Server const& rhs)
-{
-    if (this != &rhs) {
-		this->_sockets = rhs._sockets;
-        this->_connexion = rhs._connexion;
-    }
-
-    return *this;
-}
-
-void Server::init( ConfigItem * global )
-{
 	std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
 	_config = global;
@@ -49,31 +30,61 @@ void Server::init( ConfigItem * global )
 			_sockets[port].socket = -1;
 			_sockets[port].ipv4 = data.v4;
 			_sockets[port].maxConnexion = 10;
+			_sockets[port].item = *it;
 
-			ConfigItem *	autoindex = (*it)->findNearest("autoindex");
-			if (autoindex)
-				_sockets[port].autoindex = autoindex->getValue();
-			else
-				_sockets[port].autoindex = "off";
+//			ConfigItem *	autoindex = (*it)->findNearest("autoindex");
+//			if (autoindex)
+//				_sockets[port].autoindex = autoindex->getValue();
+//			else
+//				_sockets[port].autoindex = "off";
 	
+//			ConfigItem *	path = (*it)->findNearest("root");
+//			if (path)
+//				_sockets[port].root = path->getValue();
+//			else {			
+//				_sockets[port].root = "none";
+//				glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+//			}
 
-			ConfigItem *	path = (*it)->findNearest("root");
+//			ConfigItem *	index = (*it)->findNearest("index");
+//			if (index)	
+//				_sockets[port].indexes = split(index->getValue());
 
-			if (path)
-				_sockets[port].root = path->getValue();
-			
-			else {
-				
-				_sockets[port].root = "none";
-				glogger << Logger::WARNING << RED << "Error: No default path provided!\n" << CLR;
-			}
-
-			ConfigItem *	index = (*it)->findNearest("index");
-
-			if (index)	
-				_sockets[port].indexes = split(index->getValue());
+//			ConfigItem *	location = (*it)->findNearest("location");
+//			if (location) {	
+//				_sockets[port].location = location->getValue();
+//			}
 		}
 	}
+}
+
+Server::Server(Server const& src)
+{
+    *this = src;
+}
+
+Server::~Server(void) {
+
+	std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+
+	for (it = _sockets.begin(); it != ite; it++) {
+    	
+		if (_sockets[it->first].socket != -1)
+			close(_sockets[it->first].socket);
+	}
+
+	delete _config;
+}
+
+Server&
+Server::operator=(Server const& rhs)
+{
+    if (this != &rhs) {
+		this->_sockets = rhs._sockets;
+        this->_connexion = rhs._connexion;
+    }
+
+    return *this;
 }
 
 int		Server::_createSocket( void ) {
@@ -83,7 +94,7 @@ int		Server::_createSocket( void ) {
     if (socketFd == -1) {
         glogger << Logger::ERROR << RED << "Failed to create socket. errno: " << errno << " "
                   << strerror(errno) << CLR << "\n";
-        exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("Error creating socket"));
     }
 	fcntl(socketFd, F_SETFL, O_NONBLOCK);
 
@@ -101,7 +112,7 @@ sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 
     if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
         glogger << Logger::ERROR << RED << "Failed to bind to port " << port << ": [" << errno << "] "
                   << strerror(errno) << CLR << "\n";
-        exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("Error binding port"));
     }
 	else
 		glogger << Logger::INFO << GREEN << "webserv listening on port " << BOLD << port << CLR << "\n";
@@ -114,7 +125,7 @@ void		Server::_listenSocket( int socketFd, int maxConnexion ) {
     if (listen(socketFd, maxConnexion) < 0) {
         glogger << Logger::ERROR << RED << "Failed to listen on socket. errno: [" << errno << "] "
                   << strerror(errno) << CLR << "\n";
-        exit(EXIT_FAILURE);
+		throw std::runtime_error(std::string("Error listening on socket"));
 	}
 }
 
@@ -126,11 +137,43 @@ int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
         if (connexion < 0) {
             glogger << Logger::ERROR << RED << "Failed to grab connection. errno: [" << errno << "] "
                       << strerror(errno) << CLR << "\n";
-            exit(EXIT_FAILURE);
+			throw std::runtime_error(std::string("Error grabing connection"));
         }
 		
 		return connexion;
 }
+/*
+std::vector<Config>	Server::getConfig( ConfigItem * _config ) {
+
+	for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it) {
+
+		Config	tmp;
+
+		ConfigItem *	autoindex = (*it)->findNearest("autoindex");
+		if (autoindex)
+			tmp.autoindex = autoindex->getValue();
+		else
+			tmp.autoindex = "off";
+	
+		ConfigItem *	path = (*it)->findNearest("root");
+		if (path)
+			_tmp.root = path->getValue();
+		else {			
+			tmp.root = "none";
+			glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+		}
+
+		ConfigItem *	index = (*it)->findNearest("index");
+		if (index)	
+			tmp.indexes = split(index->getValue());
+
+		_parsed.push_back(tmp);
+	}
+
+//	ConfigItem *	location = (*it)->findNearest("location");
+//	if (location)
+//		tmp.location = location->getValue();
+}*/
 
 void
 Server::start(void)
@@ -145,7 +188,7 @@ Server::start(void)
 		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
 	}
 
-	std::cout << "webserv is running\nHit Ctrl-C or Ctrl-D to exit." << std::endl;
+	std::cout << "webserv is running\nHit Ctrl-C to exit." << std::endl;
 
     while (isWebservAlive) {
 
@@ -196,8 +239,11 @@ Server::start(void)
 					
 						Header	header;
 
-	        			header.parseHeader(buffer, _sockets[it->first].root);
-	        			header.createResponse(_sockets[it->first].autoindex, _sockets[it->first].indexes);
+	        			//header.parseHeader(buffer, _sockets[it->first].root);
+	        			header.parseHeader(buffer);
+						
+						header.createResponse(_sockets[it->first].item);
+	        			//header.createResponse(_sockets[it->first].autoindex, _sockets[it->first].indexes, _sockets[it->first].location);
 	        			sendResponse(header);
 	        		//	close(_connexion);
 					}
@@ -222,18 +268,4 @@ Server::sendResponse( Header header )
 
     //write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
-}
-
-void
-Server::stop(void)
-{
-	std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
-
-	for (it = _sockets.begin(); it != ite; it++) {
-    	
-		if (_sockets[it->first].socket != -1)
-			close(_sockets[it->first].socket);
-	}
-
-	delete _config;
 }
