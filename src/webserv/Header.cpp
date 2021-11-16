@@ -243,7 +243,7 @@ std::string	Header::_getIndex( std::string path, std::vector<std::string> indexe
 	for (it = indexes.begin(); it != ite; it++) {
 
 		file = path + *it;
-		glogger << Logger::DEBUG << "file + index" << file << "\n";
+		glogger << Logger::DEBUG << "checking file + index => " << file << "\n";
 
 		if (stat(file.c_str(), &s) == 0)
 			return *it;
@@ -266,7 +266,7 @@ bool		Header::_isFolder( std::string path) {
 
 bool		Header::_haveLocation( std::string requestPath, std::string location ) {
 
-	glogger << Logger::DEBUG << "[" << requestPath << "] [" << location << "]\n";
+	glogger << Logger::DEBUG << "requestPath [" << requestPath << "] [" << location << "] Location to search\n";
 
 	size_t found = requestPath.find(location);
 	glogger << Logger::DEBUG << "Found [" << found << "]\n";
@@ -293,21 +293,19 @@ void    	Header::createResponse( ConfigItem * item ) {
 	std::vector<std::string>	indexes;
 	bool		haveLoc = false;
 
-	std::cout << *item << "\n";
-
 	std::vector<ConfigItem *>	locations = item->findBlocks("location");
 
 	for (std::vector<ConfigItem*>::iterator it = locations.begin(); it != locations.end(); it++) {
 
 		std::string tmp = (*it)->getValue();
-		location = tmp.substr(0, tmp.length() - 2);
+		location = tmp.substr(0, tmp.length() - 1);
 
-		if ((haveLoc = _haveLocation(_headerParam["Path"], location)) == true) {
+		if ((haveLoc = _haveLocation(_headerParam["Path"] + "/", location)) == true) {
 			glogger << Logger::DEBUG << "haveLoc is true\n";
 
 			ConfigItem*	rootItem = (*it)->findNearest("root");
 			root = rootItem->getValue();
-			path = root.substr(0, root.length() - 1) + location + "/";
+			path = root.substr(0, root.length() - 1) + location;
 			
 			ConfigItem* autoindexItem = (*it)->findNearest("autoindex");
 			if (autoindexItem)
@@ -325,10 +323,17 @@ void    	Header::createResponse( ConfigItem * item ) {
 
 		glogger << Logger::DEBUG << "haveLoc is false\n";
 
-	std::cout << *item << "\n";
 		ConfigItem* rootItem = item->findNearest("root");
-		root = rootItem->getValue();
-		path = root.substr(0, root.length() - 1) + _headerParam["Path"];
+		if (rootItem) {
+
+			root = rootItem->getValue();
+	//		path = root;
+			path = root.substr(0, root.length() - 1) + _headerParam["Path"];
+		}
+		else {			
+			root = "none";
+			glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+		}
 
 		ConfigItem* autoindexItem = item->findNearest("autoindex");
 		if (autoindexItem)
@@ -356,7 +361,6 @@ void    	Header::createResponse( ConfigItem * item ) {
 
 			if (autoindex == "on")
 				_autoIndexResponse(path, buf);
-
 			else {
 
 				_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
@@ -370,12 +374,16 @@ void    	Header::createResponse( ConfigItem * item ) {
 				_headerParam["Content-Type"] = "text/html";
 			}
 		}
-		else 
-			_noAutoIndexResponse(path, buf);
-	}
-	else
-		_noAutoIndexResponse(path, buf);
+		else {
 
+	//		path += _headerParam["Path"];
+			_noAutoIndexResponse(path, buf);
+		}	
+	}
+	else {
+	//	path += _headerParam["Path"];
+		_noAutoIndexResponse(path, buf);
+	}
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
