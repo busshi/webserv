@@ -1,4 +1,7 @@
 #include "http/message.hpp"
+#include "utils/string.hpp"
+
+/* HTTP::Message */
 
 std::string HTTP::Message::getHeaderField(const std::string& name) const
 {
@@ -10,6 +13,14 @@ std::string HTTP::Message::getHeaderField(const std::string& name) const
 void HTTP::Message::setHeaderField(const std::string& name, const std::string& value)
 {
     _headers[name] = value;
+}
+
+HTTP::Message::Message(void)
+{
+}
+
+HTTP::Message::~Message(void)
+{
 }
 
 HTTP::Message::Message(const Message& other)
@@ -24,4 +35,52 @@ HTTP::Message& HTTP::Message::operator=(const Message& rhs)
     }
 
     return *this; 
+}
+
+/* HTTP::Request */
+
+HTTP::Request::Request(std::string rawData)
+{
+    std::string::size_type pos = rawData.find(HTTP::CRLF);
+
+    std::vector<std::string> ss = split(rawData.substr(0, pos));
+
+    _method = ss[0];
+    _URI = ss[1];
+    _protocol = ss[2];
+
+    std::string::size_type bodyPos = rawData.find(HTTP::CRLF + HTTP::CRLF);
+
+    std::vector<std::string> fields = split(rawData.substr(pos, bodyPos - pos), HTTP::CRLF);
+
+    for (std::vector<std::string>::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
+        std::vector<std::string> ss = split(*cit, " ");
+        setHeaderField(ss[0], ss[1]);
+    }
+
+    _body = rawData.substr(bodyPos + 4, rawData.size() - bodyPos - 4);
+}
+
+HTTP::Request::~Request(void)
+{
+}
+
+HTTP::Request::Request(const HTTP::Request& other)
+{
+    *this = other;
+}
+
+HTTP::Request& HTTP::Request::operator=(const HTTP::Request& rhs)
+{
+    Message::operator=(rhs);
+    return *this;
+}
+
+std::ostream& HTTP::Request::printHeaders(std::ostream& os)
+{
+    for (std::map<std::string, std::string>::const_iterator cit = _headers.begin(); cit != _headers.end(); ++cit) {
+        os << cit->first << " " << cit->second << "\n";
+    }
+
+    return os;
 }
