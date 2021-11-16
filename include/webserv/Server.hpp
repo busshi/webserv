@@ -13,16 +13,14 @@
 class Server
 {
   public:
-    Server(void);
+    Server(ConfigItem * global);
     Server(Server const& src);
     ~Server(void);
 
     Server& operator=(Server const& rhs);
 
-  	void init( ConfigItem * global );
   	void start(void);
     void sendResponse( Header header );
-    void stop(void);
 
   private:
 	struct Socket {
@@ -33,12 +31,8 @@ class Server
 		int				connexion;
 		sockaddr_in		sockaddr;
 		int				addrlen;
-		std::string		root;
-		std::string		autoindex;
-		std::vector<std::string>		indexes;
-		//std::vector<ConfigItem*>	items;
+		ConfigItem*		item;
 	};
-
 
 	std::map<unsigned short, Socket>	_sockets;
 

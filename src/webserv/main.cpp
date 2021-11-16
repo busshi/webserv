@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Constants.hpp"
 #include <iostream>
 #include <signal.h>
 #include <cstdlib>
@@ -10,7 +11,7 @@ bool isWebservAlive = true;
 
 static void handleSIGINT(int)
 {
-    std::cout << "Bye bye!\n";
+    std::cout << " Bye bye!\n";
     isWebservAlive = false;
 }
 
@@ -34,17 +35,15 @@ main(int ac, char** av)
             glogger.setWebservLogLevel(Logger::parseLogLevel(log_level->getValue()));
         }
 
-        Server server;
+        Server server(config);
 
-        server.init(config);
         server.start();
-        server.stop();
     } catch (Lexer::LexerException& e) {
         e.printFormatted(std::cerr) << "\n";
     } catch (ConfigParser::ParserException& e) {
         e.printFormatted(std::cerr) << "\n";
     } catch (std::exception& e) {
-        std::cout << e.what() << std::endl;
+        std::cout << RED << e.what() << CLR << std::endl;
     }
 
     return 0;

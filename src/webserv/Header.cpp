@@ -1,6 +1,7 @@
 #include "Header.hpp"
-#include "logger/Logger.hpp"
 #include "Constants.hpp"
+#include "logger/Logger.hpp"
+#include "utils/string.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
 #include <vector>
@@ -45,12 +46,13 @@ std::string	Header::_setParam( std::string s ) {
 	return s.substr(start, found - start);
 }
 
-void		Header::_parseFirstLine( std::string s, std::string root ) {
+void		Header::_parseFirstLine( std::string s ) {
+//void		Header::_parseFirstLine( std::string s, std::string root ) {
 
 	unsigned pos = s.find(' ');
 	_headerParam["Method"] = s.substr(0, pos);
 
-	_headerParam["Root"] = root;
+//	_headerParam["Root"] = root;
 			
 	unsigned pos2 = s.find(' ', pos + 1);
 	_headerParam["Path"] = s.substr(pos + 1, pos2 - pos - 1);
@@ -62,7 +64,8 @@ void		Header::_parseFirstLine( std::string s, std::string root ) {
 	_headerParam["HTTP"] = s.substr(pos2 + 1, s.length() - pos2 - 2);
 }
 
-void		Header::parseHeader(char buffer[], std::string rootPath) {
+//void		Header::parseHeader(char buffer[], std::string rootPath) {
+void		Header::parseHeader(char buffer[]) {
 
     std::vector<std::string> lines;
     std::istringstream buf(buffer);
@@ -77,7 +80,8 @@ void		Header::parseHeader(char buffer[], std::string rootPath) {
         unsigned line = it - lines.begin();
 
         if (line == 0)
-			_parseFirstLine(*it, rootPath);
+			//_parseFirstLine(*it, rootPath);
+			_parseFirstLine(*it);
 		else if (line == 1)
 			_headerParam["Host"] = _setParam(*it);
 		else if (line == 2)
@@ -239,6 +243,7 @@ std::string	Header::_getIndex( std::string path, std::vector<std::string> indexe
 	for (it = indexes.begin(); it != ite; it++) {
 
 		file = path + *it;
+		glogger << Logger::DEBUG << "checking file + index => " << file << "\n";
 
 		if (stat(file.c_str(), &s) == 0)
 			return *it;
@@ -247,7 +252,7 @@ std::string	Header::_getIndex( std::string path, std::vector<std::string> indexe
 	return index;
 }
 
-bool		Header::_checkFolder( std::string path) {
+bool		Header::_isFolder( std::string path) {
 
 	struct stat	s;
 
@@ -259,22 +264,103 @@ bool		Header::_checkFolder( std::string path) {
 	return false;
 }
 
-void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes ) {
+bool		Header::_haveLocation( std::string requestPath, std::string location ) {
+
+	glogger << Logger::DEBUG << "requestPath [" << requestPath << "] [" << location << "] Location to search\n";
+
+	size_t found = requestPath.find(location);
+	glogger << Logger::DEBUG << "Found [" << found << "]\n";
+	glogger << Logger::DEBUG << "npos [" << std::string::npos << "]\n";
+
+	if (found == std::string::npos) {
+		glogger << Logger::DEBUG << "DO NOT HAVE LOCATION\n";
+		return false;
+	}
+	else {
+		glogger << Logger::DEBUG << "HAVE LOCATION\n";
+		return true;
+	}
+}
+
+//void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes, std::string location ) {
+void    	Header::createResponse( ConfigItem * item ) {
 
 	std::stringstream	buf;
-    std::string 		path = _headerParam["Root"];
+	std::string			location;
+	std::string			root;
+	std::string			path;
+	std::string			autoindex;
+	std::vector<std::string>	indexes;
+	bool		haveLoc = false;
 
-	path += _headerParam["Path"].substr(1);
+	std::vector<ConfigItem *>	locations = item->findBlocks("location");
 
-	if (_checkFolder(path) == true) {
+	for (std::vector<ConfigItem*>::iterator it = locations.begin(); it != locations.end(); it++) {
 
+		std::string tmp = (*it)->getValue();
+		location = tmp.substr(0, tmp.length() - 1);
+
+		if ((haveLoc = _haveLocation(_headerParam["Path"] + "/", location)) == true) {
+			glogger << Logger::DEBUG << "haveLoc is true\n";
+
+			ConfigItem*	rootItem = (*it)->findNearest("root");
+			root = rootItem->getValue();
+			path = root.substr(0, root.length() - 1) + location;
+			
+			ConfigItem* autoindexItem = (*it)->findNearest("autoindex");
+			if (autoindexItem)
+				autoindex = autoindexItem->getValue();
+			else
+				autoindex = "off";
+
+			ConfigItem *    index = (*it)->findNearest("index");
+   			if (index)  
+        	   		indexes = split(index->getValue());
+		}
+	}
+
+	if (haveLoc == false) {
+
+		glogger << Logger::DEBUG << "haveLoc is false\n";
+
+		ConfigItem* rootItem = item->findNearest("root");
+		if (rootItem) {
+
+			root = rootItem->getValue();
+	//		path = root;
+			path = root.substr(0, root.length() - 1) + _headerParam["Path"];
+		}
+		else {			
+			root = "none";
+			glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+		}
+
+		ConfigItem* autoindexItem = item->findNearest("autoindex");
+		if (autoindexItem)
+			autoindex = autoindexItem->getValue();
+		else
+			autoindex = "off";
+
+		ConfigItem *    index = item->findNearest("index");
+   		if (index)  
+           		indexes = split(index->getValue());
+	}
+
+	glogger << Logger::DEBUG << "_headerParam[\"Path\"] [" << _headerParam["Path"] << "]\n";
+	glogger << Logger::DEBUG << "Root [" << root << "]\n";
+	glogger << Logger::DEBUG << "Path [" << path << "]\n";
+	glogger << Logger::DEBUG << "Location [" << location << "]\n";
+	glogger << Logger::DEBUG << "Autoindex [" << autoindex << "]\n";
+
+	if (_isFolder(path) == true) {
+		glogger << Logger::DEBUG << "IS FOLDER\n";
 		path += _getIndex(path, indexes);
 
-		if (_checkFolder(path) == true) {
+		glogger << Logger :: DEBUG << "Path+index [" << path << "]\n";
+		if (_isFolder(path) == true) {
 
 			if (autoindex == "on")
 				_autoIndexResponse(path, buf);
-
 			else {
 
 				_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
@@ -288,12 +374,16 @@ void    	Header::createResponse( std::string autoindex, std::vector<std::string>
 				_headerParam["Content-Type"] = "text/html";
 			}
 		}
-		else
-			_noAutoIndexResponse(path, buf);
-	}
-	else
-		_noAutoIndexResponse(path, buf);
+		else {
 
+	//		path += _headerParam["Path"];
+			_noAutoIndexResponse(path, buf);
+		}	
+	}
+	else {
+	//	path += _headerParam["Path"];
+		_noAutoIndexResponse(path, buf);
+	}
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
