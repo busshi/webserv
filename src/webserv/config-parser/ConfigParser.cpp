@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 
 static const ConfigItemCaracteristics knownConfigItems[] = {
     /* BLOCKS */
@@ -42,6 +43,7 @@ ConfigParser::ConfigParser(void)
         std::pair<std::string, ConfigItemCaracteristics> p(
           knownConfigItems[i].name, knownConfigItems[i]);
         _knownConfigItems.insert(p);
+        //_knownConfigItems[knownConfigItems[i].name] = knownConfigItems[i];
     }
 }
 
@@ -78,7 +80,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                 break;
 
             case Lexer::VALUE:
-                keyval.second = expandVar(ite->getValue());
+                keyval.second = trim(expandVar(ite->getValue()));
                 break;
 
             case Lexer::SEMICOLON:
