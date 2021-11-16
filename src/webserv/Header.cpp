@@ -243,6 +243,7 @@ std::string	Header::_getIndex( std::string path, std::vector<std::string> indexe
 	for (it = indexes.begin(); it != ite; it++) {
 
 		file = path + *it;
+		glogger << Logger::DEBUG << "file + index" << file << "\n";
 
 		if (stat(file.c_str(), &s) == 0)
 			return *it;
@@ -263,6 +264,24 @@ bool		Header::_isFolder( std::string path) {
 	return false;
 }
 
+bool		Header::_haveLocation( std::string requestPath, std::string location ) {
+
+	glogger << Logger::DEBUG << "[" << requestPath << "] [" << location << "]\n";
+
+	size_t found = requestPath.find(location);
+	glogger << Logger::DEBUG << "Found [" << found << "]\n";
+	glogger << Logger::DEBUG << "npos [" << std::string::npos << "]\n";
+
+	if (found == std::string::npos) {
+		glogger << Logger::DEBUG << "DO NOT HAVE LOCATION\n";
+		return false;
+	}
+	else {
+		glogger << Logger::DEBUG << "HAVE LOCATION\n";
+		return true;
+	}
+}
+
 //void    	Header::createResponse( std::string autoindex, std::vector<std::string> indexes, std::string location ) {
 void    	Header::createResponse( ConfigItem * item ) {
 
@@ -272,46 +291,54 @@ void    	Header::createResponse( ConfigItem * item ) {
 	std::string			path;
 	std::string			autoindex;
 	std::vector<std::string>	indexes;
-	bool		found = false;
+	bool		haveLoc = false;
+
+	std::cout << *item << "\n";
 
 	std::vector<ConfigItem *>	locations = item->findBlocks("location");
 
 	for (std::vector<ConfigItem*>::iterator it = locations.begin(); it != locations.end(); it++) {
 
-		if (found == false) {
+		std::string tmp = (*it)->getValue();
+		location = tmp.substr(0, tmp.length() - 2);
 
-			std::string tmp = (*it)->getValue();
-			location = tmp.substr(0, tmp.length() - 2);
-		
+		if ((haveLoc = _haveLocation(_headerParam["Path"], location)) == true) {
+			glogger << Logger::DEBUG << "haveLoc is true\n";
+
 			ConfigItem*	rootItem = (*it)->findNearest("root");
 			root = rootItem->getValue();
-		}
-		if (location == _headerParam["Path"]) {
-
-			found = true;
-
-			path = root.substr(0, root.length() - 1) + location;
+			path = root.substr(0, root.length() - 1) + location + "/";
 			
 			ConfigItem* autoindexItem = (*it)->findNearest("autoindex");
-			autoindex = autoindexItem->getValue();
+			if (autoindexItem)
+				autoindex = autoindexItem->getValue();
+			else
+				autoindex = "off";
 
 			ConfigItem *    index = (*it)->findNearest("index");
    			if (index)  
-        	   	indexes = split(index->getValue());
+        	   		indexes = split(index->getValue());
 		}
 	}
-	if (found == false) {
 
+	if (haveLoc == false) {
+
+		glogger << Logger::DEBUG << "haveLoc is false\n";
+
+	std::cout << *item << "\n";
 		ConfigItem* rootItem = item->findNearest("root");
-		if (rootItem)
-			path = rootItem->getValue();
+		root = rootItem->getValue();
+		path = root.substr(0, root.length() - 1) + _headerParam["Path"];
 
 		ConfigItem* autoindexItem = item->findNearest("autoindex");
-		autoindex = autoindexItem->getValue();
+		if (autoindexItem)
+			autoindex = autoindexItem->getValue();
+		else
+			autoindex = "off";
 
 		ConfigItem *    index = item->findNearest("index");
    		if (index)  
-           	indexes = split(index->getValue());
+           		indexes = split(index->getValue());
 	}
 
 	glogger << Logger::DEBUG << "_headerParam[\"Path\"] [" << _headerParam["Path"] << "]\n";
@@ -321,7 +348,7 @@ void    	Header::createResponse( ConfigItem * item ) {
 	glogger << Logger::DEBUG << "Autoindex [" << autoindex << "]\n";
 
 	if (_isFolder(path) == true) {
-
+		glogger << Logger::DEBUG << "IS FOLDER\n";
 		path += _getIndex(path, indexes);
 
 		glogger << Logger :: DEBUG << "Path+index [" << path << "]\n";
@@ -343,7 +370,7 @@ void    	Header::createResponse( ConfigItem * item ) {
 				_headerParam["Content-Type"] = "text/html";
 			}
 		}
-		else
+		else 
 			_noAutoIndexResponse(path, buf);
 	}
 	else

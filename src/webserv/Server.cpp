@@ -241,8 +241,10 @@ Server::start(void)
 
 	        			//header.parseHeader(buffer, _sockets[it->first].root);
 	        			header.parseHeader(buffer);
-						
-						header.createResponse(_sockets[it->first].item);
+				
+//		std::string	autoindex = _sockets[it->first].item->findNearest("autoindex")->getValue();
+//		glogger << Logger::DEBUG << "AUTOindex [" << autoindex << "]\n";
+					header.createResponse(_sockets[it->first].item);
 	        			//header.createResponse(_sockets[it->first].autoindex, _sockets[it->first].indexes, _sockets[it->first].location);
 	        			sendResponse(header);
 	        		//	close(_connexion);

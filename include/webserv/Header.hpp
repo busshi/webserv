@@ -34,7 +34,8 @@ class	Header {
 		void        		_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
 		void			   	_noAutoIndexResponse( std::string path, std::stringstream & buf );
 		void				_autoIndexResponse( std::string path, std::stringstream & buf );
-		bool        		_isFolder( std::string path);
+		bool        		_isFolder( std::string path );
+		bool        		_haveLocation( std::string requestPath, std::string location);
 
 		std::map<std::string, std::string>	_headerParam;
 		std::string	_response;
