@@ -38,6 +38,13 @@ namespace HTTP {
             Request& operator=(const Request& rhs);
             ~Request(void);
 
+            /* No mutators are provided for these: it would make no sense to mutate them */
+
+            const std::string& getMethod(void) const;
+            const std::string& getURI(void) const;
+            const std::string& getProtocol(void) const;
+            const std::string& getBody(void) const;
+
             std::ostream& printHeaders(std::ostream& os);
     };
   

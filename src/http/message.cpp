@@ -55,7 +55,7 @@ HTTP::Request::Request(std::string rawData)
 
     for (std::vector<std::string>::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         std::vector<std::string> ss = split(*cit, " ");
-        setHeaderField(ss[0], ss[1]);
+        setHeaderField(ss[0].substr(0, ss[0].find(':')), ss[1]);
     }
 
     _body = rawData.substr(bodyPos + 4, rawData.size() - bodyPos - 4);
@@ -65,7 +65,7 @@ HTTP::Request::~Request(void)
 {
 }
 
-HTTP::Request::Request(const HTTP::Request& other)
+HTTP::Request::Request(const HTTP::Request& other): Message()
 {
     *this = other;
 }
@@ -74,6 +74,26 @@ HTTP::Request& HTTP::Request::operator=(const HTTP::Request& rhs)
 {
     Message::operator=(rhs);
     return *this;
+}
+
+const std::string& HTTP::Request::getMethod(void) const
+{
+    return _method;
+}
+
+const std::string& HTTP::Request::getURI(void) const
+{
+    return _URI;
+}
+
+const std::string& HTTP::Request::getProtocol(void) const
+{
+    return _protocol;
+}
+
+const std::string& HTTP::Request::getBody(void) const
+{
+    return _body;
 }
 
 std::ostream& HTTP::Request::printHeaders(std::ostream& os)
