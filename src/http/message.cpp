@@ -136,13 +136,13 @@ HTTP::Response& HTTP::Response::operator=(const HTTP::Response& rhs)
     return *this;
 }
 
-HTTP::Response::~Response(void)
+HTTP::Response::~Response(void) 
 {
 }
 
 std::string HTTP::Response::str(void) const
 {
-    return _sendHeaders() + _body;
+    return _sendHeader() + _body;
 }
 
 HTTP::Response& HTTP::Response::setStatus(StatusCode statusCode)
@@ -164,9 +164,11 @@ const HTTP::Request& HTTP::Response::getReq(void) const
     return _req;
 }
 
-std::string HTTP::Response::_sendHeaders(void) const
+std::string HTTP::Response::_sendHeader(void) const
 {
     std::ostringstream oss;
+
+    oss << _statusCode << " " << toStatusCodeString(_statusCode) << HTTP::CRLF;
 
     for (HTTP::Header::const_iterator cit = _header.begin(); cit != _header.end(); ++cit) {
         oss << cit->first << ": " << cit->second << HTTP::CRLF;

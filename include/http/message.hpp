@@ -57,7 +57,7 @@ namespace HTTP {
         Request _req;
         std::string _body;
 
-        std::string _sendHeaders(void) const;
+        std::string _sendHeader(void) const;
 
         public:
             Response(const Request& req);
