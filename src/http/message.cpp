@@ -46,7 +46,7 @@ HTTP::Request::Request(std::string rawData)
     std::vector<std::string> ss = split(rawData.substr(0, pos));
 
     _method = ss[0];
-    _URI = ss[1];
+    _resourceURI = ss[1];
     _protocol = ss[2];
 
     std::string::size_type bodyPos = rawData.find(HTTP::CRLF + HTTP::CRLF);
@@ -59,6 +59,7 @@ HTTP::Request::Request(std::string rawData)
     }
 
     _body = rawData.substr(bodyPos + 4, rawData.size() - bodyPos - 4);
+    _URI = "http://" + getHeaderField("Host") + _resourceURI;
 }
 
 HTTP::Request::~Request(void)
@@ -81,10 +82,16 @@ const std::string& HTTP::Request::getMethod(void) const
     return _method;
 }
 
+const std::string& HTTP::Request::getResourceURI(void) const
+{
+    return _resourceURI;
+}
+
 const std::string& HTTP::Request::getURI(void) const
 {
     return _URI;
 }
+
 
 const std::string& HTTP::Request::getProtocol(void) const
 {
