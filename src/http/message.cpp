@@ -190,6 +190,7 @@ HTTP::Response& HTTP::Response::sendFile(const std::string& filepath)
     }
 
     _body = fileContent;
+    setHeaderField("Content-Type", _detectMediaType(filepath));
 
     return *this;
 }
@@ -206,4 +207,29 @@ HTTP::Response& HTTP::Response::append(const std::string& s)
     _body += s;
     
     return *this;
+}
+
+std::string HTTP::Response::_detectMediaType(const std::string &resource) const
+{
+    static MediaTypeEntry entries[] = {
+        { "image/png", "png" },
+        { "image/jpeg", "jpg|jpeg" },
+        { "image/webp", "webp" },
+        { "image/gif", "gif" },
+        { "image/bmp", "bmp" },
+        { "text/css", "css" },
+        { "text/javascript", "js" },
+        { "text/html", "html|htm" },
+    };
+
+    const std::string::size_type index = resource.find_last_of('.');
+    const std::string ext = resource.substr(index + 1, resource.size() - index);
+
+    for (size_t i = 0; i != sizeof(entries) / sizeof(*entries); ++i) {
+        if (entries[i].extensions.find(ext) != std::string::npos) {
+            return entries[i].mediaType;
+        }
+    }
+
+    return "text/plain";
 }

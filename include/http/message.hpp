@@ -59,6 +59,13 @@ namespace HTTP {
 
         std::string _sendHeader(void) const;
 
+        struct MediaTypeEntry {
+            std::string mediaType;
+            std::string extensions;
+        };
+
+        std::string _detectMediaType(const std::string& resource) const;
+
         public:
             Response(const Request& req);
             Response(const Response& other);
