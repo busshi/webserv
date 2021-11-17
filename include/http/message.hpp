@@ -7,18 +7,20 @@
 
 namespace HTTP {
     static const std::string CRLF = "\r\n";
-    
+
+    struct compareIgnoreCase {
+        bool operator()(const std::string& s1, const std::string& s2) const {
+            const std::string s1Lower = toLowerCase(s1), s2Lower = toLowerCase(s2);
+
+            return std::lexicographical_compare(s1Lower.begin(), s1Lower.end(), s2Lower.begin(), s2Lower.end());
+        }
+    };
+
+    typedef std::map<std::string, std::string, compareIgnoreCase> Header;
+
     class Message {
-        struct compareIgnoreCase {
-            bool operator()(const std::string& s1, const std::string& s2) const {
-                const std::string s1Lower = toLowerCase(s1), s2Lower = toLowerCase(s2);
-
-                return std::lexicographical_compare(s1Lower.begin(), s1Lower.end(), s2Lower.begin(), s2Lower.end());
-            }
-        };
-
         protected:
-            std::map<std::string, std::string, compareIgnoreCase> _headers;
+            Header _header;
 
         public:
             std::string getHeaderField(const std::string& name) const;
@@ -28,10 +30,6 @@ namespace HTTP {
             Message(const Message& other);
             Message& operator=(const Message& rhs);
             ~Message(void);
-    
-    };
-
-    class Response: public Message {
     };
 
     class Request: public Message {
@@ -53,5 +51,31 @@ namespace HTTP {
 
             std::ostream& printHeaders(std::ostream& os);
     };
+
+    class Response: public Message {
+        StatusCode _statusCode;
+        Request _req;
+        std::string _body;
+
+        std::string _sendHeaders(void) const;
+
+        public:
+            Response(const Request& req);
+            Response(const Response& other);
+            ~Response(void);
+            Response& operator=(const Response& res);
+
+            Response& setStatus(StatusCode statusCode);
+            Response& setStatus(unsigned intStatusCode);
+
+            const Request& getReq(void) const;
+
+            Response& sendFile(const std::string& filepath);
+            Response& send(const std::string& s);
+            Response& append(const std::string& s);
+
+            std::string str(void) const;
+    };
+   
   
 }
