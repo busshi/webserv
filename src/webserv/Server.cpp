@@ -184,10 +184,11 @@ Server::start(void)
 
         	    		glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " Received Header:\n\n" << CLR << buffer << "\n";
 					
-						Header	header;
+//						Header	header;
 
-	        			header.parseHeader(buffer);
-					header.createResponse(_sockets[it->first].item);
+//	        			header.parseHeader(buffer);
+						Header	header(buffer);
+						header.createResponse(_sockets[it->first].item);
 	        			sendResponse(header);
 					}
 					FD_CLR(_sockets[it->first].socket, &readfds);
