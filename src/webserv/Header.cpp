@@ -389,6 +389,10 @@ void    	Header::createResponse( ConfigItem * item ) {
 	glogger << Logger::DEBUG << "Default Error File [" << directives.defaultErrorFile << "]\n";
 	glogger << Logger::DEBUG << "Upload Max Size [" << directives.uploadMaxSize << "]\n";
 	glogger << Logger::DEBUG << "Body Max Size [" << directives.bodyMaxSize << "]\n";
+	glogger << Logger::DEBUG << "Methods allowed [ ";
+	for (size_t i = 0; i < directives.methods.size(); i++)
+		glogger << Logger::DEBUG << directives.methods[i] << " ";
+	glogger << Logger::DEBUG << "]\n";
 
 	if (_isFolder(directives.path) == true) {
 		glogger << Logger::DEBUG << "IS FOLDER\n";
