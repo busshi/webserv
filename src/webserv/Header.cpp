@@ -281,20 +281,19 @@ Header::Direc	Header::_getDirectives(ConfigItem * item, std::string suffix ) {
 
 	Direc	directives;
 
-	ConfigItem* rootItem = item->findNearest("root");
-	if (rootItem) {
-
-	directives.root = rootItem->getValue();
-	directives.path = directives.root.substr(0, directives.root.length() - 1) + suffix;
+	ConfigItem* root = item->findNearest("root");
+	if (root) {
+		directives.root = root->getValue();
+		directives.path = directives.root.substr(0, directives.root.length() - 1) + suffix;
 	}
 	else {			
 		directives.root = "none";
-		glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << "Error: No default path provided!\n" << CLR;
 	}
 
-	ConfigItem* autoindexItem = item->findNearest("autoindex");
-	if (autoindexItem)
-		directives.autoindex = autoindexItem->getValue();
+	ConfigItem* autoindex = item->findNearest("autoindex");
+	if (autoindex)
+		directives.autoindex = autoindex->getValue();
 	else
 		directives.autoindex = "off";
 
@@ -302,15 +301,65 @@ Header::Direc	Header::_getDirectives(ConfigItem * item, std::string suffix ) {
    	if (index)  
          		directives.indexes = split(index->getValue());
 
+	ConfigItem *    methods = item->findNearest("method");
+   	if (methods)  
+         		directives.methods = split(methods->getValue());
+
+	ConfigItem *	uploadPath = item->findNearest("file_upload_dir");
+	if (uploadPath)
+		directives.uploadPath = uploadPath->getValue();
+	else {
+		directives.uploadPath = "tmp/";
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " No upload path provided! Using default path: " << directives.uploadPath << "\n" << CLR;
+	}
+
+	ConfigItem *	defaultErrorFile = item->findNearest("default_error_file");
+	if (defaultErrorFile)
+		directives.defaultErrorFile = defaultErrorFile->getValue();
+	else {
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " No error file path provided! Using webserv default error pages\n" << CLR;
+	}
+
+	ConfigItem *	uploadMaxSize = item->findNearest("upload_max_size");
+	if (uploadMaxSize)
+		directives.uploadMaxSize = uploadMaxSize->getValue();
+	else {
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " No upload_max_size directive found! Using webserv default upload_max_size\n" << CLR;
+	}
+
+	ConfigItem *	bodyMaxSize = item->findNearest("client_body_max_size");
+	if (bodyMaxSize)
+		directives.bodyMaxSize = bodyMaxSize->getValue();
+	else {
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " No body_max_size directive found! Using webserv default body_max_size\n" << CLR;
+	}
+
 	return directives;
+}
+
+std::string	Header::_checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence ) {
+
+	struct stat	s;
+
+	if (stat(defaultPage.c_str(), &s) == 0) {
+
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page exists. Using " << defaultPage << "\n";
+		return defaultPage;
+	}
+	else {
+		
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page does not exist. Using webserv default error page\n";
+		_genErrorPage("asset/sample_error.html", code, errorMsg, errorSentence);
+		return "asset/error_page.html";
+	}
 }
 
 void    	Header::createResponse( ConfigItem * item ) {
 
-	Direc			directives;
+	Direc				directives;
 	std::stringstream	buf;
 	std::string			location;
-	bool		haveLoc = false;
+	bool				haveLoc = false;
 
 	std::vector<ConfigItem *>	locations = item->findBlocks("location");
 
@@ -336,6 +385,14 @@ void    	Header::createResponse( ConfigItem * item ) {
 	glogger << Logger::DEBUG << "Path [" << directives.path << "]\n";
 	glogger << Logger::DEBUG << "Location [" << location << "]\n";
 	glogger << Logger::DEBUG << "Autoindex [" << directives.autoindex << "]\n";
+	glogger << Logger::DEBUG << "Upload Path [" << directives.uploadPath << "]\n";
+	glogger << Logger::DEBUG << "Default Error File [" << directives.defaultErrorFile << "]\n";
+	glogger << Logger::DEBUG << "Upload Max Size [" << directives.uploadMaxSize << "]\n";
+	glogger << Logger::DEBUG << "Body Max Size [" << directives.bodyMaxSize << "]\n";
+	glogger << Logger::DEBUG << "Methods allowed [ ";
+	for (size_t i = 0; i < directives.methods.size(); i++)
+		glogger << Logger::DEBUG << directives.methods[i] << " ";
+	glogger << Logger::DEBUG << "]\n";
 
 	if (_isFolder(directives.path) == true) {
 		glogger << Logger::DEBUG << "IS FOLDER\n";
@@ -347,11 +404,10 @@ void    	Header::createResponse( ConfigItem * item ) {
 			if (directives.autoindex == "on")
 				_autoIndexResponse(directives.path, buf);
 			else {
-
-				_genErrorPage("asset/sample_error.html", "403", "Forbidden", "the access is permanently forbidden");
+				std::string	errorPage = _checkErrorPage(directives.defaultErrorFile, "403", "Forbidden", "the access is permanently forbidden");
 
 				std::ifstream		ifs;
-				ifs.open("asset/error_page.html");
+				ifs.open(errorPage.c_str());
     			buf << ifs.rdbuf();
     			ifs.close();
 
@@ -362,9 +418,9 @@ void    	Header::createResponse( ConfigItem * item ) {
 		else
 			_noAutoIndexResponse(directives.path, buf);
 	}
-	else {
+	else
 		_noAutoIndexResponse(directives.path, buf);
-	}
+
 	unsigned len = buf.str().size();
 	std::stringstream	tmp;
 	tmp << len;
@@ -377,6 +433,6 @@ void    	Header::createResponse( ConfigItem * item ) {
 			"Date: " + _getDate(time(0)) + "\r\n" +
 			"Last-Modified: " + _getLastModified(directives.path) + "\r\n" +
 			"Location: " + _headerParam["Referer"] + "\r\n" +
-			"Server: webserv©" + "\r\n\r\n" + 
+			"Server: webserv" + "\r\n\r\n" + 
 		  buf.str();
 }

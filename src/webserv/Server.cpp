@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 
@@ -31,29 +32,6 @@ Server::Server( ConfigItem * global ) {
 			_sockets[port].ipv4 = data.v4;
 			_sockets[port].maxConnexion = 10;
 			_sockets[port].item = *it;
-
-//			ConfigItem *	autoindex = (*it)->findNearest("autoindex");
-//			if (autoindex)
-//				_sockets[port].autoindex = autoindex->getValue();
-//			else
-//				_sockets[port].autoindex = "off";
-	
-//			ConfigItem *	path = (*it)->findNearest("root");
-//			if (path)
-//				_sockets[port].root = path->getValue();
-//			else {			
-//				_sockets[port].root = "none";
-//				glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
-//			}
-
-//			ConfigItem *	index = (*it)->findNearest("index");
-//			if (index)	
-//				_sockets[port].indexes = split(index->getValue());
-
-//			ConfigItem *	location = (*it)->findNearest("location");
-//			if (location) {	
-//				_sockets[port].location = location->getValue();
-//			}
 		}
 	}
 }
@@ -92,7 +70,7 @@ int		Server::_createSocket( void ) {
     int	socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socketFd == -1) {
-        glogger << Logger::ERROR << RED << "Failed to create socket. errno: " << errno << " "
+        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to create socket. errno: " << errno << " "
                   << strerror(errno) << CLR << "\n";
 		throw std::runtime_error(std::string("Error creating socket"));
     }
@@ -110,12 +88,12 @@ sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 
     sockaddr.sin_port = htons(port);
 
     if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        glogger << Logger::ERROR << RED << "Failed to bind to port " << port << ": [" << errno << "] "
+        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to bind to port " << port << ": [" << errno << "] "
                   << strerror(errno) << CLR << "\n";
-		throw std::runtime_error(std::string("Error binding port"));
+		throw std::runtime_error("webserv: fatal error: impssible to bind port");
     }
 	else
-		glogger << Logger::INFO << GREEN << "webserv listening on port " << BOLD << port << CLR << "\n";
+		glogger << Logger::INFO << Logger::getTimestamp() << GREEN << " webserv listening on port " << BOLD << port << CLR << "\n";
 	
 	return sockaddr;
 }
@@ -123,9 +101,9 @@ sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 
 void		Server::_listenSocket( int socketFd, int maxConnexion ) {
 
     if (listen(socketFd, maxConnexion) < 0) {
-        glogger << Logger::ERROR << RED << "Failed to listen on socket. errno: [" << errno << "] "
+        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to listen on socket. errno: [" << errno << "] "
                   << strerror(errno) << CLR << "\n";
-		throw std::runtime_error(std::string("Error listening on socket"));
+		throw std::runtime_error(std::string("webserv: fatal error: impossible to listen on socket"));
 	}
 }
 
@@ -135,45 +113,13 @@ int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
           accept(socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
 
         if (connexion < 0) {
-            glogger << Logger::ERROR << RED << "Failed to grab connection. errno: [" << errno << "] "
+            glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to grab connection. errno: [" << errno << "] "
                       << strerror(errno) << CLR << "\n";
-			throw std::runtime_error(std::string("Error grabing connection"));
+			throw std::runtime_error(std::string("webserv: error: grabing connection"));
         }
 		
 		return connexion;
 }
-/*
-std::vector<Config>	Server::getConfig( ConfigItem * _config ) {
-
-	for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it) {
-
-		Config	tmp;
-
-		ConfigItem *	autoindex = (*it)->findNearest("autoindex");
-		if (autoindex)
-			tmp.autoindex = autoindex->getValue();
-		else
-			tmp.autoindex = "off";
-	
-		ConfigItem *	path = (*it)->findNearest("root");
-		if (path)
-			_tmp.root = path->getValue();
-		else {			
-			tmp.root = "none";
-			glogger << Logger::WARNING << ORANGE << "Error: No default path provided!\n" << CLR;
-		}
-
-		ConfigItem *	index = (*it)->findNearest("index");
-		if (index)	
-			tmp.indexes = split(index->getValue());
-
-		_parsed.push_back(tmp);
-	}
-
-//	ConfigItem *	location = (*it)->findNearest("location");
-//	if (location)
-//		tmp.location = location->getValue();
-}*/
 
 void
 Server::start(void)
@@ -217,37 +163,32 @@ Server::start(void)
 
 		if (ready > 0) {	
 
-			glogger << Logger::INFO << GREEN << "\n\nConnexion received.\n\n" << CLR;
-
 			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 			for (it = _sockets.begin(); it != ite; it++) {
 
 				if (FD_ISSET(_sockets[it->first].socket, &readfds))	{
+			
+					glogger << Logger::INFO << "\n\n" << Logger::getTimestamp() << GREEN << " Connexion received\n\n" << CLR;
 
 					_connexion = _accept(_sockets[it->first].socket, _sockets[it->first].sockaddr, _sockets[it->first].addrlen);
         	
+
 					char buffer[1024];
         			bzero(buffer, 1024);
 
         			int bytesread = read(_connexion, &buffer, 1024);
 
         			if (!bytesread)
-        	    		glogger << Logger::WARNING << ORANGE << "Nothing received..." << CLR << "\n";
+        	    		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " Nothing received...\n" << CLR;
 					else {
 
-        	    		glogger << Logger::DEBUG << PURPLE << "----- Received Header -----\n" << CLR << buffer << "\n";
+        	    		glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " Received Header:\n\n" << CLR << buffer << "\n";
 					
 						Header	header;
 
-	        			//header.parseHeader(buffer, _sockets[it->first].root);
 	        			header.parseHeader(buffer);
-				
-//		std::string	autoindex = _sockets[it->first].item->findNearest("autoindex")->getValue();
-//		glogger << Logger::DEBUG << "AUTOindex [" << autoindex << "]\n";
 					header.createResponse(_sockets[it->first].item);
-	        			//header.createResponse(_sockets[it->first].autoindex, _sockets[it->first].indexes, _sockets[it->first].location);
 	        			sendResponse(header);
-	        		//	close(_connexion);
 					}
 					FD_CLR(_sockets[it->first].socket, &readfds);
 					FD_CLR(_sockets[it->first].socket, &writefds);
@@ -264,9 +205,9 @@ Server::sendResponse( Header header )
 	std::string	response = header.getResponse();
 
 	if (response.size() > 512)
-		glogger << Logger::DEBUG << PURPLE << "\n----- Response Header -----\n" << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
+		glogger << Logger::DEBUG << "\n" << Logger::getTimestamp() << PURPLE << " Response Header:\n\n" << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
 	else
-		glogger << Logger::DEBUG << PURPLE << "\n----- Response Header -----\n" << CLR << response << "\n";
+		glogger << Logger::DEBUG << "\n" << Logger::getTimestamp() << PURPLE << " Response Header:\n\n" << CLR << response << "\n";
 
     //write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
