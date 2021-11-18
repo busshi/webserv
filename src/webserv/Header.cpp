@@ -3,7 +3,7 @@
 #include "Constants.hpp"
 #include "logger/Logger.hpp"
 #include "utils/string.hpp"
-#include <sys/stat.h>
+#include "utils/os.hpp"
 #include <dirent.h>
 #include <vector>
 #include <fstream>
@@ -91,27 +91,6 @@ void		Header::_parseFirstLine( std::string s ) {
 		_headerParam["Content-Type"] = _setContentType(_headerParam["Path"].substr(found + 1));
 
 	_headerParam["HTTP"] = s.substr(pos2 + 1, s.length() - pos2 - 2);
-}
-
-std::string	Header::_getDate( time_t timestamp ) {
-
-	struct tm		*date;
-	char			buffer[30];
-
-	date = gmtime(&timestamp);
-	strftime(buffer, 30, "%a, %d %b %Y %H:%M:%S GMT", date);
-	
-	return std::string(buffer);
-}
-
-std::string	Header::_getLastModified( std::string path ) {
-
-	struct stat	res;
-
-	if (stat(path.c_str(), &res) == 0)
-		return _getDate(res.st_mtime);
-	else
-		return _getDate(time(0));
 }
 
 std::string		Header::_replace(std::string in, std::string s1, std::string s2) {
@@ -226,18 +205,6 @@ void	Header::_autoIndexResponse( std::string path, std::stringstream & buf ) {
 	}
 }
 
-bool		Header::_isFolder( std::string path) {
-
-	struct stat	s;
-
-	if (stat(path.c_str(), &s) == 0) {
-
-		if (s.st_mode & S_IFDIR)
-			return true;
-	}
-	return false;
-}
-
 std::string	Header::_checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence ) {
 
 	struct stat	s;
@@ -296,12 +263,12 @@ void    	Header::createResponse( ConfigItem * item ) {
 		//glogger << Logger::DEBUG << *it << " ";
 //	glogger << Logger::DEBUG << "]\n";
 
-	if (_isFolder(directives.getPath()) == true) {
+	if (isFolder(directives.getPath()) == true) {
 		glogger << Logger::DEBUG << "IS FOLDER\n";
 		directives.setPathWithIndex();
 
 		glogger << Logger :: DEBUG << "Path+index [" << directives.getPath() << "]\n";
-		if (_isFolder(directives.getPath()) == true) {
+		if (isFolder(directives.getPath()) == true) {
 
 			if (directives.getAutoIndex() == "on")
 				_autoIndexResponse(directives.getPath(), buf);
@@ -332,9 +299,9 @@ void    	Header::createResponse( ConfigItem * item ) {
           _headerParam["HTTP"] + " " + _headerParam["Status-Code"] + "\r\n" + 
 		  "Content-Type: " + _headerParam["Content-Type"] + ";charset=UTF-8\r\n" + 
 		  "Content-Length: " + _headerParam["Content-Length"] + "\r\n" +
-			"Date: " + _getDate(time(0)) + "\r\n" +
-			"Last-Modified: " + _getLastModified(directives.getPath()) + "\r\n" +
-			"Location: " + _headerParam["Referer"] + "\r\n" +
-			"Server: webserv" + "\r\n\r\n" + 
+		  "Date: " + getDate(time(0)) + "\r\n" +
+		  "Last-Modified: " + getLastModified(directives.getPath()) + "\r\n" +
+		  "Location: " + _headerParam["Referer"] + "\r\n" +
+		  "Server: webserv" + "\r\n\r\n" + 
 		  buf.str();
 }
