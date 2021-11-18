@@ -48,8 +48,6 @@ namespace HTTP {
             const std::string& getURI(void) const;
             const std::string& getProtocol(void) const;
             const std::string& getBody(void) const;
-
-            std::ostream& printHeaders(std::ostream& os);
     };
 
     class Response: public Message {

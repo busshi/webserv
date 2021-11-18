@@ -52,4 +52,8 @@ re:			fclean all
 run:		re
 		@./$(NAME) "./asset/config/simple.conf"
 
+doc:
+	doxygen doxygen.conf
+.PHONY: doc
+
 .PHONY:	all clean fclean re run

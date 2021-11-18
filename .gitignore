@@ -4,3 +4,4 @@
 *.swp
 error_*.html
 /logs
+/doxygen
