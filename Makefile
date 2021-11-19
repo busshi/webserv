@@ -74,7 +74,7 @@ doc: $(DOXYGEN_OUT)/html/index.html
 	@($(OPEN) $(DOXYGEN_OUT)/html/index.html 2> /dev/null &)
 	@printf "Now displaying documentation in your browser's tab\nProcess has been sent to the background.\n";
 
-docclean:
+cleandoc:
 	$(RM) $(DOXYGEN_OUT)
 
 redoc: docclean doc
