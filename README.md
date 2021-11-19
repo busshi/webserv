@@ -26,3 +26,16 @@ be started by providing it a configuration file like so:
 ```
 More information about the configuration file format and available configuration options can be found on the corresponding
 [wiki page](https://github.com/busshi/webserv/wiki/Configuration-File) .
+
+## Generate documentation (doxygen)
+
+Our webserv's code is highly documented and HTML-based documentation can be generated using `doxygen`.
+For that, special Makefile rules are provided: you just need to have the doxygen executable available on your system.
+
+| Rule | Effect |
+|------|--------|
+| doc  |  generate documentation if it hasn't been generated already, and then open the index.html file in a new tab in the default browser.  |
+| cleandoc | Basically removes the documentation directory, allowing any subsequent doc command to regenerate it.
+| redoc | cleandoc + doc
+
+**IMPORTANT NOTE**: documentation WON'T be regenerated on source file change, you need to remake it to update it as needed. 
