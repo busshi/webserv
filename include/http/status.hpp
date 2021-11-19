@@ -1,7 +1,15 @@
 #pragma once
 #include <string>
 
+/* Everything related to the HTTP protocol */
 namespace HTTP {
+
+    /**
+     * @brief Provides a more "textual" way of expressing HTTP status codes.
+     *
+     * Most operations involving HTTP::StatusCode are also doable using a plain integer status code.
+     */
+
     enum StatusCode {
 
         /* 100 - INFO */

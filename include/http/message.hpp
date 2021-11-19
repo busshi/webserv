@@ -5,6 +5,7 @@
 #include "http/status.hpp"
 #include "utils/string.hpp"
 
+/* Everything related to the HTTP protocol */
 namespace HTTP {
     static const std::string CRLF = "\r\n";
 
@@ -16,7 +17,22 @@ namespace HTTP {
         }
     };
 
+    /**
+     * @brief A header mainly being a collection of key-value pairs, this typedef provides
+     a cleaner and shorter way to refer to the underlying type that is a map of string to string.
+     Map ordering is case insensitive as header field names are.
+     */
+
     typedef std::map<std::string, std::string, compareIgnoreCase> Header;
+
+    /**
+     * @brief A HTTP message is an all encompassing term that usually refers to a HTTP::Request or HTTP::Response.
+     This is the base class HTTP::Request and HTTP::Response are inheriting from. It mostly provide a map that contains
+     the header fields of the message.
+     *
+     * @see HTTP::Request
+     * @see HTTP::Response
+     */
 
     class Message {
         protected:
@@ -31,6 +47,13 @@ namespace HTTP {
             Message& operator=(const Message& rhs);
             ~Message(void);
     };
+
+    /**
+     * @brief Type used to represent the data sent by the user agent well known as "HTTP request".
+     *
+     * This type is mainly intented to represent the data that has been sent, parsing it so that critical information
+     * are made available in an easier way.
+     */
 
     class Request: public Message {
         std::string _method, _resourceURI, _URI, _protocol, _body;
@@ -49,6 +72,20 @@ namespace HTTP {
             const std::string& getProtocol(void) const;
             const std::string& getBody(void) const;
     };
+
+    /**
+     * @brief Type used to represent the data SENT BACK to the user agent, well known as "HTTP Response".
+     *
+     * A response must be based on a complete HTTP::Request object: this is the request the response is litteraly
+     * "responding" to.
+     *
+     * A response has a statusCode and a body that respectively indicate what happened (did an error happen?) and which data is
+     * sent back to the user agent.
+     *
+     * Additionally, a response also has its own set of headers, almost none of them being strictly mandatory.
+     *
+     * @see HTTP::Request
+     */
 
     class Response: public Message {
         StatusCode _statusCode;
