@@ -109,15 +109,38 @@ static std::string codeStrings[][100] = {
     }
 };
 
+/**
+ * @brief Return the HTTP::StatusCode enum member corresponding to the integer status passed as a parameter.
+ * 
+ * @param intStatusCode an integer that represents a valid HTTP status code, that is any number between 100 and 599.
+ If the integer falls outside of this range, the returned value should not be considered to be meaningful.
+ *
+ * @return HTTP::StatusCode 
+ */
+
 HTTP::StatusCode HTTP::toStatusCode(unsigned intStatusCode)
 {
     return static_cast<HTTP::StatusCode>(intStatusCode);
 }
 
+/**
+ * @brief Return the integer corresponding to the HTTP:StatusCode enum member passed as a parameter.
+ * 
+ * @param statusCode
+ * @return unsigned
+ */
+
 unsigned HTTP::toStatusCode(HTTP::StatusCode statusCode)
 {
     return static_cast<int>(statusCode);
 }
+
+/**
+ * @brief Return a message describing the HTTP::StatusCode enum member passed as a parameter.
+ * 
+ * @param statusCode 
+ * @return std::string 
+ */
 
 std::string HTTP::toStatusCodeString(HTTP::StatusCode statusCode)
 {   
@@ -125,6 +148,13 @@ std::string HTTP::toStatusCodeString(HTTP::StatusCode statusCode)
 
     return codeStrings[typeIndex][static_cast<int>(statusCode) - (typeIndex + 1) * 100];
 }
+
+/**
+ * @brief Return a message describing the HTTP integer status code passed as a parameter.
+ * 
+ * @param intStatusCode
+ * @return std::string 
+ */
 
 std::string HTTP::toStatusCodeString(unsigned intStatusCode)
 {

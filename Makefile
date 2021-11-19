@@ -77,7 +77,7 @@ doc: $(DOXYGEN_OUT)/html/index.html
 cleandoc:
 	$(RM) $(DOXYGEN_OUT)
 
-redoc: docclean doc
+redoc: cleandoc doc
 	@printf "Doc REgenerated successfully.\n"
 
 .PHONY: doc
