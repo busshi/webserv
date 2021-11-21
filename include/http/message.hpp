@@ -8,6 +8,7 @@
 /* Everything related to the HTTP protocol */
 namespace HTTP {
     static const std::string CRLF = "\r\n";
+    static const std::string BODY_DELIMITER = "\r\n\r\n";
 
     struct compareIgnoreCase {
         bool operator()(const std::string& s1, const std::string& s2) const {
@@ -92,7 +93,7 @@ namespace HTTP {
         Request _req;
         std::string _body;
 
-        std::string _sendHeader(void) const;
+        std::string _sendHeader(void);
 
         struct MediaTypeEntry {
             std::string mediaType;
@@ -116,7 +117,7 @@ namespace HTTP {
             Response& send(const std::string& s);
             Response& append(const std::string& s);
 
-            std::string str(void) const;
+            std::string str(void);
     };
    
   

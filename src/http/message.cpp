@@ -207,6 +207,7 @@ const std::string& HTTP::Request::getBody(void) const
 
 HTTP::Response::Response(const HTTP::Request& req): _statusCode(HTTP::OK), _req(req)
 {
+    setHeaderField("Server", "webserv/1.0");
 }
 
 /**
@@ -251,7 +252,7 @@ HTTP::Response::~Response(void)
  * @return std::string 
  */
 
-std::string HTTP::Response::str(void) const
+std::string HTTP::Response::str(void)
 {
     return _sendHeader() + _body;
 }
@@ -301,12 +302,13 @@ const HTTP::Request& HTTP::Response::getReq(void) const
  * @return std::string 
  */
 
-std::string HTTP::Response::_sendHeader(void) const
+std::string HTTP::Response::_sendHeader(void)
 {
     std::ostringstream oss;
 
-    oss << _statusCode << " " << toStatusCodeString(_statusCode) << HTTP::CRLF;
+    oss << "HTTP/1.1" << " " << _statusCode << " " << toStatusCodeString(_statusCode) << HTTP::CRLF;
 
+    oss << "Content-Length: " << _body.size() << HTTP::CRLF;
     for (HTTP::Header::const_iterator cit = _header.begin(); cit != _header.end(); ++cit) {
         oss << cit->first << ": " << cit->second << HTTP::CRLF;
     }
