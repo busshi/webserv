@@ -97,6 +97,7 @@ HTTP::Request::Request(std::string rawData)
 
     std::string::size_type bodyPos = rawData.find(HTTP::CRLF + HTTP::CRLF);
 
+
     std::vector<std::string> fields = split(rawData.substr(pos, bodyPos - pos), HTTP::CRLF);
 
     for (std::vector<std::string>::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
@@ -104,7 +105,6 @@ HTTP::Request::Request(std::string rawData)
         setHeaderField(ss[0].substr(0, ss[0].find(':')), ss[1]);
     }
 
-    _body = rawData.substr(bodyPos + 4, rawData.size() - bodyPos - 4);
     _URI = "http://" + getHeaderField("Host") + _resourceURI;
 }
 /**
@@ -137,6 +137,14 @@ HTTP::Request::Request(const HTTP::Request& other): Message()
 HTTP::Request& HTTP::Request::operator=(const HTTP::Request& rhs)
 {
     Message::operator=(rhs);
+    if (this != &rhs) {
+        _method = rhs._method;
+        _resourceURI = rhs._resourceURI;
+        _URI = rhs._URI;
+        _protocol = rhs._protocol;
+        body.str("");
+        body << rhs.body.str();
+    }
     return *this;
 }
 
@@ -194,9 +202,9 @@ const std::string& HTTP::Request::getProtocol(void) const
  * @return const std::string& 
  */
 
-const std::string& HTTP::Request::getBody(void) const
+const std::string HTTP::Request::getBody(void) const
 {
-    return _body;
+    return body.str();
 }
 
 /**

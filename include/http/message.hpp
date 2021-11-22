@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "http/status.hpp"
 #include "utils/string.hpp"
 
@@ -57,9 +58,11 @@ namespace HTTP {
      */
 
     class Request: public Message {
-        std::string _method, _resourceURI, _URI, _protocol, _body;
+        std::string _method, _resourceURI, _URI, _protocol;
         
         public:
+            std::ostringstream body;
+
             Request(std::string rawData = "");
             Request(const Request& other);
             Request& operator=(const Request& rhs);
@@ -71,7 +74,7 @@ namespace HTTP {
             const std::string& getResourceURI(void) const;
             const std::string& getURI(void) const;
             const std::string& getProtocol(void) const;
-            const std::string& getBody(void) const;
+            const std::string getBody(void) const;
     };
 
     /**
