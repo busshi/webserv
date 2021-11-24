@@ -24,7 +24,7 @@ class Socket {
 };
 
 class ClientSocket: public Socket {
-    struct sockaddr_in _address;
+    //struct sockaddr_in _address;
     size_t _bufferSize;
     char* _buf;
 
