@@ -24,3 +24,6 @@ validateLogLevel(const std::string& value, std::string& errorMsg);
 
 bool
 validateRedirect(const std::string& value, std::string& errorMsg);
+
+bool
+validateCgiPass(const std::string& value, std::string& errorMsg);
