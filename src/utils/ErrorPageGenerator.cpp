@@ -56,7 +56,7 @@ ErrorPageGenerator::_replace(std::string in, std::string s1, std::string s2) {
 }
 
 void
-ErrorPageGenerator::generate( std::string file, std::string code, std::string msg, std::string sentence ) {
+ErrorPageGenerator::_generate( std::string file, std::string code, std::string msg, std::string sentence ) {
 
     std::ifstream   ifs(file.c_str());
     std::string     res;
@@ -95,7 +95,7 @@ ErrorPageGenerator::checkErrorPage( std::string defaultPage, std::string code, s
     else {
 
         glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page does not exist. Using webserv default error page\n";
-        generate(ERROR_SAMPLE, code, errorMsg, errorSentence);
+        _generate(ERROR_SAMPLE, code, errorMsg, errorSentence);
         return ERROR_PAGE;
     }
 }

@@ -11,8 +11,8 @@ class	ErrorPageGenerator {
 		~ErrorPageGenerator( void );
 
 		std::string checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence );
-		void		generate( std::string file, std::string code, std::string msg, std::string sentence );
 
 	private:
 		std::string	_replace(std::string in, std::string s1, std::string s2);
+		void		_generate( std::string file, std::string code, std::string msg, std::string sentence );
 };

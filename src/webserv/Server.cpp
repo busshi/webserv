@@ -103,24 +103,35 @@ Server::_selectServer(std::vector<ConfigItem*>& candidates,
 }
 
 void
-Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives& direc) {
+Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives& directives) {
 
 	std::ifstream		ifs;
 
   	ifs.open(path.c_str());
 	if (!ifs) {
-		ErrorPageGenerator	errorPage;
+		ErrorPageGenerator	errorGen;
+		std::string			errorPage;
 
-		if (direc.getRoot() == "none") {
+		if (directives.getRoot() == "none") {
 			res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
 			//_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
-			errorPage.generate(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
+			//errorPage.generate(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
+			errorPage = errorGen.checkErrorPage(directives.getDefaultErrorFile(),
+                                  "500",
+                                  "Internal Server Error",
+                                  "the server encountered an internal error");
+
 
 		}
 		else {
 			res.setStatus(HTTP::NOT_FOUND);
 			//_genErrorPage(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
-			errorPage.generate(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
+			//errorPage.generate(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
+			errorPage = errorGen.checkErrorPage(directives.getDefaultErrorFile(),
+                                  "404",
+                                  "Not Found",
+                                  "the page you are looking for does not exist");
+
 		}
 		
 		res.sendFile(ERROR_PAGE);
