@@ -24,7 +24,7 @@ class Socket {
 };
 
 class ClientSocket: public Socket {
-    //struct sockaddr_in _address;
+    struct sockaddr_in _address;
     size_t _bufferSize;
     char* _buf;
 
@@ -36,6 +36,8 @@ class ClientSocket: public Socket {
         ClientSocket& operator=(const ClientSocket& rhs);
         std::string recv(size_t max_read = 0);
         ClientSocket& send(const std::string& s);
+
+        in_port_t getPort(void) const;
 };
 
 class ServerSocket: public Socket {
@@ -48,7 +50,7 @@ class ServerSocket: public Socket {
         ServerSocket& operator=(const ServerSocket& rhs);
         ~ServerSocket(void);
 
-        ServerSocket& bind(unsigned short port, const std::string& ip = "0.0.0.0");
+        ServerSocket& bind(unsigned short port, uint32_t ip = INADDR_ANY);
         ServerSocket& listen(size_t connectionLimit = 1024);
         ClientSocket waitForConnection(void);
 };

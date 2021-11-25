@@ -44,9 +44,14 @@ Net::Socket& Net::Socket::operator=(const Socket &rhs)
  * The file descriptor corresponding to the socket is closed on destruction.
  */
 
+#include <iostream>
+
 Net::Socket::~Socket(void)
 {
-    
+    if (_fd != -1) {
+        std::cout << "closed!" << std::endl;
+        close();
+    }
 }
 
 Net::Socket& Net::Socket::open(void)
@@ -126,11 +131,11 @@ Net::ServerSocket& Net::ServerSocket::listen(size_t connectionLimit)
 
 #include <iostream>
 
-Net::ServerSocket& Net::ServerSocket::bind(unsigned short port, const std::string& ip)
+Net::ServerSocket& Net::ServerSocket::bind(unsigned short port, uint32_t ip)
 {
     _address.sin_family = AF_INET;
     _address.sin_port = htons(port);
-    _address.sin_addr.s_addr = inet_addr(ip.c_str());
+    _address.sin_addr.s_addr = ip;
 
     // use <sys/socket.h>'s bind not this function
     std::cout << port << "\n";
@@ -161,6 +166,8 @@ Net::ClientSocket::ClientSocket(int fd, size_t bufferSize): Socket(), _bufferSiz
 {
     _fd = fd;
     fcntl(_fd, F_SETFL, O_NONBLOCK);
+    socklen_t slen = sizeof(_address);
+    getsockname(_fd, (struct sockaddr*)&_address, &slen);
 }
 
 Net::ClientSocket::ClientSocket(const ClientSocket& other): Socket()
@@ -211,8 +218,13 @@ std::string Net::ClientSocket::recv(size_t maxRead)
 Net::ClientSocket& Net::ClientSocket::send(const std::string& s)
 {
     ::send(_fd, s.c_str(), s.size(), 0);
-
+ 
     return *this;
+}
+
+in_port_t Net::ClientSocket::getPort(void) const
+{
+    return ntohs(_address.sin_port);
 }
 
 /********************************************************************************/

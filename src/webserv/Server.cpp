@@ -1,39 +1,51 @@
 #include "Server.hpp"
+#include "http/message.hpp"
 #include "logger/Logger.hpp"
 #include "utils/string.hpp"
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/select.h>
+#include "webserv/Directives.hpp"
+#include "utils/os.hpp"
+#include <dirent.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <iostream>
 #include <sstream>
-#include <vector>
 #include <stdexcept>
+#include <sys/select.h>
+#include <unistd.h>
+#include <vector>
 
-Server::Server( ConfigItem * global ) {
+Server::Server(ConfigItem* global)
+{
 
-	std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
+    std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
-	_config = global;
+    _config = global;
 
-	for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin();
-	    it != serverBlocks.end(); ++it) {
-			
-		std::vector<ConfigItem*>	listens = (*it)->findBlocks("listen");
+    for (std::vector<ConfigItem*>::const_iterator it = serverBlocks.begin();
+         it != serverBlocks.end();
+         ++it) {
 
-		for (size_t i = 0; i != listens.size(); i++) {
+        std::vector<ConfigItem*> listens = (*it)->findBlocks("listen");
 
-			ListenData	data = parseListen(listens[i]->getValue());
-			unsigned short	port = data.port;
+        for (size_t i = 0; i != listens.size(); i++) {
 
-			_sockets[port].socket = -1;
-			_sockets[port].ipv4 = data.v4;
-			_sockets[port].maxConnexion = 10;
-			_sockets[port].item = *it;
-		}
-	}
+            ListenData data = parseListen(listens[i]->getValue());
+
+            if (_entrypoints.find(data.port) == _entrypoints.end()) {
+                Net::ServerSocket* ssock = new Net::ServerSocket();
+
+                // TODO: handle max connexion
+                ssock->open();
+                ssock->bind(data.port, data.v4).listen(1024);
+
+                _entrypoints[data.port].ssock = ssock;
+            }
+
+            _entrypoints[data.port].candidates.push_back(*it);
+        }
+    }
 }
 
 Server::Server(Server const& src)
@@ -41,175 +53,412 @@ Server::Server(Server const& src)
     *this = src;
 }
 
-Server::~Server(void) {
+Server::~Server(void)
+{
 
-	std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+    std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 
-	for (it = _sockets.begin(); it != ite; it++) {
-    	
-		if (_sockets[it->first].socket != -1)
-			close(_sockets[it->first].socket);
-	}
+    for (it = _sockets.begin(); it != ite; it++) {
 
-	delete _config;
+        if (_sockets[it->first].socket != -1)
+            close(_sockets[it->first].socket);
+    }
+
+    delete _config;
 }
 
 Server&
 Server::operator=(Server const& rhs)
 {
     if (this != &rhs) {
-		this->_sockets = rhs._sockets;
+        this->_sockets = rhs._sockets;
         this->_connexion = rhs._connexion;
     }
 
     return *this;
 }
 
-int		Server::_createSocket( void ) {
+ConfigItem*
+Server::_selectServer(std::vector<ConfigItem*>& candidates,
+                      const std::string& host)
+{
+    std::string serverName;
+    ConfigItem* serverNameItem = 0;
+    ConfigItem* noServerName = 0;
+    std::string strippedHost = host.substr(0, host.find(':'));
 
-    int	socketFd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (socketFd == -1) {
-        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to create socket. errno: " << errno << " "
-                  << strerror(errno) << CLR << "\n";
-		throw std::runtime_error(std::string("Error creating socket"));
+    for (std::vector<ConfigItem*>::iterator it = candidates.begin();
+         it != candidates.end();
+         ++it) {
+        serverNameItem = (*it)->findNearest("server_name");
+        if (serverNameItem && serverNameItem->getValue() == strippedHost) {
+            return *it;
+        } else if (!serverNameItem && !noServerName) {
+            noServerName = *it;
+        }
     }
-	fcntl(socketFd, F_SETFL, O_NONBLOCK);
 
-	return socketFd;
+    return noServerName;
 }
 
-sockaddr_in	Server::_bindPort( int socketFd, unsigned short port, uint32_t ipv4 ) {
+void
+Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives& direc) {
 
-	sockaddr_in	sockaddr;
+	std::ifstream		ifs;
 
-    sockaddr.sin_family = AF_INET;
-   	sockaddr.sin_addr.s_addr = ipv4;
-    sockaddr.sin_port = htons(port);
+  	ifs.open(path.c_str());
+	if (!ifs) {
+		std::cout << "path: " << path << std::endl;
+		if (direc.getRoot() == "none") {
+			res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
+			_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
 
-    if (bind(socketFd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to bind to port " << port << ": [" << errno << "] "
-                  << strerror(errno) << CLR << "\n";
-		throw std::runtime_error("webserv: fatal error: impssible to bind port");
-    }
-	else
-		glogger << Logger::INFO << Logger::getTimestamp() << GREEN << " webserv listening on port " << BOLD << port << CLR << "\n";
+		}
+		else {
+			res.setStatus(HTTP::NOT_FOUND);
+			_genErrorPage(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
+		}
+		
+		res.sendFile(ERROR_PAGE);
+		//ifs.open(path.c_str());
+		//_headerParam["Content-Type"] = "text/html";
+	} else {
+		res.sendFile(path);
+	}
 	
-	return sockaddr;
+    //buf << ifs.rdbuf();
+   // ifs.close();
 }
 
-void		Server::_listenSocket( int socketFd, int maxConnexion ) {
+void
+Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res) {
 
-    if (listen(socketFd, maxConnexion) < 0) {
-        glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to listen on socket. errno: [" << errno << "] "
-                  << strerror(errno) << CLR << "\n";
-		throw std::runtime_error(std::string("webserv: fatal error: impossible to listen on socket"));
+	glogger << Logger::DEBUG << PURPLE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
+
+	DIR *				folder = opendir(path.c_str());
+		
+	if (folder) {
+			
+		struct dirent *	dir;
+
+		while ((dir = readdir(folder)) != NULL) {
+			std::cout << "Host: " << req.getHeaderField("HosT") << std::endl;
+			std::cout << "resourceURI: " << req.getResourceURI() << std::endl;
+			buf << "<a href=\"http://" << req.getHeaderField("Host") << req.getResourceURI() << (req.getResourceURI() == "/" ? "" : "/") << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
+			glogger << Logger::DEBUG << dir->d_name << "\n";
+		}
+
+		res.send(buf.str());
+
+		glogger << Logger::DEBUG << "\n";
+		closedir(folder);
 	}
 }
 
-int		Server::_accept( int socketFd, sockaddr_in sockaddr, int addrlen ) {
+void
+Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
+{
+    Directives directives;
+    std::stringstream buf;
+    std::string location;
+    bool haveLoc = false;
 
-        int connexion =
-          accept(socketFd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+    std::vector<ConfigItem*> locations = server->findBlocks("location");
 
-        if (connexion < 0) {
-            glogger << Logger::ERROR << Logger::getTimestamp() << RED << " Failed to grab connection. errno: [" << errno << "] "
-                      << strerror(errno) << CLR << "\n";
-			throw std::runtime_error(std::string("webserv: error: grabing connection"));
+    for (std::vector<ConfigItem*>::iterator it = locations.begin();
+         it != locations.end();
+         it++) {
+
+        location = (*it)->getValue();
+
+        if ((haveLoc = directives.haveLocation(req.getResourceURI(),
+                                               location)) == true) {
+            glogger << Logger::DEBUG << "haveLoc is true\n";
+            directives.getConfig(*it, req.getResourceURI());
         }
+    }
+
+    if (haveLoc == false) {
+        glogger << Logger::DEBUG << "haveLoc is false\n";
+        directives.getConfig(server, req.getResourceURI());
+    }
+
+	std::cout << "Path: " << directives.getPath() << std::endl;
+    if (isFolder(directives.getPath()) == true) {
+        glogger << Logger::DEBUG << "IS FOLDER\n";
+        directives.setPathWithIndex();
+
+        glogger << Logger ::DEBUG << "Path+index [" << directives.getPath()
+                << "]\n";
+        if (isFolder(directives.getPath()) == true) {
+
+            if (directives.getAutoIndex() == "on")
+                _autoIndexResponse(directives.getPath(), buf, req, res);
+            else {
+                std::string errorPage =
+                  _checkErrorPage(directives.getDefaultErrorFile(),
+                                  "403",
+                                  "Forbidden",
+                                  "the access is permanently forbidden");
+				std::cout << "Error page: " << errorPage << std::endl;
+				
+
+                std::ifstream ifs;
+                ifs.open(errorPage.c_str());
+                buf << ifs.rdbuf();
+                ifs.close();
+
+				res.setHeaderField("Content-Type", "text/html");
+				res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
+				/*
+                _headerParam["Status-Code"] = "403 Forbidden";
+                _headerParam["Content-Type"] = "text/html";
+				*/
+            }
+        } else
+            _noAutoIndexResponse(directives.getPath(), res, directives);
+    } else {
+        _noAutoIndexResponse(directives.getPath(), res, directives);
+	}
+
+	res.setHeaderField("Last-Modified", getLastModified(directives.getPath()));
+	res.setHeaderField("Date", getDate(time(0)));
+	res.setHeaderField("Location", req.getResourceURI());
+
+	// add referer
+
+	/*
+    _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
+                "\r\n" + "Content-Type: " + _headerParam["Content-Type"] +
+                ";charset=UTF-8\r\n" +
+                "Content-Length: " + _headerParam["Content-Length"] + "\r\n" +
+                "Date: " + getDate(time(0)) + "\r\n" +
+                "Last-Modified: " + getLastModified(directives.getPath()) +
+                "\r\n" + "Location: " + _headerParam["Referer"] + "\r\n" +
+                "Server: webserv" + "\r\n\r\n" + buf.str();
+	*/
+}
+
+std::string
+Server::_replace(std::string in, std::string s1, std::string s2) {
+
+	std::string		out;
+	std::string		line;
+	size_t			len = s1.size();
+	std::istringstream	iss(in);
+
+	while (getline(iss, line)) {
+
+		for (size_t i = 0; i < line.size(); i++) {
+				
+				size_t	found = line.find(s1, i);
+
+				if (found == std::string::npos) {
+
+					out += &line[i];
+					break;
+				}
+				else {
+
+					if (found > i) {
+
+						std::string	subLine = line.substr(i, found - i);
+						out += subLine;
+						i += subLine.size();
+					}
+					out += s2;
+					i += len - 1;
+				}
+		}
+		out += "\n";
+	}
+	return out;
+}
+
+void
+Server::_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence ) {
+
+	std::ifstream	ifs(file.c_str());
+	std::string		res;
+	std::string		line;
+	std::string		out;
+
+	while (getline(ifs, line)) {
+
+		res += line;
+		res += "\n";
+	}
+
+	ifs.close();
+
+	out = _replace(res, "ERROR_CODE", code);
+	out = _replace(out, "ERROR_MESSAGE", msg);
+	out = _replace(out, "ERROR_SENTENCE", sentence);
+
+	
+	std::ofstream	ofs(ERROR_PAGE);
+	ofs << out;
+	ofs.close();
+}
+
+std::string
+Server::_checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence ) {
+
+	struct stat	s;
+
+	if (stat(defaultPage.c_str(), &s) == 0) {
+
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page exists. Using " << defaultPage << "\n";
+		return defaultPage;
+	}
+	else {
 		
-		return connexion;
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page does not exist. Using webserv default error page\n";
+		_genErrorPage(ERROR_SAMPLE, code, errorMsg, errorSentence);
+		return ERROR_PAGE;
+	}
 }
 
 void
 Server::start(void)
 {
-	std::map<unsigned short, Socket>::iterator	it, ite = _sockets.end();
+    Net::SocketSet set;
+    std::map<Net::ClientSocket*, std::string> data;
+    std::map<Net::ClientSocket*, HTTP::Request> incomingRequests;
 
-	for (it = _sockets.begin(); it != ite; it++) {
-		
-		_sockets[it->first].socket = _createSocket();
-		_sockets[it->first].sockaddr = _bindPort(_sockets[it->first].socket, it->first, _sockets[it->first].ipv4);
-		_listenSocket(_sockets[it->first].socket, _sockets[it->first].maxConnexion);
-		_sockets[it->first].addrlen = sizeof(_sockets[it->first].sockaddr);
-	}
+    for (SockMap::const_iterator cit = _entrypoints.begin();
+         cit != _entrypoints.end();
+         ++cit) {
+        set += *cit->second.ssock;
+    }
 
-	std::cout << "webserv is running\nHit Ctrl-C to exit." << std::endl;
+    std::cout << "webserv is running\nHit Ctrl-C to exit." << std::endl;
 
     while (isWebservAlive) {
+        std::list<Net::Socket*> ready = set.select();
 
-		fd_set			readfds;
-		fd_set			writefds;
+        // std::cout << ready.size() << " socket(s) are ready" << std::endl;
 
-		struct timeval	timeout;
+        for (std::list<Net::Socket*>::iterator cit = ready.begin();
+             cit != ready.end();
+             ++cit) {
+            Net::ClientSocket* csock = dynamic_cast<Net::ClientSocket*>(*cit);
 
-		int				ready = 0;
+            // if this is a client socket, we need to ready the data from it to
+            // build the request
+            if (csock) {
 
-		int	nfds = 1024;
+                // parsing request header
+                if (incomingRequests.find(csock) == incomingRequests.end()) {
+                    std::cout << data[csock] << std::endl;
 
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
-		
-		FD_ZERO(&readfds);
-		FD_ZERO(&writefds);
+                    data[csock] += csock->recv();
 
-		std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
-		for (it = _sockets.begin(); it != ite; it++){
+                    if (data[csock].find(HTTP::BODY_DELIMITER) !=
+                        std::string::npos) {
+                        incomingRequests.insert(
+                          std::make_pair(csock, HTTP::Request(data[csock])));
+                    }
+                }
 
-			FD_SET(_sockets[it->first].socket, &readfds);
-			FD_SET(_sockets[it->first].socket, &writefds);
-		}
-		ready = select(nfds, &readfds, &writefds, NULL, &timeout);
+                // parsing request body
+                if (incomingRequests.find(csock) != incomingRequests.end()) {
+                    HTTP::Request req = incomingRequests[csock];
+                    std::istringstream oss(
+                      req.getHeaderField("Content-Length"));
+                    size_t contentLength = 0;
+                    oss >> contentLength;
 
-		if (ready > 0) {	
+                    std::cout << "Length: " << contentLength << "\n";
 
-			std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
-			for (it = _sockets.begin(); it != ite; it++) {
+                    if (req.body.str().size() < contentLength) {
+                        std::cout << contentLength - req.body.str().size()
+                                  << std::endl;
+                        std::string s =
+                          csock->recv(contentLength - req.body.str().size());
+                        req.body << s;
+                        std::cout << "size: " << req.body.str().size()
+                                  << std::endl;
+                    }
 
-				if (FD_ISSET(_sockets[it->first].socket, &readfds))	{
-			
-					glogger << Logger::INFO << "\n\n" << Logger::getTimestamp() << GREEN << " Connexion received\n\n" << CLR;
+                    if (req.body.str().size() >= contentLength) {
+                        HTTP::Response res(req);
 
-					_connexion = _accept(_sockets[it->first].socket, _sockets[it->first].sockaddr, _sockets[it->first].addrlen);
-        	
+                        // socket cleanup
+                        incomingRequests.erase(csock);
+                        data.erase(csock);
 
-					char buffer[1024];
-        			bzero(buffer, 1024);
+                        std::cout << "Request received on port "
+                                  << csock->getPort() << std::endl;
 
-        			int bytesread = read(_connexion, &buffer, 1024);
+                        ConfigItem* server = _selectServer(
+                          _entrypoints[csock->getPort()].candidates,
+                          req.getHeaderField("Host"));
 
-        			if (!bytesread)
-        	    		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " Nothing received...\n" << CLR;
-					else {
+                        // TODO: check server
+						std::cout << *server << std::endl;
+                        _createResponse(req, res, server);
 
-        	    		glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " Received Header:\n\n" << CLR << buffer << "\n";
-					
-//						Header	header;
+                        csock->send(res.str());
 
-//	        			header.parseHeader(buffer);
-						Header	header(buffer);
-						header.createResponse(_sockets[it->first].item);
-	        			sendResponse(header);
-					}
-					FD_CLR(_sockets[it->first].socket, &readfds);
-					FD_CLR(_sockets[it->first].socket, &writefds);
-	        		close(_connexion);
-				}
-			}
-		}
+                        //////// MERGE RESPONSE LOGIC ///////////
+
+                        // header.createResponse(_sockets[it->first].item);
+                        // sendResponse(header);
+
+                        /*
+if (req.body.str().empty()) {
+    res.send("Hello world");
+} else {
+    res.send(req.body.str());
+}
+                        */
+
+                        //////// MERGE RESPONSE LOGIC ////////////
+
+                        set -= *csock;
+                        csock->close();
+                        delete csock;
+                    }
+                }
+
+                // if this is a server socket, then we need to accept a new
+                // connection
+            } else {
+                Net::ServerSocket* ssock =
+                  dynamic_cast<Net::ServerSocket*>(*cit);
+
+                // add the new client to the socket list
+                Net::ClientSocket* csock =
+                  new Net::ClientSocket(ssock->waitForConnection());
+                set += *csock;
+            }
+        }
+    }
+
+    // delete every server socket
+
+    for (SockMap::const_iterator cit = _entrypoints.begin();
+         cit != _entrypoints.end();
+         ++cit) {
+        delete cit->second.ssock;
     }
 }
 
 void
-Server::sendResponse( Header header )
+Server::sendResponse(Header header)
 {
-	std::string	response = header.getResponse();
+    std::string response = header.getResponse();
 
-	if (response.size() > 512)
-		glogger << Logger::DEBUG << "\n" << Logger::getTimestamp() << PURPLE << " Response Header:\n\n" << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
-	else
-		glogger << Logger::DEBUG << "\n" << Logger::getTimestamp() << PURPLE << " Response Header:\n\n" << CLR << response << "\n";
+    if (response.size() > 512)
+        glogger << Logger::DEBUG << "\n"
+                << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
+                << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
+    else
+        glogger << Logger::DEBUG << "\n"
+                << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
+                << CLR << response << "\n";
 
-    //write(_connexion, response.c_str(), response.length());
+    // write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
 }
