@@ -21,8 +21,7 @@ main(void)
     ssocket1->bind(8080).listen(1024);
     ssocket2->bind(8082).listen();
 
-    std::map<Net::ClientSocket*, std::string> data;
-    std::map<Net::ClientSocket*, HTTP::Request> incomingRequests;
+
 
     Net::SocketSet sockset;
 
@@ -72,7 +71,8 @@ main(void)
                             incomingRequests.erase(csock);
                             data.erase(csock);
 
-                            // HERE!!!!! WE ARE SENDING THE ACTUAL RESPONSE!
+                            //////// MERGE RESPONSE LOGIC ////////////
+
                             if (req.body.str().empty()) {
                                 res.send("Hello world");
                             } else {
@@ -80,6 +80,8 @@ main(void)
                             }
 
                             csock->send(res.str());
+
+                            //////// MERGE RESPONSE LOGIC ////////////
 
                             sockset -= *csock;
                             csock->close();
