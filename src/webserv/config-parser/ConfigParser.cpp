@@ -25,7 +25,8 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "client_body_max_size", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
     { "upload_max_size", validateSize, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
-    { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK }
+    { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK },
+    { "redirect", validateRedirect, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
 };
 
 static void
