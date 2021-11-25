@@ -120,14 +120,9 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 		}
 		
 		res.sendFile(ERROR_PAGE);
-		//ifs.open(path.c_str());
-		//_headerParam["Content-Type"] = "text/html";
 	} else {
 		res.sendFile(path);
 	}
-	
-    //buf << ifs.rdbuf();
-   // ifs.close();
 }
 
 void
@@ -142,8 +137,6 @@ Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Req
 		struct dirent *	dir;
 
 		while ((dir = readdir(folder)) != NULL) {
-			std::cout << "Host: " << req.getHeaderField("HosT") << std::endl;
-			std::cout << "resourceURI: " << req.getResourceURI() << std::endl;
 			buf << "<a href=\"http://" << req.getHeaderField("Host") << req.getResourceURI() << (req.getResourceURI() == "/" ? "" : "/") << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
 			glogger << Logger::DEBUG << dir->d_name << "\n";
 		}
@@ -210,10 +203,6 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
 
 				res.setHeaderField("Content-Type", "text/html");
 				res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
-				/*
-                _headerParam["Status-Code"] = "403 Forbidden";
-                _headerParam["Content-Type"] = "text/html";
-				*/
             }
         } else
             _noAutoIndexResponse(directives.getPath(), res, directives);
@@ -401,21 +390,6 @@ Server::start(void)
 
                         csock->send(res.str());
 
-                        //////// MERGE RESPONSE LOGIC ///////////
-
-                        // header.createResponse(_sockets[it->first].item);
-                        // sendResponse(header);
-
-                        /*
-if (req.body.str().empty()) {
-    res.send("Hello world");
-} else {
-    res.send(req.body.str());
-}
-                        */
-
-                        //////// MERGE RESPONSE LOGIC ////////////
-
                         set -= *csock;
                         csock->close();
                         delete csock;
@@ -444,7 +418,7 @@ if (req.body.str().empty()) {
         delete cit->second.ssock;
     }
 }
-
+/*
 void
 Server::sendResponse(Header header)
 {
@@ -459,6 +433,5 @@ Server::sendResponse(Header header)
                 << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
                 << CLR << response << "\n";
 
-    // write(_connexion, response.c_str(), response.length());
     send(_connexion, response.c_str(), response.size(), 0);
-}
+}*/

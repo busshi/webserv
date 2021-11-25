@@ -8,7 +8,6 @@
 #include "net/socket.hpp"
 #include "config-parser/ConfigParser.hpp"
 #include "config-parser/ConfigItem.hpp"
-#include "Header.hpp"
 #include "Constants.hpp"
 #include "http/message.hpp"
 #include "webserv/Directives.hpp"
@@ -23,7 +22,6 @@ class Server
     Server& operator=(Server const& rhs);
 
   	void start(void);
-    void sendResponse( Header header );
 
   private:
 	struct Socket {

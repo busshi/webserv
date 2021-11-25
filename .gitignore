@@ -2,6 +2,5 @@
 *.o
 .cache
 *.swp
-error_*.html
 /logs
 /doxygen
