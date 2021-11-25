@@ -114,19 +114,14 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 
 		if (directives.getRoot() == "none") {
 			res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
-			//_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
-			//errorPage.generate(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
 			errorPage = errorGen.checkErrorPage(directives.getDefaultErrorFile(),
                                   "500",
                                   "Internal Server Error",
                                   "the server encountered an internal error");
 
-
 		}
 		else {
 			res.setStatus(HTTP::NOT_FOUND);
-			//_genErrorPage(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
-			//errorPage.generate(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
 			errorPage = errorGen.checkErrorPage(directives.getDefaultErrorFile(),
                                   "404",
                                   "Not Found",
@@ -142,11 +137,10 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 
 void
 Server::_autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response& res) {
-//Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res) {
 
 	std::stringstream	buf;
 
-	glogger << Logger::DEBUG << PURPLE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
+	glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " Autoindex is ON... Listing directory: " << path << CLR << "\n";
 
 	DIR *				folder = opendir(path.c_str());
 		
@@ -170,7 +164,6 @@ void
 Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 {
     Directives directives;
-//    std::stringstream buf;
     std::string location;
     bool haveLoc = false;
 
@@ -184,27 +177,29 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
 
         if ((haveLoc = directives.haveLocation(req.getResourceURI(),
                                                location)) == true) {
-            glogger << Logger::DEBUG << "haveLoc is true\n";
+            glogger << Logger::DEBUG << Logger::getTimestamp() << " haveLoc is true\n";
             directives.getConfig(*it, req.getResourceURI());
+			break;
         }
     }
 
     if (haveLoc == false) {
-        glogger << Logger::DEBUG << "haveLoc is false\n";
+        glogger << Logger::DEBUG << " haveLoc is false\n";
         directives.getConfig(server, req.getResourceURI());
     }
 
-	std::cout << "Path: " << directives.getPath() << std::endl;
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " Path: " << directives.getPath() << "\n";
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " Root: " << directives.getRoot() << "\n";
+
     if (isFolder(directives.getPath()) == true) {
-        glogger << Logger::DEBUG << "IS FOLDER\n";
+        glogger << Logger::DEBUG << " IS FOLDER\n";
         directives.setPathWithIndex();
 
-        glogger << Logger ::DEBUG << "Path+index [" << directives.getPath()
+        glogger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index [" << directives.getPath()
                 << "]\n";
         if (isFolder(directives.getPath()) == true) {
 
             if (directives.getAutoIndex() == "on")
-                //_autoIndexResponse(directives.getPath(), buf, req, res);
                 _autoIndexResponse(directives.getPath(), req, res);
             else {
 				ErrorPageGenerator	errorGen;
@@ -214,20 +209,8 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
                                   "Forbidden",
                                   "the access is permanently forbidden");
   
-
-              //std::string errorPage =
-                //  _checkErrorPage(directives.getDefaultErrorFile(),
-                  //                "403",
-                    //              "Forbidden",
-                      //            "the access is permanently forbidden");
-				std::cout << "Error page: " << errorPage << std::endl;
+				glogger << Logger::DEBUG << Logger::getTimestamp() << "Error page: " << errorPage << "\n";
 				
-
-  //              std::ifstream ifs;
-    //            ifs.open(errorPage.c_str());
-      //          buf << ifs.rdbuf();
-        //        ifs.close();
-
 				res.setHeaderField("Content-Type", "text/html");
 				res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
             }
@@ -254,87 +237,7 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
                 "Server: webserv" + "\r\n\r\n" + buf.str();
 	*/
 }
-/*
-std::string
-Server::_replace(std::string in, std::string s1, std::string s2) {
 
-	std::string		out;
-	std::string		line;
-	size_t			len = s1.size();
-	std::istringstream	iss(in);
-
-	while (getline(iss, line)) {
-
-		for (size_t i = 0; i < line.size(); i++) {
-				
-				size_t	found = line.find(s1, i);
-
-				if (found == std::string::npos) {
-
-					out += &line[i];
-					break;
-				}
-				else {
-
-					if (found > i) {
-
-						std::string	subLine = line.substr(i, found - i);
-						out += subLine;
-						i += subLine.size();
-					}
-					out += s2;
-					i += len - 1;
-				}
-		}
-		out += "\n";
-	}
-	return out;
-}
-
-void
-Server::_genErrorPage( std::string file, std::string code, std::string msg, std::string sentence ) {
-
-	std::ifstream	ifs(file.c_str());
-	std::string		res;
-	std::string		line;
-	std::string		out;
-
-	while (getline(ifs, line)) {
-
-		res += line;
-		res += "\n";
-	}
-
-	ifs.close();
-
-	out = _replace(res, "ERROR_CODE", code);
-	out = _replace(out, "ERROR_MESSAGE", msg);
-	out = _replace(out, "ERROR_SENTENCE", sentence);
-
-	
-	std::ofstream	ofs(ERROR_PAGE);
-	ofs << out;
-	ofs.close();
-}
-
-std::string
-Server::_checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence ) {
-
-	struct stat	s;
-
-	if (stat(defaultPage.c_str(), &s) == 0) {
-
-		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page exists. Using " << defaultPage << "\n";
-		return defaultPage;
-	}
-	else {
-		
-		glogger << Logger::DEBUG << Logger::getTimestamp() << " Default error page does not exist. Using webserv default error page\n";
-		_genErrorPage(ERROR_SAMPLE, code, errorMsg, errorSentence);
-		return ERROR_PAGE;
-	}
-}
-*/
 void
 Server::start(void)
 {
@@ -353,8 +256,6 @@ Server::start(void)
     while (isWebservAlive) {
         std::list<Net::Socket*> ready = set.select();
 
-        // std::cout << ready.size() << " socket(s) are ready" << std::endl;
-
         for (std::list<Net::Socket*>::iterator cit = ready.begin();
              cit != ready.end();
              ++cit) {
@@ -366,7 +267,6 @@ Server::start(void)
 
                 // parsing request header
                 if (incomingRequests.find(csock) == incomingRequests.end()) {
-//                    std::cout << data[csock] << std::endl;
 
                     data[csock] += csock->recv();
 
@@ -385,7 +285,7 @@ Server::start(void)
                     size_t contentLength = 0;
                     oss >> contentLength;
 
-                    std::cout << "Length: " << contentLength << "\n";
+                    glogger << Logger::DEBUG << Logger::getTimestamp() << "Length: " << contentLength << "\n";
 
                     if (req.body.str().size() < contentLength) {
                         std::cout << contentLength - req.body.str().size()
@@ -393,8 +293,8 @@ Server::start(void)
                         std::string s =
                           csock->recv(contentLength - req.body.str().size());
                         req.body << s;
-                        std::cout << "size: " << req.body.str().size()
-                                  << std::endl;
+                        glogger << Logger::DEBUG << Logger::getTimestamp() << "size: " << req.body.str().size()
+                                  << "\n";
                     }
 
                     if (req.body.str().size() >= contentLength) {
@@ -404,15 +304,14 @@ Server::start(void)
                         incomingRequests.erase(csock);
                         data.erase(csock);
 
-                        std::cout << "Request received on port "
-                                  << csock->getPort() << std::endl;
+                        glogger << Logger::INFO << Logger::getTimestamp() << "Request received on port "
+                                  << csock->getPort() << "\n";
 
                         ConfigItem* server = _selectServer(
                           _entrypoints[csock->getPort()].candidates,
                           req.getHeaderField("Host"));
 
                         // TODO: check server
-//						std::cout << *server << std::endl;
                         _createResponse(req, res, server);
 
                         csock->send(res.str());
@@ -420,6 +319,16 @@ Server::start(void)
                         set -= *csock;
                         csock->close();
                         delete csock;
+
+					    if (res.str().size() > 512)
+        					glogger << Logger::DEBUG << "\n"
+              				<< Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
+                			<< CLR << res.str().substr(0, 512) << "\n\n[ ...SNIP... ]\n";
+    					else
+    					    glogger << Logger::DEBUG << "\n"
+            			    << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
+                			<< CLR << res.str() << "\n";
+
                     }
                 }
 
