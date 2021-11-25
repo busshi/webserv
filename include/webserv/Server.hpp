@@ -60,7 +60,8 @@ class Server
 	
 	
 	void _noAutoIndexResponse( std::string path, HTTP::Response& res, Directives& direc);
-	void _autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res);
+	//void _autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res);
+	void _autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response& res);
 
 	// TBD: move below functions inside their own class
 	void _genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );

@@ -1,8 +1,9 @@
 #include "Server.hpp"
+#include "webserv/Directives.hpp"
 #include "http/message.hpp"
 #include "logger/Logger.hpp"
 #include "utils/string.hpp"
-#include "webserv/Directives.hpp"
+#include "utils/ErrorPageGenerator.hpp"
 #include "utils/os.hpp"
 #include <dirent.h>
 #include <cerrno>
@@ -108,15 +109,18 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 
   	ifs.open(path.c_str());
 	if (!ifs) {
-		std::cout << "path: " << path << std::endl;
+		ErrorPageGenerator	errorPage;
+
 		if (direc.getRoot() == "none") {
 			res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
-			_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
+			//_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
+			errorPage.generate(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
 
 		}
 		else {
 			res.setStatus(HTTP::NOT_FOUND);
-			_genErrorPage(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
+			//_genErrorPage(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
+			errorPage.generate(ERROR_SAMPLE, "404", "Not Found", "the page you are looking for doesn't exist");
 		}
 		
 		res.sendFile(ERROR_PAGE);
@@ -126,7 +130,10 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 }
 
 void
-Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res) {
+Server::_autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response& res) {
+//Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res) {
+
+	std::stringstream	buf;
 
 	glogger << Logger::DEBUG << PURPLE << "Autoindex is ON... Listing directory: " << path << CLR << "\n";
 
@@ -152,7 +159,7 @@ void
 Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 {
     Directives directives;
-    std::stringstream buf;
+//    std::stringstream buf;
     std::string location;
     bool haveLoc = false;
 
@@ -186,20 +193,29 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
         if (isFolder(directives.getPath()) == true) {
 
             if (directives.getAutoIndex() == "on")
-                _autoIndexResponse(directives.getPath(), buf, req, res);
+                //_autoIndexResponse(directives.getPath(), buf, req, res);
+                _autoIndexResponse(directives.getPath(), req, res);
             else {
-                std::string errorPage =
-                  _checkErrorPage(directives.getDefaultErrorFile(),
+				ErrorPageGenerator	errorGen;
+
+				std::string errorPage = errorGen.checkErrorPage(directives.getDefaultErrorFile(),
                                   "403",
                                   "Forbidden",
                                   "the access is permanently forbidden");
+  
+
+              //std::string errorPage =
+                //  _checkErrorPage(directives.getDefaultErrorFile(),
+                  //                "403",
+                    //              "Forbidden",
+                      //            "the access is permanently forbidden");
 				std::cout << "Error page: " << errorPage << std::endl;
 				
 
-                std::ifstream ifs;
-                ifs.open(errorPage.c_str());
-                buf << ifs.rdbuf();
-                ifs.close();
+  //              std::ifstream ifs;
+    //            ifs.open(errorPage.c_str());
+      //          buf << ifs.rdbuf();
+        //        ifs.close();
 
 				res.setHeaderField("Content-Type", "text/html");
 				res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
@@ -227,7 +243,7 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
                 "Server: webserv" + "\r\n\r\n" + buf.str();
 	*/
 }
-
+/*
 std::string
 Server::_replace(std::string in, std::string s1, std::string s2) {
 
@@ -307,7 +323,7 @@ Server::_checkErrorPage( std::string defaultPage, std::string code, std::string 
 		return ERROR_PAGE;
 	}
 }
-
+*/
 void
 Server::start(void)
 {
@@ -339,7 +355,7 @@ Server::start(void)
 
                 // parsing request header
                 if (incomingRequests.find(csock) == incomingRequests.end()) {
-                    std::cout << data[csock] << std::endl;
+//                    std::cout << data[csock] << std::endl;
 
                     data[csock] += csock->recv();
 
@@ -385,7 +401,7 @@ Server::start(void)
                           req.getHeaderField("Host"));
 
                         // TODO: check server
-						std::cout << *server << std::endl;
+//						std::cout << *server << std::endl;
                         _createResponse(req, res, server);
 
                         csock->send(res.str());
