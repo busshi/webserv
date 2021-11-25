@@ -27,6 +27,7 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "redirect", validateRedirect, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
+    { "cgi_pass", validateCgiPass, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
 };
 
 static void

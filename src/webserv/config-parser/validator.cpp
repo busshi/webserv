@@ -5,6 +5,32 @@
 #include <string>
 #include <sys/types.h>
 
+static bool
+isValidAddressPort(const std::string& value, std::string& errorMsg)
+{
+    std::vector<std::string> vs = split(value, ":");
+
+    if (vs.size() != 2) {
+        Formatter() << "Failed to parse <address>:<port>" >> errorMsg;
+        return false;
+    }
+
+    if (!isIPv4(vs[0])) {
+        Formatter() << "\"" << vs[0] << "\"" << " is not a valid IPv4." >> errorMsg;
+        return false;
+    }
+
+    std::istringstream iss(vs[1]);
+    unsigned short port = 0;
+
+    if (!(iss >> port)) {
+        Formatter() << "Could not parse port in <address>:<port>." >> errorMsg;
+        return false;
+    }
+
+    return true;
+ }
+
 bool
 validateAutoindex(const std::string& value, std::string& errorMsg)
 {
@@ -194,5 +220,22 @@ bool validateRedirect(const std::string& value, std::string& errorMsg)
         return false;
     }
     
+    return true;
+}   
+
+bool
+validateCgiPass(const std::string& value, std::string& errorMsg)
+{
+    std::vector<std::string> vs = split(value);
+
+    if (vs.size() != 1) {
+        Formatter() << "Expected <ip>:<port> for cgi_pass directive, but found extra tokens!" >> errorMsg;
+        return false;
+    }
+
+    if (!isValidAddressPort(vs[0], errorMsg)) {
+        return false;
+    }
+
     return true;
 }
