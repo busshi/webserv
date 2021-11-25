@@ -21,3 +21,6 @@ validateSize(const std::string& value, std::string& errorMsg);
 
 bool
 validateLogLevel(const std::string& value, std::string& errorMsg);
+
+bool
+validateRedirect(const std::string& value, std::string& errorMsg);

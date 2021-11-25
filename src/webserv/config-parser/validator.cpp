@@ -184,3 +184,15 @@ bool validateLogLevel(const std::string& value, std::string& errorMsg)
 
     return false;
 }
+
+bool validateRedirect(const std::string& value, std::string& errorMsg)
+{
+    std::vector<std::string> vs = split(value);
+
+    if (vs.size() != 1) {
+        Formatter() << "Expected a single URL for HTTP redirection, but found extra tokens!" >> errorMsg;
+        return false;
+    }
+    
+    return true;
+}
