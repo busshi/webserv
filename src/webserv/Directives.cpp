@@ -48,7 +48,7 @@ void	Directives::getConfig( ConfigItem * item, std::string suffix ) {
 	ConfigItem* root = item->findNearest("root");
 	if (root) {
 		_root = root->getValue();
-		_path = _root.substr(0, _root.length() - 1) + suffix;
+		_path = _root.substr(0, _root.length() - (_root == "/")) + suffix;
 	}
 	else {			
 		_root = "none";

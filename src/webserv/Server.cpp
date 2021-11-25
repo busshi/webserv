@@ -108,6 +108,7 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 
   	ifs.open(path.c_str());
 	if (!ifs) {
+		std::cout << "path: " << path << std::endl;
 		if (direc.getRoot() == "none") {
 			res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
 			_genErrorPage(ERROR_SAMPLE, "500", "Internal Server Error", "the server encountered an internal error");
@@ -121,6 +122,8 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
 		res.sendFile(ERROR_PAGE);
 		//ifs.open(path.c_str());
 		//_headerParam["Content-Type"] = "text/html";
+	} else {
+		res.sendFile(path);
 	}
 	
     //buf << ifs.rdbuf();
@@ -139,8 +142,9 @@ Server::_autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Req
 		struct dirent *	dir;
 
 		while ((dir = readdir(folder)) != NULL) {
-				
-			buf << "<a href=\"http://" << req.getHeaderField("Host") << "/" << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
+			std::cout << "Host: " << req.getHeaderField("HosT") << std::endl;
+			std::cout << "resourceURI: " << req.getResourceURI() << std::endl;
+			buf << "<a href=\"http://" << req.getHeaderField("Host") << req.getResourceURI() << (req.getResourceURI() == "/" ? "" : "/") << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
 			glogger << Logger::DEBUG << dir->d_name << "\n";
 		}
 
@@ -167,10 +171,10 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
 
         location = (*it)->getValue();
 
-        if ((haveLoc = directives.haveLocation(req.getResourceURI() + "/",
+        if ((haveLoc = directives.haveLocation(req.getResourceURI(),
                                                location)) == true) {
             glogger << Logger::DEBUG << "haveLoc is true\n";
-            directives.getConfig(*it, location);
+            directives.getConfig(*it, req.getResourceURI());
         }
     }
 
@@ -196,6 +200,8 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
                                   "403",
                                   "Forbidden",
                                   "the access is permanently forbidden");
+				std::cout << "Error page: " << errorPage << std::endl;
+				
 
                 std::ifstream ifs;
                 ifs.open(errorPage.c_str());
@@ -203,7 +209,7 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
                 ifs.close();
 
 				res.setHeaderField("Content-Type", "text/html");
-				res.setStatus(HTTP::FORBIDDEN).send(buf.str());
+				res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
 				/*
                 _headerParam["Status-Code"] = "403 Forbidden";
                 _headerParam["Content-Type"] = "text/html";
