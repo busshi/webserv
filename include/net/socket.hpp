@@ -37,7 +37,8 @@ class ClientSocket: public Socket {
         std::string recv(size_t max_read = 0);
         ClientSocket& send(const std::string& s);
 
-        in_port_t getPort(void) const;
+        in_port_t 	getPort(void) const;
+       	std::string	getIP(void) const;
 };
 
 class ServerSocket: public Socket {

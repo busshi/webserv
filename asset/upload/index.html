@@ -1,18 +1,44 @@
 <!DOCTYPE html>
-<style>
-</style>
 <html>
 	<head>
                 <title>UPLOAD ZONE</title>
 	</head>
-	<body style="background-color:black">
-		<div style="text-align:center; color:orange">
+	<body style="background-color:black; text-align:center; color:orange">
+		<div>
 			<h1>UPLOAD</h1>
+			<h2>WELCOME <?php echo htmlspecialchars($_POST['name']);?></h2><br/><br/>
 		</div>
 
+		<div>
+			<form method="get">
+				<p>What is your name? <input type="text" name="name"</p>
+				<p><input type="submit" value="Submit (GET)"></p><br/>
+			</form>
+		</div>
+		<div>
+			<form method="post">
+				<p>What is your name? <input type="text" name="name"</p>
+				<p><input type="submit" value="Submit (POST)"></p><br/><br/><br/><br/>
+			</form>
+		</div>
+
+		<div>
+			<form method="get">
+				<label>Choose one or several file(s) to upload:</label>
+				<input type="file" name="files" multiple><br/><br/>
+				<button>Upload file(s) (GET)</button><br/><br/><br/>
+			</form>
+		</div>
+		<div>
+			<form method="post">
+				<label>Choose one or several file(s) to upload:</label>
+				<input type="file" name="files" multiple><br/><br/>
+				<button>Upload file(s) (POST)</button><br/><br/><br/><br/><br/>
+			</form>
+		</div>
 
 	<footer>
-		<p style="color:grey; text-align:center">Upload Zone by aldubar and abrabant<br/>42 PARIS</p>
+		<p style="color:grey">Upload Zone by aldubar and abrabant<br/>42 PARIS</p>
 	</footer>
 	</body>
 </html>

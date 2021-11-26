@@ -75,6 +75,8 @@ namespace HTTP {
             const std::string& getURI(void) const;
             const std::string& getProtocol(void) const;
             const std::string getBody(void) const;
+
+            void setResourceURI(const std::string& url);
     };
 
     /**

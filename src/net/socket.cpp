@@ -1,4 +1,6 @@
 #include "net/socket.hpp"
+#include "logger/Logger.hpp"
+#include "webserv/Constants.hpp"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -49,7 +51,7 @@ Net::Socket& Net::Socket::operator=(const Socket &rhs)
 Net::Socket::~Socket(void)
 {
     if (_fd != -1) {
-        std::cout << "closed!" << std::endl;
+        glogger << Logger::INFO << Logger::getTimestamp() << " socket closed!" << "\n";
         close();
     }
 }
@@ -137,8 +139,12 @@ Net::ServerSocket& Net::ServerSocket::bind(unsigned short port, uint32_t ip)
     _address.sin_port = htons(port);
     _address.sin_addr.s_addr = ip;
 
+	char	ipStr[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(_address.sin_addr), ipStr, INET_ADDRSTRLEN);
+
     // use <sys/socket.h>'s bind not this function
-    std::cout << port << "\n";
+    std::cout << GREEN << "Listening on " << ipStr << ":" << BOLD << port << "\n" << CLR;
+
     if (::bind(_fd, (sockaddr*)&_address, sizeof (_address)) == -1) {
         throw std::runtime_error(std::string("ServerSocket bind: ") + strerror(errno));
     }
@@ -225,6 +231,15 @@ Net::ClientSocket& Net::ClientSocket::send(const std::string& s)
 in_port_t Net::ClientSocket::getPort(void) const
 {
     return ntohs(_address.sin_port);
+}
+
+std::string	Net::ClientSocket::getIP(void) const
+{
+    struct  sockaddr_in sa;
+    char    ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(sa.sin_addr), ip, INET_ADDRSTRLEN);
+
+	return std::string(ip);
 }
 
 /********************************************************************************/

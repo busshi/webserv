@@ -33,7 +33,7 @@ std::string Logger::getTimestamp(void)
 	tm* timeinfo = localtime(&rawTime);
 
 	buf[0] = '[';
-	buf[strftime(buf + 1, 1024, "%Y-%m-%e-%H-%M-%S", timeinfo) + 1] = ']';
+	buf[strftime(buf + 1, 1024, "%Y-%m-%e %H:%M:%S", timeinfo) + 1] = ']';
 
 	return buf;
 }

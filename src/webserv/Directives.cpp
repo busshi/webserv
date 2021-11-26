@@ -48,11 +48,13 @@ void	Directives::getConfig( ConfigItem * item, std::string suffix ) {
 	ConfigItem* root = item->findNearest("root");
 	if (root) {
 		_root = root->getValue();
-		_path = _root.substr(0, _root.length() - (_root == "/")) + suffix;
+		_path = _root.substr(0, _root.length() - (_root[_root.length() - 1] == '/')) + suffix;
+		glogger << Logger::WARNING << Logger::getTimestamp() << " Root: " << _root << "\n";
+		glogger << Logger::WARNING << Logger::getTimestamp() << " Path: " << _path << "\n";
 	}
 	else {			
 		_root = "none";
-		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << "Error: No default path provided!\n" << CLR;
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " Error: No default path provided!\n" << CLR;
 	}
 
 	ConfigItem* autoindex = item->findNearest("autoindex");
@@ -109,7 +111,7 @@ void	Directives::setPathWithIndex( void ) {
 	for (it = _indexes.begin(); it != ite; it++) {
 
 		file = _path + *it;
-		glogger << Logger::DEBUG << "checking file + index => " << file << "\n";
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " checking file + index => " << file << "\n";
 
 		if (stat(file.c_str(), &s) == 0)
 			_path += *it;
@@ -118,19 +120,18 @@ void	Directives::setPathWithIndex( void ) {
 
 bool	Directives::haveLocation( std::string requestPath, std::string location ) {
 
-	glogger << Logger::DEBUG << "requestPath [" << requestPath << "] [" << location << "] Location to search\n";
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " requestPath [" << requestPath << "] [" << location << "] Location to search\n";
 
 	size_t found = requestPath.find(location);
-	glogger << Logger::DEBUG << "Found [" << found << "]\n";
-	glogger << Logger::DEBUG << "npos [" << std::string::npos << "]\n";
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " Found [" << found << "]\n";
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " npos [" << std::string::npos << "]\n";
 
 	if (found == std::string::npos) {
-		glogger << Logger::DEBUG << "DO NOT HAVE LOCATION\n";
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " DO NOT HAVE LOCATION\n";
 		return false;
 	}
 	else {
-		glogger << Logger::DEBUG << "HAVE LOCATION\n";
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " HAVE LOCATION\n";
 		return true;
 	}
 }
-

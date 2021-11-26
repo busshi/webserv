@@ -24,16 +24,16 @@ class Server
   	void start(void);
 
   private:
-	struct Socket {
+//	struct Socket {
 
-		int				socket;
-		uint32_t		ipv4;
-		int				maxConnexion;
-		int				connexion;
-		sockaddr_in		sockaddr;
-		int				addrlen;
-		ConfigItem*		item;
-	};
+//		int				socket;
+//		uint32_t		ipv4;
+//		int				maxConnexion;
+//		int				connexion;
+//		sockaddr_in		sockaddr;
+//		int				addrlen;
+//		ConfigItem*		item;
+//	};
 
 	struct Entrypoint {
 		Net::ServerSocket* ssock;
@@ -41,7 +41,7 @@ class Server
 	};
 
 
-	std::map<unsigned short, Socket>	_sockets;
+//	std::map<unsigned short, Socket>	_sockets;
 
 	typedef std::map<unsigned short, Entrypoint> SockMap;
 	SockMap _entrypoints;
@@ -57,16 +57,13 @@ class Server
 
 	ConfigItem* _selectServer(std::vector<ConfigItem*>& candidates, const std::string& host);
 	void _createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
+	void _postResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
+	void _getResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
+	void _deleteResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
 	
 	
 	void _noAutoIndexResponse( std::string path, HTTP::Response& res, Directives& direc);
-	//void _autoIndexResponse( std::string path, std::stringstream & buf, HTTP::Request& req, HTTP::Response& res);
 	void _autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response& res);
-
-	// TBD: move below functions inside their own class
-	void _genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
-	std::string	_replace(std::string in, std::string s1, std::string s2);
-	std::string _checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence);
 };
 
 extern bool isWebservAlive;

@@ -57,23 +57,23 @@ Server::Server(Server const& src)
 Server::~Server(void)
 {
 
-    std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
+ //   std::map<unsigned short, Socket>::iterator it, ite = _sockets.end();
 
-    for (it = _sockets.begin(); it != ite; it++) {
+   // for (it = _sockets.begin(); it != ite; it++) {
 
-        if (_sockets[it->first].socket != -1)
-            close(_sockets[it->first].socket);
-    }
+     //   if (_sockets[it->first].socket != -1)
+       //     close(_sockets[it->first].socket);
+  //  }
 
-    delete _config;
+    //delete _config;
 }
 
 Server&
 Server::operator=(Server const& rhs)
 {
     if (this != &rhs) {
-        this->_sockets = rhs._sockets;
-        this->_connexion = rhs._connexion;
+     //   this->_sockets = rhs._sockets;
+       // this->_connexion = rhs._connexion;
     }
 
     return *this;
@@ -118,7 +118,6 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
                                   "500",
                                   "Internal Server Error",
                                   "the server encountered an internal error");
-
 		}
 		else {
 			res.setStatus(HTTP::NOT_FOUND);
@@ -126,7 +125,6 @@ Server::_noAutoIndexResponse( std::string path, HTTP::Response& res, Directives&
                                   "404",
                                   "Not Found",
                                   "the page you are looking for does not exist");
-
 		}
 		
 		res.sendFile(ERROR_PAGE);
@@ -147,9 +145,10 @@ Server::_autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response
 	if (folder) {
 			
 		struct dirent *	dir;
-
+		
 		while ((dir = readdir(folder)) != NULL) {
-			buf << "<a href=\"http://" << req.getHeaderField("Host") << req.getResourceURI() << (req.getResourceURI() == "/" ? "" : "/") << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
+			std::string	s = req.getResourceURI();
+			buf << "<a href=\"http://" << req.getHeaderField("Host") << req.getResourceURI() << (req.getResourceURI()[req.getResourceURI().length() - 1] == '/' ? "" : "/") << dir->d_name << "\">" << dir->d_name << "</a><br/>" << std::endl;
 			glogger << Logger::DEBUG << dir->d_name << "\n";
 		}
 
@@ -161,8 +160,10 @@ Server::_autoIndexResponse( std::string path, HTTP::Request& req, HTTP::Response
 }
 
 void
-Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
+Server::_getResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 {
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " GET response triggered\n";
+
     Directives directives;
     std::string location;
     bool haveLoc = false;
@@ -184,7 +185,7 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
     }
 
     if (haveLoc == false) {
-        glogger << Logger::DEBUG << " haveLoc is false\n";
+        glogger << Logger::DEBUG << Logger::getTimestamp() << " haveLoc is false\n";
         directives.getConfig(server, req.getResourceURI());
     }
 
@@ -239,6 +240,49 @@ Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* ser
 }
 
 void
+Server::_postResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server) {
+
+	glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " POST response triggered\n" << CLR;
+	_getResponse(req, res, server);
+}
+
+void
+Server::_deleteResponse(HTTP::Request& , HTTP::Response& , ConfigItem*) {
+
+	glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " DELETE response triggered\n" << CLR;
+}
+
+void	Server::_createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server) {
+
+	std::string	method = req.getMethod();
+
+	glogger << Logger::DEBUG << Logger::getTimestamp() << " Method triggered: " << method << "\n";
+
+	std::string	uri = req.getResourceURI();
+	size_t	found = uri.find_first_of('?');
+
+	if (found != uri.npos) {
+		std::string	url = uri.substr(0, found);
+		std::string	args = uri.substr(found + 1, uri.length() - found - 1);
+
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " URL [" << url << "]\n";
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " args [" << args << "]\n";
+
+		req.setResourceURI(url);
+		glogger << Logger::DEBUG << Logger::getTimestamp() << " URL after split [" << req.getResourceURI() << "]\n";
+	}
+	
+	if (method == "GET")
+		_getResponse(req, res, server);
+	else if (method == "POST")
+		_postResponse(req, res, server);
+	else if (method == "DELETE")
+		_deleteResponse(req, res, server);
+	else
+		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " Unsupported response triggered\n" << CLR;
+}
+
+void
 Server::start(void)
 {
     Net::SocketSet set;
@@ -251,7 +295,7 @@ Server::start(void)
         set += *cit->second.ssock;
     }
 
-    std::cout << "webserv is running\nHit Ctrl-C to exit." << std::endl;
+    std::cout << "webserv is running...\nHit Ctrl-C to exit." << std::endl;
 
     while (isWebservAlive) {
         std::list<Net::Socket*> ready = set.select();
@@ -274,6 +318,8 @@ Server::start(void)
                         std::string::npos) {
                         incomingRequests.insert(
                           std::make_pair(csock, HTTP::Request(data[csock])));
+							glogger << Logger::DEBUG << "\n----------\n";
+							glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE << " Request Header:\n" << CLR << data[csock] << "----------\n";
                     }
                 }
 
@@ -285,11 +331,10 @@ Server::start(void)
                     size_t contentLength = 0;
                     oss >> contentLength;
 
-                    glogger << Logger::DEBUG << Logger::getTimestamp() << "Length: " << contentLength << "\n";
+                    glogger << Logger::DEBUG << Logger::getTimestamp() << " Content-Length: " << contentLength << "\n";
 
                     if (req.body.str().size() < contentLength) {
-                        std::cout << contentLength - req.body.str().size()
-                                  << std::endl;
+                        glogger << Logger::DEBUG << Logger::getTimestamp() << contentLength - req.body.str().size() << "\n";
                         std::string s =
                           csock->recv(contentLength - req.body.str().size());
                         req.body << s;
@@ -304,8 +349,8 @@ Server::start(void)
                         incomingRequests.erase(csock);
                         data.erase(csock);
 
-                        glogger << Logger::INFO << Logger::getTimestamp() << "Request received on port "
-                                  << csock->getPort() << "\n";
+                        glogger << Logger::INFO << Logger::getTimestamp() << GREEN << " Request received on " << BOLD << csock->getIP() << ":"
+                                  << csock->getPort() << CLR << "\n";
 
                         ConfigItem* server = _selectServer(
                           _entrypoints[csock->getPort()].candidates,
@@ -321,13 +366,13 @@ Server::start(void)
                         delete csock;
 
 					    if (res.str().size() > 512)
-        					glogger << Logger::DEBUG << "\n"
+        					glogger << Logger::DEBUG << "----------\n"
               				<< Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
-                			<< CLR << res.str().substr(0, 512) << "\n\n[ ...SNIP... ]\n";
+                			<< CLR << res.str().substr(0, 512) << "\n\n[ ...SNIP... ]\n----------\n";
     					else
-    					    glogger << Logger::DEBUG << "\n"
+    					    glogger << Logger::DEBUG << "----------\n"
             			    << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
-                			<< CLR << res.str() << "\n";
+                			<< CLR << res.str() << "\n----------\n";
 
                     }
                 }
@@ -354,20 +399,3 @@ Server::start(void)
         delete cit->second.ssock;
     }
 }
-/*
-void
-Server::sendResponse(Header header)
-{
-    std::string response = header.getResponse();
-
-    if (response.size() > 512)
-        glogger << Logger::DEBUG << "\n"
-                << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
-                << CLR << response.substr(0, 512) << "\n\n[ ...SNIP... ]\n";
-    else
-        glogger << Logger::DEBUG << "\n"
-                << Logger::getTimestamp() << PURPLE << " Response Header:\n\n"
-                << CLR << response << "\n";
-
-    send(_connexion, response.c_str(), response.size(), 0);
-}*/

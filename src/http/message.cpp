@@ -1,6 +1,7 @@
 #include "http/message.hpp"
 #include "utils/string.hpp"
 #include "logger/Logger.hpp"
+#include "webserv/Constants.hpp"
 #include <sstream>
 #include <string>
 #include <fstream>
@@ -31,6 +32,11 @@ std::string HTTP::Message::getHeaderField(const std::string& name) const
 void HTTP::Message::setHeaderField(const std::string& name, const std::string& value)
 {
     _header[name] = value;
+}
+
+void HTTP::Request::setResourceURI(const std::string& url)
+{
+    _resourceURI = url;
 }
 
 /**
@@ -339,7 +345,7 @@ HTTP::Response& HTTP::Response::sendFile(const std::string& filepath)
     std::string fileContent;
     
     if (!ifs) {
-        glogger << "Failed to open file " << filepath << " while building a response\n";
+        glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << "Failed to open file " << filepath << " while building a response\n" << CLR;
     } else {
         fileContent = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
     }
