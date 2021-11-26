@@ -3,7 +3,8 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <net/inet.h>
+#include <netinet/in.h>
+
 #include "http/status.hpp"
 #include "utils/string.hpp"
 
@@ -124,8 +125,6 @@ namespace HTTP {
             Response& sendFile(const std::string& filepath);
             Response& send(const std::string& s);
             Response& append(const std::string& s);
-
-            Response& cgiPass(uint32_t address, port_t port);
 
             std::string str(void);
     };

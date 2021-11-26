@@ -427,9 +427,3 @@ std::string HTTP::Response::_detectMediaType(const std::string &resource) const
 
     return "text/plain";
 }
-
-HTTP::Response& HTTP::Response::cgiPass(uint32_t address, port_t port)
-{
-    // TODO: create socket client that connects to address:port of the CGI
-    // Then parse the cgi response to update the final response
-}
