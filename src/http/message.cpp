@@ -85,20 +85,24 @@ HTTP::Message& HTTP::Message::operator=(const Message& rhs)
  It is usually the data sent by the user agent through the client socket.
  */
 
-HTTP::Request::Request(std::string rawData)
+HTTP::Request::Request(void)
 {
-    std::string::size_type pos = rawData.find(HTTP::CRLF);
+}
 
-    std::vector<std::string> ss = split(rawData.substr(0, pos));
+ HTTP::Request& HTTP::Request::parseHeader(const std::string& headerData)
+ {
+   std::string::size_type pos = headerData.find(HTTP::CRLF);
+
+    std::vector<std::string> ss = split(headerData.substr(0, pos));
 
     _method = ss[0];
     _resourceURI = ss[1];
     _protocol = ss[2];
 
-    std::string::size_type bodyPos = rawData.find(HTTP::CRLF + HTTP::CRLF);
+    std::string::size_type bodyPos = headerData.find(HTTP::CRLF + HTTP::CRLF);
 
 
-    std::vector<std::string> fields = split(rawData.substr(pos, bodyPos - pos), HTTP::CRLF);
+    std::vector<std::string> fields = split(headerData.substr(pos, bodyPos - pos), HTTP::CRLF);
 
     for (std::vector<std::string>::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         std::vector<std::string> ss = split(*cit, " ");
@@ -106,7 +110,20 @@ HTTP::Request::Request(std::string rawData)
     }
 
     _URI = "http://" + getHeaderField("Host") + _resourceURI;
-}
+
+    return *this;
+ }
+
+ std::ostream& HTTP::Request::printHeader(std::ostream& os) const
+ {
+    os << getMethod() << " " << getResourceURI() << " " << getProtocol() << "\n";
+    for (Header::const_iterator cit = _header.begin(); cit != _header.end(); ++cit) {
+        os << cit->first << ": " << cit->second << "\n";
+    }
+
+    return os;
+ }
+
 /**
  * @brief Destroy the HTTP::Request::Request object
  * 

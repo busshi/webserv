@@ -63,7 +63,7 @@ namespace HTTP {
         public:
             std::ostringstream body;
 
-            Request(std::string rawData = "");
+            Request(void);
             Request(const Request& other);
             Request& operator=(const Request& rhs);
             ~Request(void);
@@ -75,6 +75,10 @@ namespace HTTP {
             const std::string& getURI(void) const;
             const std::string& getProtocol(void) const;
             const std::string getBody(void) const;
+
+            HTTP::Request& parseHeader(const std::string& headerData);
+            
+            std::ostream& printHeader(std::ostream& os = std::cout) const;
     };
 
     /**

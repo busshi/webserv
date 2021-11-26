@@ -270,10 +270,15 @@ Server::start(void)
 
                     data[csock] += csock->recv();
 
-                    if (data[csock].find(HTTP::BODY_DELIMITER) !=
+                    // we've got the header now we need to parse it
+                    std::string::size_type pos = 0;
+
+                    if ((pos = data[csock].find(HTTP::BODY_DELIMITER)) !=
                         std::string::npos) {
-                        incomingRequests.insert(
-                          std::make_pair(csock, HTTP::Request(data[csock])));
+                        incomingRequests.insert(std::make_pair(csock, HTTP::Request()));
+                        incomingRequests[csock].parseHeader(data[csock].substr(0, pos));
+
+                        incomingRequests[csock].printHeader();
                     }
                 }
 
