@@ -151,3 +151,41 @@ std::string toLowerCase(const std::string& s)
 
     return ls;
 }
+
+/**
+ * @brief parse a string-encoded integer expressed in base radix, such as 2 <= radix <= 36.
+ * 
+ * @param s
+ * @param radix
+ * @return long long 
+ */
+
+long long parseInt(const std::string& s, int radix)
+{
+    static const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    long long parsed = 0;
+    bool isNeg = false;
+    std::string trimmed = trim(s);
+    
+    std::string::const_iterator sbit = trimmed.begin();
+
+    while (sbit != trimmed.end() && (*sbit == '+' || *sbit == '-')) {
+        if (*sbit == '-') {
+            isNeg = !isNeg;
+        }
+        ++sbit;
+    }
+
+    while (sbit != trimmed.end()) {
+        std::string::size_type pos = charset.find(toupper(*sbit));
+
+        if (pos == std::string::npos) {
+            break ;
+        }
+
+        parsed = parsed * radix + pos;
+        ++sbit;
+    }
+
+    return parsed * (isNeg ? -1 : 1);
+}
