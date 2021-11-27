@@ -12,17 +12,17 @@ else
 	OPEN := open
 endif
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
+SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp events.cpp  Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
 SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp utils/os.cpp utils/ErrorPageGenerator.cpp)
 SRCS		+= $(addprefix src/logger/, Logger.cpp)
-SRCS		+= $(addprefix src/http/, status.cpp message.cpp)
+SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp)
 SRCS		+= $(addprefix src/net/, socket.cpp)
 SRCS		+= $(addprefix src/cgi/, cgi.cpp)
 
 HEADER		= $(addprefix include/webserv/, Server.hpp Directives.hpp Constants.hpp config-parser/Lexer.hpp config-parser/ConfigParser.hpp config-parser/validator.hpp config-parser/ConfigItem.hpp)
 HEADER		+= $(addprefix include/, utils/Formatter.hpp utils/string.hpp utils/os.hpp utils/ErrorPageGenerator.hpp)
 HEADER		+=  $(addprefix include/logger/, Logger.hpp)
-HEADER		+= $(addprefix include/http/, status.hpp message.hpp)
+HEADER		+= $(addprefix include/http/, header.hpp status.hpp message.hpp)
 HEADER		+= $(addprefix include/net/, socket.hpp)
 HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 

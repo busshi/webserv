@@ -56,7 +56,7 @@ Net::Socket::~Socket(void)
 
 Net::Socket& Net::Socket::open(void)
 {
-   _fd = socket(AF_INET, SOCK_STREAM, 0);
+   
 
     if (_fd == -1) {
         throw std::runtime_error(std::string("Socket open: ") + strerror(errno));

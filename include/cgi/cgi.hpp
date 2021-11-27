@@ -1,12 +1,18 @@
 #pragma once
 #include "http/message.hpp"
 #include <cstdio>
+#include <cstring>
+#include <sys/select.h>
 
 class CommonGatewayInterface {
     int _inputFd[2], _outputFd[2];
-    HTTP::Request _req;
-    std::string _cgiExecName;
+    std::string _cgiExecName, _filepath, _data;
+    int _csockFd;
+    fd_set& _fdSet;
     pid_t _proc;
+    HTTP::Response _res;
+    enum { STREAMING_HEADER, STREAMING_BODY } _state;
+    bool _isDone;
 
     char** _mapToEnviron(const std::map<std::string, std::string>& m)
     {
@@ -20,11 +26,19 @@ class CommonGatewayInterface {
     }
 
     public:
-        CommonGatewayInterface(HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath, size_t contentLength = 0);
+        CommonGatewayInterface(int csockFd, fd_set& fdSet, const std::string& cgiExecName, const std::string& filepath);
         ~CommonGatewayInterface(void);
 
-        CommonGatewayInterface& passFile(const std::string& filepath);
+        void start(void);
 
-        
+        int getOutputFd(void) const;
+        int getInputFd(void) const;
+        int getClientFd(void) const;
+        bool isDone(void) const;
 
+        const std::string& getData(void) const;
+
+        int read(void);
+
+        void stream(void);
 };

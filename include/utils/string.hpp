@@ -16,3 +16,6 @@ isIPv4(const std::string& s);
 
 std::string
 toLowerCase(const std::string& s);
+
+long long
+parseInt(const std::string& s, int radix);

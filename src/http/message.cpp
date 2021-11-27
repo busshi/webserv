@@ -16,9 +16,7 @@
 
 std::string HTTP::Message::getHeaderField(const std::string& name) const
 {
-    std::map<std::string, std::string>::const_iterator cit =_header.find(name);
-
-    return cit != _header.end() ? cit->second : "";
+    return _header.getField(name);
 }
 
 /**
@@ -30,7 +28,7 @@ std::string HTTP::Message::getHeaderField(const std::string& name) const
 
 void HTTP::Message::setHeaderField(const std::string& name, const std::string& value)
 {
-    _header[name] = value;
+    _header.setField(name, value);
 }
 
 /**
@@ -78,6 +76,10 @@ HTTP::Message& HTTP::Message::operator=(const Message& rhs)
     return *this; 
 }
 
+HTTP::Request::Request(void)
+{
+}
+
 /**
  * @brief Construct a new HTTP::Request::Request object
  * 
@@ -85,11 +87,12 @@ HTTP::Message& HTTP::Message::operator=(const Message& rhs)
  It is usually the data sent by the user agent through the client socket.
  */
 
-HTTP::Request::Request(void)
+HTTP::Request::Request(int csockFd, const std::string& headerRawData): _csockFd(csockFd)
 {
+    _parseHeader(headerRawData);
 }
 
- HTTP::Request& HTTP::Request::parseHeader(const std::string& headerData)
+ HTTP::Request& HTTP::Request::_parseHeader(const std::string& headerData)
  {
    std::string::size_type pos = headerData.find(HTTP::CRLF);
 
@@ -99,29 +102,11 @@ HTTP::Request::Request(void)
     _resourceURI = ss[1];
     _protocol = ss[2];
 
-    std::string::size_type bodyPos = headerData.find(HTTP::CRLF + HTTP::CRLF);
-
-
-    std::vector<std::string> fields = split(headerData.substr(pos, bodyPos - pos), HTTP::CRLF);
-
-    for (std::vector<std::string>::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
-        std::vector<std::string> ss = split(*cit, " ");
-        setHeaderField(ss[0].substr(0, ss[0].find(':')), ss[1]);
-    }
+    _header.parse(headerData.substr(pos, std::string::npos));
 
     _URI = "http://" + getHeaderField("Host") + _resourceURI;
 
     return *this;
- }
-
- std::ostream& HTTP::Request::printHeader(std::ostream& os) const
- {
-    os << getMethod() << " " << getResourceURI() << " " << getProtocol() << "\n";
-    for (Header::const_iterator cit = _header.begin(); cit != _header.end(); ++cit) {
-        os << cit->first << ": " << cit->second << "\n";
-    }
-
-    return os;
  }
 
 /**
@@ -224,6 +209,18 @@ const std::string HTTP::Request::getBody(void) const
     return body.str();
 }
 
+HTTP::Request& HTTP::Request::setServerBlock(ConfigItem* serverBlock)
+{
+    _serverBlock = serverBlock;
+
+    return *this;
+}
+
+HTTP::Response::Response(void): _statusCode(HTTP::OK)
+{
+    setHeaderField("Server", "webserv/1.0");
+}
+
 /**
  * @brief Construct a new HTTP::Response::Response object
  * 
@@ -241,7 +238,7 @@ HTTP::Response::Response(const HTTP::Request& req): _statusCode(HTTP::OK), _req(
  * @param other 
  */
 
-HTTP::Response::Response(const HTTP::Response& other): Message()
+HTTP::Response::Response(const HTTP::Response& other): Message() 
 {
     *this = other;
 }
@@ -334,9 +331,7 @@ std::string HTTP::Response::_sendHeader(void)
     oss << "HTTP/1.1" << " " << _statusCode << " " << toStatusCodeString(_statusCode) << HTTP::CRLF;
 
     oss << "Content-Length: " << _body.size() << HTTP::CRLF;
-    for (HTTP::Header::const_iterator cit = _header.begin(); cit != _header.end(); ++cit) {
-        oss << cit->first << ": " << cit->second << HTTP::CRLF;
-    }
+    oss << _header.format();
     oss << HTTP::CRLF;
 
     return oss.str();

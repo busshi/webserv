@@ -3,7 +3,9 @@
 #include <string>
 #include <map>
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <sys/socket.h>
+#include <set> 
 
 #include "net/socket.hpp"
 #include "config-parser/ConfigParser.hpp"
@@ -11,6 +13,7 @@
 #include "Constants.hpp"
 #include "http/message.hpp"
 #include "webserv/Directives.hpp"
+#include "cgi/cgi.hpp"
 
 class Server
 {
@@ -35,16 +38,29 @@ class Server
 		ConfigItem*		item;
 	};
 
-	struct Entrypoint {
-		Net::ServerSocket* ssock;
+	/**
+	 * @brief Representation of a host
+	 * candiates are all the blocks that are connected to this host.
+	 */
+
+	struct Host {
+		int ssockFd;
+		sockaddr_in addr;
 		std::vector<ConfigItem*> candidates;
+		std::vector<CommonGatewayInterface*> cgis;
 	};
 
+	std::map<int, std::string> _data;
+    std::map<int, HTTP::Request> _reqs;
+    std::set<CommonGatewayInterface*> _cgis;
+    std::set<int> _clients;
+
+	fd_set _fdset;
 
 	std::map<unsigned short, Socket>	_sockets;
-
-	typedef std::map<unsigned short, Entrypoint> SockMap;
-	SockMap _entrypoints;
+	
+	typedef std::map<unsigned short, Host> HostMap;
+	HostMap _hosts;
 
     int _connexion;
 	
@@ -67,6 +83,10 @@ class Server
 	void _genErrorPage( std::string file, std::string code, std::string msg, std::string sentence );
 	std::string	_replace(std::string in, std::string s1, std::string s2);
 	std::string _checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence);
+
+	void _handleClientEvents(const fd_set& set);
+	void _handleServerEvents(const fd_set& set);
+	void _handleCGIEvents(const fd_set& set);
 };
 
 extern bool isWebservAlive;

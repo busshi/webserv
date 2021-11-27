@@ -7,6 +7,9 @@
 
 #include "http/status.hpp"
 #include "utils/string.hpp"
+#include "webserv/config-parser/ConfigParser.hpp"
+#include "net/socket.hpp"
+#include "http/header.hpp"
 
 /* Everything related to the HTTP protocol */
 namespace HTTP {
@@ -20,14 +23,6 @@ namespace HTTP {
             return std::lexicographical_compare(s1Lower.begin(), s1Lower.end(), s2Lower.begin(), s2Lower.end());
         }
     };
-
-    /**
-     * @brief A header mainly being a collection of key-value pairs, this typedef provides
-     a cleaner and shorter way to refer to the underlying type that is a map of string to string.
-     Map ordering is case insensitive as header field names are.
-     */
-
-    typedef std::map<std::string, std::string, compareIgnoreCase> Header;
 
     /**
      * @brief A HTTP message is an all encompassing term that usually refers to a HTTP::Request or HTTP::Response.
@@ -61,11 +56,14 @@ namespace HTTP {
 
     class Request: public Message {
         std::string _method, _resourceURI, _URI, _protocol;
+        ConfigItem* _serverBlock;
+        int _csockFd;
         
         public:
             std::ostringstream body;
 
             Request(void);
+            Request(int csockfd, const std::string& headerRawData);
             Request(const Request& other);
             Request& operator=(const Request& rhs);
             ~Request(void);
@@ -78,8 +76,10 @@ namespace HTTP {
             const std::string& getProtocol(void) const;
             const std::string getBody(void) const;
 
-            HTTP::Request& parseHeader(const std::string& headerData);
-            
+            HTTP::Request& setServerBlock(ConfigItem* serverBlock);
+
+            HTTP::Request& _parseHeader(const std::string& headerData);
+
             std::ostream& printHeader(std::ostream& os = std::cout) const;
     };
 
@@ -112,6 +112,7 @@ namespace HTTP {
         std::string _detectMediaType(const std::string& resource) const;
 
         public:
+            Response(void);
             Response(const Request& req);
             Response(const Response& other);
             ~Response(void);
