@@ -90,6 +90,7 @@ HTTP::Request::Request(void)
 HTTP::Request::Request(int csockFd, const std::string& headerRawData): _csockFd(csockFd)
 {
     _parseHeader(headerRawData);
+    remContentLength = 0;
 }
 
  HTTP::Request& HTTP::Request::_parseHeader(const std::string& headerData)

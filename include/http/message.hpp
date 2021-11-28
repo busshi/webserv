@@ -63,6 +63,7 @@ namespace HTTP {
         
         public:
             std::ostringstream body;
+            int remContentLength;
 
             Request(void);
             Request(int csockfd, const std::string& headerRawData);
