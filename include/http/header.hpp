@@ -39,6 +39,9 @@ class Header
         std::string getField(const std::string& name) const;
         Header& setField(const std::string& name, const std::string& value);
         Header& parse(const std::string& rawData);
+        Header& merge(const Header& other,
+        std::pair<const std::string, std::string> (*transformer)(const std::pair<const std::string, std::string>& p) = 0);
+        char** toEnv(void) const;
 
         std::string format(void) const;
 };

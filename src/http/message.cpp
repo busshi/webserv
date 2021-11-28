@@ -216,7 +216,12 @@ HTTP::Request& HTTP::Request::setServerBlock(ConfigItem* serverBlock)
     return *this;
 }
 
-HTTP::Response::Response(void): _statusCode(HTTP::OK)
+ConfigItem* HTTP::Request::getServerBlock(void) const
+{
+    return _serverBlock;
+}
+
+HTTP::Response::Response(int csock): _statusCode(HTTP::OK), _csock(csock)
 {
     setHeaderField("Server", "webserv/1.0");
 }
@@ -230,6 +235,11 @@ HTTP::Response::Response(void): _statusCode(HTTP::OK)
 HTTP::Response::Response(const HTTP::Request& req): _statusCode(HTTP::OK), _req(req)
 {
     setHeaderField("Server", "webserv/1.0");
+}
+
+int HTTP::Response::getClientSocket(void) const
+{
+    return _csock;
 }
 
 /**
@@ -307,6 +317,11 @@ HTTP::Response& HTTP::Response::setStatus(unsigned intStatusCode)
     return *this;
 }
 
+HTTP::Header& HTTP::Message::header(void)
+{
+    return _header;
+}
+
 /**
  * @brief Get the original request the response is answering too.
  * 
@@ -330,7 +345,6 @@ std::string HTTP::Response::_sendHeader(void)
 
     oss << "HTTP/1.1" << " " << _statusCode << " " << toStatusCodeString(_statusCode) << HTTP::CRLF;
 
-    oss << "Content-Length: " << _body.size() << HTTP::CRLF;
     oss << _header.format();
     oss << HTTP::CRLF;
 

@@ -152,6 +152,18 @@ std::string toLowerCase(const std::string& s)
     return ls;
 }
 
+std::string toUpperCase(const std::string& s)
+{
+    std::string us(s);
+
+    for (std::string::iterator it = us.begin(); it != us.end(); ++it) {
+        *it = toupper(*it);
+    }
+
+    return us;
+}
+
+
 /**
  * @brief parse a string-encoded integer expressed in base radix, such as 2 <= radix <= 36.
  * 

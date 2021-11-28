@@ -1,6 +1,7 @@
 #include "http/header.hpp"
 #include "http/message.hpp"
 #include <sstream>
+#include <cstring>
 
 HTTP::Header::Header(void)
 {
@@ -50,6 +51,39 @@ HTTP::Header& HTTP::Header::parse(const std::string &headerData)
     }
 
     return *this;
+}
+
+/**
+ * @brief Merge all the header fields held by other in the current instance. In case a header is already set before merging,
+ * the old value is replaced by the new one.
+ * 
+ * @param other 
+ * @return HTTP::Header& 
+ */
+
+HTTP::Header&
+HTTP::Header::merge(const HTTP::Header& other,
+      std::pair<const std::string, std::string> (*transformer)(const std::pair<const std::string, std::string>& p))
+{
+    for (Fields::const_iterator cit = other._fields.begin(); cit != other._fields.end(); ++cit) {
+        _fields.insert(transformer ? transformer(*cit) : *cit);
+    }
+
+    return *this;
+}
+
+char** HTTP::Header::toEnv(void) const
+{
+    char** envp = new char*[_fields.size() + 1], **p = envp;
+
+    for (Fields::const_iterator cit = _fields.begin(); cit != _fields.end(); ++cit) {
+        *p = strdup((cit->first + "=" + cit->second).c_str());
+        ++p;
+    }
+
+    envp[_fields.size()] = 0;
+
+    return envp;
 }
 
 std::string HTTP::Header::format(void) const

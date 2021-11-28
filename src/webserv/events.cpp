@@ -5,6 +5,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+void Server::_closeConnection(int sockFd)
+{
+    _reqs.erase(sockFd);
+    _data.erase(sockFd);
+    _clients.erase(sockFd);
+    _cgis.erase(sockFd);
+    FD_CLR(sockFd, &_fdset);
+    close(sockFd);
+}
+
 void
 Server::_handleClientEvents(const fd_set& set)
 {
@@ -48,15 +58,22 @@ Server::_handleClientEvents(const fd_set& set)
                     req.setServerBlock(_selectServer(
                       _hosts[port].candidates, req.getHeaderField("host")));
 
-                    CommonGatewayInterface* cgi = new CommonGatewayInterface(
-                      *cit, _fdset, "php-cgi", "./test.php");
 
-                    //std::cout << "Start cgi" << std::endl;
-                    cgi->start();
-                    _cgis.insert(cgi);
+                    HTTP::Response res(*cit);
+
+                    _createResponse(req, res, req.getServerBlock());
+
+                    // we don't want to enter that block if request has been taken by the CGI
+                    if (_cgis.find(*cit) == _cgis.end()) {
+                        send(*cit, res.str().c_str(), res.str().size(), 0);
+
+                        // we need to wait for CGI to end before closing!
+                        _closeConnection(*cit);
+                    }
+
                 }
             }
-        }
+        } 
     }
     std::cout << "---- END clients -----" << std::endl;
 }
@@ -70,8 +87,8 @@ Server::_handleClientEvents(const fd_set& set)
 void Server::_handleCGIEvents(const fd_set& set)
 {
     std::cout << "cgis: " << _cgis.size() << std::endl; 
-    for (std::set<CommonGatewayInterface*>::const_iterator cit = _cgis.begin(); cit != _cgis.end();) {
-        CommonGatewayInterface* cgi = *cit;
+    for (std::map<int, CommonGatewayInterface*>::const_iterator cit = _cgis.begin(); cit != _cgis.end();) {
+        CommonGatewayInterface* cgi = cit->second;
         ++cit;
 
         // We've got data to read from the php-cgi, now let's process it
@@ -80,14 +97,8 @@ void Server::_handleCGIEvents(const fd_set& set)
 
             // EOF
             if (cgi->isDone()) {
-                _data.erase(cgi->getClientFd());
-                _reqs.erase(cgi->getClientFd());
-                FD_CLR(cgi->getClientFd(), &_fdset);
-                close(cgi->getClientFd());
-                _clients.erase(cgi->getClientFd());
+                _closeConnection(cgi->getClientFd());
                 delete cgi;
-                _cgis.erase(cgi);
-                std::cout << "Erase cgi" << std::endl;
             }
         }
     }

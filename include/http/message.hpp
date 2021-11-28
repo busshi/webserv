@@ -45,6 +45,8 @@ namespace HTTP {
             Message(const Message& other);
             Message& operator=(const Message& rhs);
             ~Message(void);
+
+            Header& header(void);
     };
 
     /**
@@ -77,6 +79,7 @@ namespace HTTP {
             const std::string getBody(void) const;
 
             HTTP::Request& setServerBlock(ConfigItem* serverBlock);
+            ConfigItem* getServerBlock(void) const;
 
             HTTP::Request& _parseHeader(const std::string& headerData);
 
@@ -101,6 +104,7 @@ namespace HTTP {
         StatusCode _statusCode;
         Request _req;
         std::string _body;
+        int _csock;
 
         std::string _sendHeader(void);
 
@@ -112,7 +116,7 @@ namespace HTTP {
         std::string _detectMediaType(const std::string& resource) const;
 
         public:
-            Response(void);
+            Response(int csock = -1);
             Response(const Request& req);
             Response(const Response& other);
             ~Response(void);
@@ -126,9 +130,9 @@ namespace HTTP {
             Response& sendFile(const std::string& filepath);
             Response& send(const std::string& s);
             Response& append(const std::string& s);
+        
+            int getClientSocket(void) const;
 
             std::string str(void);
     };
-   
-  
 }

@@ -1,11 +1,12 @@
 #include "cgi/cgi.hpp"
+#include "utils/string.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
 #include <cstdlib>
 
-CommonGatewayInterface::CommonGatewayInterface(int csockFd, fd_set& fdSet, const std::string& cgiExecName, const std::string& filepath):
-_cgiExecName(cgiExecName), _filepath(filepath), _csockFd(csockFd), _fdSet(fdSet), _proc(-1), _state(STREAMING_HEADER), _isDone(false)
+CommonGatewayInterface::CommonGatewayInterface(int csockFd, fd_set& fdSet, HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath):
+_cgiExecName(cgiExecName), _filepath(filepath), _csockFd(csockFd), _fdSet(fdSet), _req(req), _proc(-1), _state(STREAMING_HEADER), _isDone(false)
 {
     _inputFd[0] = -1;
     _inputFd[1] = -1;
@@ -13,9 +14,15 @@ _cgiExecName(cgiExecName), _filepath(filepath), _csockFd(csockFd), _fdSet(fdSet)
     _outputFd[1] = -1;
 }
 
+static std::pair<const std::string, std::string> transformClientHeaders(const std::pair<const std::string, std::string>& p)
+{
+    return make_pair(std::string("HTTP_" + toUpperCase(p.first)), p.second);
+}
+
 void CommonGatewayInterface::start(void)
 {
     std::map<std::string, std::string> cgiEnv;
+    std::string tmp;
     std::ostringstream oss;
     pipe(_inputFd);
     pipe(_outputFd);
@@ -26,6 +33,38 @@ void CommonGatewayInterface::start(void)
 
     FD_SET(_inputFd[1], &_fdSet);
     FD_SET(_outputFd[0], &_fdSet);
+    
+    HTTP::Header henv;
+
+    // Merge all the request header fields into the CGI environment, prefixing each field with "HTTP_"
+    henv.merge(_req.header(), &transformClientHeaders);
+
+    // Server information
+
+    henv.setField("SERVER_PROTOCOL", _req.getProtocol());
+    henv.setField("SERVER_SOFTWARE", henv.getField("Server"));
+
+    henv.setField("REDIRECT_STATUS", "200");
+    
+    henv.setField("SCRIPT_FILENAME", _filepath);
+    henv.setField("SCRIPT_NAME", _filepath);
+
+    tmp = henv.getField("HTTP_CONTENT-LENGTH");
+    if (!tmp.empty()) {
+        henv.setField("CONTENT_LENGTH", henv.getField("HTTP_CONTENT-LENGTH"));
+    }
+
+    tmp = henv.getField("HTTP_CONTENT-TYPE");
+    if (!tmp.empty()) {
+        henv.setField("CONTENT_TYPE", henv.getField("HTTP_CONTENT-TYPE"));
+    }
+ 
+    henv.setField("REMOTE_HOST", henv.getField("Host"));
+    henv.setField("HTTPS", "off");
+    henv.setField("REQUEST_METHOD", _req.getMethod());
+    henv.setField("PATH_INFO", _filepath);
+
+    std::cout << _filepath << std::endl;
 
     _proc = fork();
     
@@ -38,8 +77,9 @@ void CommonGatewayInterface::start(void)
             strdup(_filepath.c_str()),
             NULL
         };
-
-        execvp(argv[0], argv);
+        
+        char** envp = henv.toEnv();
+        execvpe(argv[0], argv, envp);
 
         perror("execvp: ");
         exit(1);
@@ -120,7 +160,7 @@ void CommonGatewayInterface::stream(void)
 
             std::cout << cgiHeader.format() << std::endl;
 
-            // Change status according to what php-cgi (maybe) says
+            // Change status according to what php-cgi (may) say
             std::string status = cgiHeader.getField("status");
             if (!status.empty()) {
                 std::vector<std::string> ss = split(status, " ");
@@ -128,6 +168,8 @@ void CommonGatewayInterface::stream(void)
             }
 
             _res.send(_data.substr(pos + 4, std::string::npos));
+
+            _res.header().merge(cgiHeader);
 
             _state = STREAMING_BODY;
 

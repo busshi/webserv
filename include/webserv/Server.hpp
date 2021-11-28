@@ -52,7 +52,7 @@ class Server
 
 	std::map<int, std::string> _data;
     std::map<int, HTTP::Request> _reqs;
-    std::set<CommonGatewayInterface*> _cgis;
+    std::map<int, CommonGatewayInterface*> _cgis;
     std::set<int> _clients;
 
 	fd_set _fdset;
@@ -87,6 +87,7 @@ class Server
 	void _handleClientEvents(const fd_set& set);
 	void _handleServerEvents(const fd_set& set);
 	void _handleCGIEvents(const fd_set& set);
+	void _closeConnection(int sockFd);
 };
 
 extern bool isWebservAlive;
