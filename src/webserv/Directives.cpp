@@ -141,3 +141,12 @@ bool	Directives::haveLocation( std::string requestPath, std::string location ) {
 	}
 }
 
+const std::string& Directives::getCgiExecutable(void) const
+{
+	return _cgiPass.cgiExec;
+}
+
+const std::vector<std::string>& Directives::getCgiExtensions(void) const
+{
+	return _cgiPass.exts;
+}

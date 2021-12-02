@@ -27,6 +27,8 @@ class	Directives {
 		std::string	getBodyMaxSize( void );
 		std::vector<std::string>	getIndexes( void );
 		std::vector<std::string>	getMethods( void );
+		const std::string&					getCgiExecutable(void) const;
+		const std::vector<std::string>& getCgiExtensions(void) const;
 
 		void		setPathWithIndex( void );
 
