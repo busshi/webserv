@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/types.h>
 
+/*
 static bool
 isValidAddressPort(const std::string& value, std::string& errorMsg)
 {
@@ -30,6 +31,7 @@ isValidAddressPort(const std::string& value, std::string& errorMsg)
 
     return true;
  }
+ */
 
 bool
 validateAutoindex(const std::string& value, std::string& errorMsg)
@@ -221,19 +223,17 @@ bool validateRedirect(const std::string& value, std::string& errorMsg)
     }
     
     return true;
-}   
+}
+
+// example: cgi_pass .php,.php2 php-cgi
 
 bool
 validateCgiPass(const std::string& value, std::string& errorMsg)
 {
     std::vector<std::string> vs = split(value);
 
-    if (vs.size() != 1) {
-        Formatter() << "Expected <ip>:<port> for cgi_pass directive, but found extra tokens!" >> errorMsg;
-        return false;
-    }
-
-    if (!isValidAddressPort(vs[0], errorMsg)) {
+    if (vs.size() != 2) {
+        Formatter() << "Malformed cgi_pass: expected format is: cgi_pass file_extensions path/to/cgi-executable" >> errorMsg;
         return false;
     }
 
