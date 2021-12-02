@@ -42,4 +42,8 @@ class	Directives {
 		std::string					_bodyMaxSize;
 		std::vector<std::string>	_indexes;
 		std::vector<std::string>	_methods;
+		struct {
+			std::string cgiExec;
+			std::vector<std::string> exts;
+		} _cgiPass;
 };

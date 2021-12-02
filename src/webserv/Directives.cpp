@@ -97,6 +97,13 @@ void	Directives::getConfig( ConfigItem * item, std::string suffix ) {
 	else {
 		glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE << " No body_max_size directive found! Using webserv default body_max_size\n" << CLR;
 	}
+
+	ConfigItem* cgiPass = item->findNearest("cgi_pass");
+	if (cgiPass){
+		std::vector<std::string> components = split(cgiPass->getValue());
+		_cgiPass.cgiExec = components.back();
+		_cgiPass.exts = split(components.front(), ",");
+	}
 }
 
 void	Directives::setPathWithIndex( void ) {
