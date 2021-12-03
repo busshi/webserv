@@ -9,8 +9,6 @@ void
 Server::_closeConnection(int sockFd)
 {
     _reqs.erase(sockFd);
-    _data.erase(sockFd);
-    _clients.erase(sockFd);
     _cgis.erase(sockFd);
     FD_CLR(sockFd, &_fdset);
     close(sockFd);
@@ -19,78 +17,76 @@ Server::_closeConnection(int sockFd)
 void
 Server::_handleClientEvents(const fd_set& set)
 {
-    for (std::set<int>::const_iterator cit = _clients.begin();
-         cit != _clients.end();
-         ++cit) {
+    for (std::map<int, HTTP::Request>::iterator it = _reqs.begin(); it != _reqs.end();) {
+        int csockfd = it->first;
+        HTTP::Request& req = it->second;
 
-        if (FD_ISSET(*cit, &set)) {
+        if (FD_ISSET(csockfd, &set)) {
             char buf[1024] = { 0 };
+            int ret = recv(csockfd, buf, 1023, 0);
 
-            int ret = recv(*cit, buf, 1023, 0);
-
-            // header hasn't been parsed we need to parse it
-            if (_reqs.find(*cit) == _reqs.end()) {
-                _data[*cit] += buf;
+            if (req.getState() == HTTP::Request::W4_HEADER) {
+                req.data << buf;
 
                 std::string::size_type pos = 0;
 
-                if ((pos = _data[*cit].find(HTTP::BODY_DELIMITER)) !=
+                if ((pos = req.data.str().find(HTTP::BODY_DELIMITER)) !=
                     std::string::npos) {
-                    // creates a new Request object and parses the header
-                    HTTP::Request& req =
-                      _reqs
-                        .insert(std::make_pair(
-                          *cit,
-                          HTTP::Request(*cit, _data[*cit].substr(0, pos))))
-                        .first->second;
-
+                    
+                    // remove parsed header data from the read buffer
                     strcpy(
                       buf,
-                      _data[*cit].substr(pos + 4, std::string::npos).c_str());
+                      req.data.str().substr(pos + 4, std::string::npos).c_str()
+                    );
 
+                    // actual parsing of the header
+                    req.parseHeaderFromData();
+
+                    // get port to which the connection is addressed
                     socklen_t slen = sizeof(sockaddr_in);
                     sockaddr_in addr;
-                    getsockname(*cit, (sockaddr*)&addr, &slen);
-
+                    getsockname(csockfd, (sockaddr*)&addr, &slen);
                     uint16_t port = ntohs(addr.sin_port);
-
-                    req.setServerBlock(_selectServer(
-                      _hosts[port].candidates, req.getHeaderField("host")));
+                
+                    ConfigItem* serverBlock = _selectServer(_hosts[port].candidates, req.getHeaderField("host"));
+                    req.setServerBlock(serverBlock);
 
                     req.remContentLength =
                       parseInt(req.header().getField("Content-Length"), 10);
 
-                    std::cout << "CL: " << req.remContentLength << std::endl;
-
-                    HTTP::Response res(*cit);
+                    HTTP::Response res(csockfd);
 
                     _createResponse(req, res, req.getServerBlock());
 
                     // we don't want to enter that block if request has been
                     // taken by the CGI
-                    if (_cgis.find(*cit) == _cgis.end()) {
-                        send(*cit, res.str().c_str(), res.str().size(), 0);
-
-                        _closeConnection(*cit);
+                    if (_cgis.find(csockfd) == _cgis.end()) {
+                        send(csockfd, res.str().c_str(), res.str().size(), 0);
+                        
+                        // increment before closing connection as it will invalidate the current iterator
+                        ++it;
+                        _closeConnection(csockfd);
+                        continue ;
                     }
                 }
             }
 
-            if (_reqs.find(*cit) != _reqs.end() &&
-                _reqs[*cit].remContentLength > 0) {
+            // in case incoming data is from body
+            if (req.getState() == HTTP::Request::W4_BODY &&
+                req.remContentLength > 0) {
                 std::map<int, CommonGatewayInterface*>::const_iterator cgi =
-                  _cgis.find(*cit);
+                  _cgis.find(csockfd);
 
                 // pass the body to cgi's stdin.
                 if (cgi != _cgis.end()) {
-                    std::cout << "BODY " << buf << std::endl;
                     write(cgi->second->getOutputFd(), buf, strlen(buf));
-                    _reqs[*cit].remContentLength -= ret;
+                    req.remContentLength -= ret;
                 }
 
                 // TODO: handle body for non-CGI requests
             }
         }
+        ++it;
     }
 }
 
@@ -103,7 +99,7 @@ Server::_handleClientEvents(const fd_set& set)
 void
 Server::_handleCGIEvents(const fd_set& set)
 {
-    std::cout << "cgis: " << _cgis.size() << std::endl;
+    //std::cout << "cgis: " << _cgis.size() << std::endl;
     for (std::map<int, CommonGatewayInterface*>::const_iterator cit =
            _cgis.begin();
          cit != _cgis.end();) {
@@ -116,6 +112,7 @@ Server::_handleCGIEvents(const fd_set& set)
 
             // EOF
             if (cgi->isDone()) {
+                std::cout << "Connexion done" << std::endl;
                 _closeConnection(cgi->getClientFd());
                 delete cgi;
             }
@@ -150,7 +147,7 @@ Server::_handleServerEvents(const fd_set& set)
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
             FD_SET(connection, &_fdset);
-            _clients.insert(connection);
+            _reqs.insert(std::make_pair(connection, HTTP::Request(connection)));
 
             glogger << "Initialized a new connection on port " << it->first
                     << "\n";

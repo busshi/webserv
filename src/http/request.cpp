@@ -3,22 +3,25 @@
 HTTP::Request::Request(void) {}
 
 /**
- * @brief Construct a new HTTP::Request::Request object
- *
- * @param rawData Basically a stream of bytes, here passed as a std::string.
- It is usually the data sent by the user agent through the client socket.
+ * @brief Construct a new HTTP::Request::Request object (with a client socket only)
+ * 
+ * @param csockFd 
  */
 
-HTTP::Request::Request(int csockFd, const std::string& headerRawData)
-  : _csockFd(csockFd)
+HTTP::Request::Request(int csockFd)
+  :  _state(W4_HEADER), _csockFd(csockFd)
 {
-    _parseHeader(headerRawData);
+    std::cout << "New request state " << getState() << std::endl;
     remContentLength = 0;
 }
 
 HTTP::Request&
-HTTP::Request::_parseHeader(const std::string& headerData)
+HTTP::Request::parseHeaderFromData(void)
 {
+    std::string headerData = data.str();
+    data.str("");
+    _state = W4_BODY;
+
     std::string::size_type pos = headerData.find(HTTP::CRLF);
 
     std::vector<std::string> ss = split(headerData.substr(0, pos));
@@ -71,8 +74,15 @@ HTTP::Request::operator=(const HTTP::Request& rhs)
         _protocol = rhs._protocol;
         body.str("");
         body << rhs.body.str();
+        data.str(rhs.data.str());
+        _state = rhs._state;
     }
     return *this;
+}
+
+HTTP::Request::State HTTP::Request::getState(void) const
+{
+    return _state;
 }
 
 /**

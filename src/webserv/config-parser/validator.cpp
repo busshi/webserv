@@ -233,7 +233,8 @@ validateCgiPass(const std::string& value, std::string& errorMsg)
     std::vector<std::string> vs = split(value);
 
     if (vs.size() != 2) {
-        Formatter() << "Malformed cgi_pass: expected format is: cgi_pass file_extensions path/to/cgi-executable" >> errorMsg;
+        Formatter() << "Malformed cgi_pass: expected format is: cgi_pass file_extensions path/to/cgi-executable."
+        << "(hint: commas can be used to separate multiple file extensions, but no space is allowed." >> errorMsg;
         return false;
     }
 

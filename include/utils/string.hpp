@@ -23,3 +23,6 @@ toUpperCase(const std::string& s);
 
 long long
 parseInt(const std::string& s, int radix);
+
+bool
+hasFileExtension(const std::string& path, const std::string& fileExtension);

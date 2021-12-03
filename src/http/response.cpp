@@ -52,6 +52,7 @@ HTTP::Response::operator=(const HTTP::Response& rhs)
 {
     if (this != &rhs) {
         Message::operator=(rhs);
+        _csock = rhs._csock;
     }
 
     return *this;

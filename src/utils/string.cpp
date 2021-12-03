@@ -201,3 +201,8 @@ long long parseInt(const std::string& s, int radix)
 
     return parsed * (isNeg ? -1 : 1);
 }
+
+bool hasFileExtension(const std::string& path, const std::string& fileExtension)
+{
+    return path.find(fileExtension) == path.size() - fileExtension.size();
+}

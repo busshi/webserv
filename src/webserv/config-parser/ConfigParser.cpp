@@ -45,7 +45,6 @@ ConfigParser::ConfigParser(void)
         std::pair<std::string, ConfigItemCaracteristics> p(
           knownConfigItems[i].name, knownConfigItems[i]);
         _knownConfigItems.insert(p);
-        //_knownConfigItems[knownConfigItems[i].name] = knownConfigItems[i];
     }
 }
 

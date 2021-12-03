@@ -57,16 +57,25 @@ namespace HTTP {
      */
 
     class Request: public Message {
-        std::string _method, _resourceURI, _URI, _protocol;
-        ConfigItem* _serverBlock;
-        int _csockFd;
-        
         public:
+            enum State { W4_HEADER, W4_BODY };
+
+        private:
+            State _state;
+            std::string _method, _resourceURI, _URI, _protocol;
+            ConfigItem* _serverBlock;
+            int _csockFd;
+
+        public:
+            
+            std::ostringstream data;
+
             std::ostringstream body;
             int remContentLength;
 
             Request(void);
-            Request(int csockfd, const std::string& headerRawData);
+            Request(int csockfd);
+          
             Request(const Request& other);
             Request& operator=(const Request& rhs);
             ~Request(void);
@@ -78,11 +87,12 @@ namespace HTTP {
             const std::string& getURI(void) const;
             const std::string& getProtocol(void) const;
             const std::string getBody(void) const;
+            State getState(void) const;
 
             HTTP::Request& setServerBlock(ConfigItem* serverBlock);
             ConfigItem* getServerBlock(void) const;
 
-            HTTP::Request& _parseHeader(const std::string& headerData);
+            HTTP::Request& parseHeaderFromData(void);
 
             std::ostream& printHeader(std::ostream& os = std::cout) const;
     };

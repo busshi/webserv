@@ -161,18 +161,30 @@ Server::_noAutoIndexResponse(std::string path,
 
         res.sendFile(ERROR_PAGE);
     } else {
-        // if file extension is php then call the CGI
-        if (path.find(".php") != std::string::npos) {
-            int csock = res.getClientSocket();
+        // look for cgi extension
+        if (!directives.getCgiExecutable().empty()) {
+            for (std::vector<std::string>::const_iterator cit =
+                   directives.getCgiExtensions().begin();
+                 cit != directives.getCgiExtensions().end();
+                 ++cit) {
+                // cgi let's go
+                if (hasFileExtension(path, *cit)) {
+                    int csock = res.getClientSocket();
 
-            CommonGatewayInterface* cgi = new CommonGatewayInterface(
-              csock, _fdset, _reqs[csock], "php-cgi", path);
+                    std::cout << csock << std::endl;
 
-            cgi->start();
-            _cgis[csock] = cgi;
-        } else {
-            res.sendFile(path);
+                    CommonGatewayInterface* cgi = new CommonGatewayInterface(
+                      csock, _fdset, _reqs[csock], directives.getCgiExecutable(), path);
+
+                    cgi->start();
+                    _cgis[csock] = cgi;
+
+                    return ;
+                }
+            }
         }
+        
+        res.sendFile(path);
     }
 }
 
@@ -316,13 +328,8 @@ Server::start(void)
 
         (void) nready;
 
-        //std::cout << "clients: " << _clients.size() << std::endl;
-        
-        std::cout << "server check" << std::endl;
         _handleServerEvents(set);
-        std::cout << "CGI check" << std::endl;
         _handleCGIEvents(set);
-        std::cout << "Client check" << std::endl;
         _handleClientEvents(set);
 
         /*
