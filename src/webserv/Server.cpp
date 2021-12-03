@@ -175,7 +175,10 @@ Server::_noAutoIndexResponse(std::string path,
                     CommonGatewayInterface* cgi = new CommonGatewayInterface(
                       csock, _rset, _wset, _reqs[csock], directives.getCgiExecutable(), path);
 
-                    cgi->start();
+                    // do not launch cgi if this is chunked
+                    if (!_reqs[csock].isChunked()) {
+                        cgi->start();
+                    }
                     _cgis[csock] = cgi;
 
                     return ;
@@ -316,7 +319,7 @@ _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
 void
 Server::start(void)
 {
-    struct timeval timeout = { .tv_sec = 6, .tv_usec = 0 }; // select timeout
+    struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 }; // select timeout
 
     // set each server socket's fd in the fd set that will be used by select
     for (HostMap::const_iterator cit = _hosts.begin(); cit != _hosts.end();
@@ -334,10 +337,15 @@ Server::start(void)
             perror("select: ");
         }
 
-        (void) nready;
+        std::cout << "ready " << ready << std::endl;
 
+        (void) nready;
+        
+        std::cout << "Server events" << std::endl;
         _handleServerEvents(rset, wset);
+        std::cout << "CGI events" << std::endl;
         _handleCGIEvents(rset, wset);
+        std::cout << "client events" << std::endl;
         _handleClientEvents(rset, wset);
 
         /*

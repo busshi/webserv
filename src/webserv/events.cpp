@@ -22,14 +22,22 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
         int csockfd = it->first;
         HTTP::Request& req = it->second;
 
-        // if there is something to read...
-        if (FD_ISSET(csockfd, &rset)) {
-            char buf[1024] = { 0 };
-            int ret = recv(csockfd, buf, 1023, 0);
+        /* BEGIN - IF CLIENT FD IS READABLE */
 
+        std::cout << "Check fd " << std::endl;
+        if (FD_ISSET(csockfd, &rset)) {
+            std::cout << "Handle client read: " << it->first << std::endl;
+
+            char buf[1024];
+            buf[recv(csockfd, buf, 1023, 0)] = 0;
+
+            // if parsing body as chunked we need another solution
+
+            std::cout << "read" << std::endl;
+
+            // parse the header
             if (req.getState() == HTTP::Request::W4_HEADER) {
                 req.data << buf;
-
                 std::string::size_type pos = 0;
 
                 if ((pos = req.data.str().find(HTTP::BODY_DELIMITER)) !=
@@ -65,8 +73,11 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
 
             // if writing to the client is possible...
             if (FD_ISSET(csockfd, &wset)) {
-
-                if (_cgis.find(csockfd) == _cgis.end()) {
+                
+                // if request is not handled by CGI, send an immediate response
+                // NOTE: this is a naive and uncomplete way of handling non-CGI requests
+                // Do not enter this if header is being parsed because we can't know if request will be cgi handled or not at this point
+                if (_cgis.find(csockfd) == _cgis.end() && req.getState() != HTTP::Request::W4_HEADER) {
                     send(csockfd, req.data.str().c_str(), req.data.str().size(), 0);
                         
                     // increment before closing connection as it will invalidate the current iterator
@@ -76,21 +87,41 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                 }
             }
 
-            // in case incoming data is from body
-            if (req.getState() == HTTP::Request::W4_BODY &&
-                req.remContentLength > 0) {
+            /* BODY */
+
+            if (req.getState() != HTTP::Request::W4_HEADER) {
+                
                 std::map<int, CommonGatewayInterface*>::const_iterator cgi =
                   _cgis.find(csockfd);
 
-                // pass the body to cgi's stdin.
+                // if request is handled by CGI AND cgi output file descriptor is ready for writing
                 if (cgi != _cgis.end()) {
-                    write(cgi->second->getOutputFd(), buf, strlen(buf));
-                    req.remContentLength -= ret;
-                }
+                    // unchunk incoming request body
+                    std::cout << "chunked: " << req.isChunked() << " state: " << req.getState() << std::endl;
+                    if (req.isChunked() && req.getState() != HTTP::Request::DONE) {
+                        std::cout << "Chunk parsing" << std::endl;
+                        req.parseChunk(buf);
+                        if (req.getState() == HTTP::Request::DONE) {
+                            std::ostringstream oss;
 
-                // TODO: handle body for non-CGI requests
+                            oss << req.data.str().size();
+                            req.setHeaderField("Content-Length", oss.str());
+                            _cgis[csockfd]->start();
+                        }
+                    }
+                
+                    if (!req.isChunked()) {
+                        req.data << buf;
+                    }
+
+                    std::cout << "END" << std::endl;
+                    
+                }
             }
         }
+
+        /* END - IF CLIENT FD IS READABLE */
+
         ++it;
     }
 }
@@ -104,14 +135,32 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
 void
 Server::_handleCGIEvents(const fd_set& rset, const fd_set& wset)
 {
-    (void) wset;
-    
     for (std::map<int, CommonGatewayInterface*>::const_iterator cit =
            _cgis.begin();
          cit != _cgis.end();) {
         CommonGatewayInterface* cgi = cit->second;
+
+        std::cout << "Write attempt" << std::endl;
+        if (FD_ISSET(cgi->getOutputFd(), &wset)) {
+            HTTP::Request& req = _reqs[cit->first];
+
+            std::cout << "Wordivangue" << std::endl;
+            if (
+                !req.data.str().empty() &&
+                (!req.isChunked() || (req.isChunked() && req.getState() == HTTP::Request::DONE))
+            ) {
+                std::cout << "WRITE " << req.data.str() << std::endl;
+                std::string s = req.data.str();
+                write(cgi->getOutputFd(), s.c_str(), s.size());
+                req.data.str("");
+            }
+        }
+        std::cout << "After ISSET" << std::endl;
+
+        // increment before possible item erasure
         ++cit;
 
+        std::cout << "Read attempt" << std::endl; 
         // We've got data to read from the php-cgi, now let's process it
         if (FD_ISSET(cgi->getInputFd(), &rset)) {
             cgi->stream();

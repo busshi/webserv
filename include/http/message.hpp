@@ -58,7 +58,7 @@ namespace HTTP {
 
     class Request: public Message {
         public:
-            enum State { W4_HEADER, W4_BODY };
+            enum State { W4_HEADER, W4_BODY, DONE };
 
         private:
             State _state;
@@ -67,7 +67,13 @@ namespace HTTP {
             int _csockFd;
 
         public:
-            
+            struct ChunkInfo {
+                std::string decodedData; // data read for the current chunk so far
+                size_t chunkSize; // the actual chunk size parsed from hex
+            };
+
+            ChunkInfo currentChunk;
+
             std::ostringstream data;
 
             std::ostringstream body;
@@ -89,7 +95,10 @@ namespace HTTP {
             const std::string getBody(void) const;
             State getState(void) const;
 
-            HTTP::Request& setServerBlock(ConfigItem* serverBlock);
+            bool isChunked(void) const;
+            void parseChunk(const std::string& buf);
+
+            Request& setServerBlock(ConfigItem* serverBlock);
             ConfigItem* getServerBlock(void) const;
 
             HTTP::Request& parseHeaderFromData(void);
