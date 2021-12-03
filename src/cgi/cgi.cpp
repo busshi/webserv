@@ -99,7 +99,7 @@ CommonGatewayInterface::start(void)
 
         char** envp = henv.toEnv();
 
-        execle("/usr/bin/php-cgi", "/usr/bin/php-cgi", NULL, envp);
+        execle(_cgiExecName.c_str(), _cgiExecName.c_str(), NULL, envp);
 
         perror("execvp: ");
         exit(1);
