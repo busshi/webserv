@@ -6,7 +6,6 @@
 #include "utils/os.hpp"
 #include "utils/string.hpp"
 #include "webserv/Directives.hpp"
-#include <bits/types/struct_timeval.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
