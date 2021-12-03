@@ -55,7 +55,7 @@ class Server
     std::map<int, CommonGatewayInterface*> _cgis;
     std::set<int> _clients;
 
-	fd_set _fdset;
+	fd_set _rset, _wset;
 
 	std::map<unsigned short, Socket>	_sockets;
 	
@@ -84,9 +84,9 @@ class Server
 	std::string	_replace(std::string in, std::string s1, std::string s2);
 	std::string _checkErrorPage( std::string defaultPage, std::string code, std::string errorMsg, std::string errorSentence);
 
-	void _handleClientEvents(const fd_set& set);
-	void _handleServerEvents(const fd_set& set);
-	void _handleCGIEvents(const fd_set& set);
+	void _handleClientEvents(const fd_set& rset, const fd_set& wset);
+	void _handleServerEvents(const fd_set& rset, const fd_set& wset);
+	void _handleCGIEvents(const fd_set& rset, const fd_set& wset);
 	void _closeConnection(int sockFd);
 };
 

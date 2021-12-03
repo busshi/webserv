@@ -8,7 +8,7 @@ class CommonGatewayInterface {
     int _inputFd[2], _outputFd[2];
     std::string _cgiExecName, _filepath, _data;
     int _csockFd;
-    fd_set& _fdSet;
+    fd_set &_rset, &_wset;
     HTTP::Request& _req;
     pid_t _proc;
     HTTP::Response _res;
@@ -16,7 +16,7 @@ class CommonGatewayInterface {
     bool _isDone;
 
     public:
-        CommonGatewayInterface(int csockFd, fd_set& fdSet, HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath);
+        CommonGatewayInterface(int csockFd, fd_set& rset, fd_set& wset, HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath);
         ~CommonGatewayInterface(void);
 
         void start(void);

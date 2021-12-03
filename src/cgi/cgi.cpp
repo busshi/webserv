@@ -7,14 +7,16 @@
 #include <unistd.h>
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,
-                                               fd_set& fdSet,
+                                               fd_set& rset,
+                                               fd_set& wset,
                                                HTTP::Request& req,
                                                const std::string& cgiExecName,
                                                const std::string& filepath)
   : _cgiExecName(cgiExecName)
   , _filepath(filepath)
   , _csockFd(csockFd)
-  , _fdSet(fdSet)
+  , _rset(rset)
+  , _wset(wset)
   , _req(req)
   , _proc(-1)
   , _state(STREAMING_HEADER)
@@ -104,7 +106,8 @@ CommonGatewayInterface::start(void)
     }
 
     fcntl(_inputFd[0], F_SETFL, O_NONBLOCK);
-    FD_SET(_inputFd[0], &_fdSet); // where cgi response will come from
+    FD_SET(_inputFd[0], &_rset); // where cgi response will come from
+    FD_SET(_outputFd[1], &_wset); // write end of the pipe used to provide cgi's body
 
     close(_outputFd[0]); // used by the CGI to read body
     close(_inputFd[1]);
@@ -112,15 +115,15 @@ CommonGatewayInterface::start(void)
 
 CommonGatewayInterface::~CommonGatewayInterface(void)
 {
-    FD_CLR(_outputFd[1], &_fdSet);
-    FD_CLR(_inputFd[0], &_fdSet);
+    FD_CLR(_inputFd[0], &_rset);
+    FD_CLR(_outputFd[1], &_wset);
 
     if (_inputFd[0] != -1) {
-        close(_inputFd[1]);
+        close(_inputFd[0]);
     }
 
     if (_outputFd[1] != -1) {
-        close(_outputFd[0]);
+        close(_outputFd[1]);
     }
 }
 
@@ -165,15 +168,10 @@ CommonGatewayInterface::stream(void)
 {
     char buf[1024] = { 0 };
 
-    std::cout << "Before reading" << std::endl;
     int ret = ::read(getInputFd(), buf, 1023);
-    std::cout << "After reading" << std::endl;
-
-    std::cout << "RET " << ret << std::endl;
 
     // EOF reached
     if (ret <= 0) {
-        std::cout << "Done streaming" << std::endl;
         _isDone = true;
         return;
     }

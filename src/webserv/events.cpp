@@ -10,18 +10,20 @@ Server::_closeConnection(int sockFd)
 {
     _reqs.erase(sockFd);
     _cgis.erase(sockFd);
-    FD_CLR(sockFd, &_fdset);
+    FD_CLR(sockFd, &_rset);
+    FD_CLR(sockFd, &_wset);
     close(sockFd);
 }
 
 void
-Server::_handleClientEvents(const fd_set& set)
+Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
 {
     for (std::map<int, HTTP::Request>::iterator it = _reqs.begin(); it != _reqs.end();) {
         int csockfd = it->first;
         HTTP::Request& req = it->second;
 
-        if (FD_ISSET(csockfd, &set)) {
+        // if there is something to read...
+        if (FD_ISSET(csockfd, &rset)) {
             char buf[1024] = { 0 };
             int ret = recv(csockfd, buf, 1023, 0);
 
@@ -57,17 +59,20 @@ Server::_handleClientEvents(const fd_set& set)
                     HTTP::Response res(csockfd);
 
                     _createResponse(req, res, req.getServerBlock());
+                    req.data.str(res.str());
+                }
+            }
 
-                    // we don't want to enter that block if request has been
-                    // taken by the CGI
-                    if (_cgis.find(csockfd) == _cgis.end()) {
-                        send(csockfd, res.str().c_str(), res.str().size(), 0);
+            // if writing to the client is possible...
+            if (FD_ISSET(csockfd, &wset)) {
+
+                if (_cgis.find(csockfd) == _cgis.end()) {
+                    send(csockfd, req.data.str().c_str(), req.data.str().size(), 0);
                         
-                        // increment before closing connection as it will invalidate the current iterator
-                        ++it;
-                        _closeConnection(csockfd);
-                        continue ;
-                    }
+                    // increment before closing connection as it will invalidate the current iterator
+                    ++it;
+                     _closeConnection(csockfd);
+                    continue ;
                 }
             }
 
@@ -97,9 +102,10 @@ Server::_handleClientEvents(const fd_set& set)
  */
 
 void
-Server::_handleCGIEvents(const fd_set& set)
+Server::_handleCGIEvents(const fd_set& rset, const fd_set& wset)
 {
-    //std::cout << "cgis: " << _cgis.size() << std::endl;
+    (void) wset;
+    
     for (std::map<int, CommonGatewayInterface*>::const_iterator cit =
            _cgis.begin();
          cit != _cgis.end();) {
@@ -107,7 +113,7 @@ Server::_handleCGIEvents(const fd_set& set)
         ++cit;
 
         // We've got data to read from the php-cgi, now let's process it
-        if (FD_ISSET(cgi->getInputFd(), &set)) {
+        if (FD_ISSET(cgi->getInputFd(), &rset)) {
             cgi->stream();
 
             // EOF
@@ -127,13 +133,15 @@ Server::_handleCGIEvents(const fd_set& set)
  */
 
 void
-Server::_handleServerEvents(const fd_set& set)
+Server::_handleServerEvents(const fd_set& rset, const fd_set& wset)
 {
+    (void)wset;
+
     for (HostMap::iterator it = _hosts.begin(); it != _hosts.end(); ++it) {
 
         // server socket is readable without blocking, we've got a new
         // connection
-        if (FD_ISSET(it->second.ssockFd, &set)) {
+        if (FD_ISSET(it->second.ssockFd, &rset)) {
             socklen_t slen = sizeof(it->second.addr);
             int connection =
               accept(it->second.ssockFd, (sockaddr*)&it->second.addr, &slen);
@@ -146,7 +154,8 @@ Server::_handleServerEvents(const fd_set& set)
             std::cout << "Added connection for fd " << connection << std::endl;
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
-            FD_SET(connection, &_fdset);
+            FD_SET(connection, &_rset);
+            FD_SET(connection, &_wset);
             _reqs.insert(std::make_pair(connection, HTTP::Request(connection)));
 
             glogger << "Initialized a new connection on port " << it->first

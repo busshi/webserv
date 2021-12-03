@@ -25,7 +25,7 @@
 
 Server::Server(ConfigItem* global)
 {
-    FD_ZERO(&_fdset);
+    FD_ZERO(&_rset); FD_ZERO(&_wset);
     std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
     _config = global;
@@ -174,7 +174,7 @@ Server::_noAutoIndexResponse(std::string path,
                     std::cout << csock << std::endl;
 
                     CommonGatewayInterface* cgi = new CommonGatewayInterface(
-                      csock, _fdset, _reqs[csock], directives.getCgiExecutable(), path);
+                      csock, _rset, _wset, _reqs[csock], directives.getCgiExecutable(), path);
 
                     cgi->start();
                     _cgis[csock] = cgi;
@@ -305,6 +305,15 @@ _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
     */
 }
 
+/**
+ * @brief How does the Server loop work:
+ * 
+ * For each loop cycle, the select system call selects all the file descriptors that are readable and/or writable WITHOUT BLOCKING
+ * given a read and write sets of file descriptors.
+ * 
+ * A file descriptor MUST only be read or written if selects has set it to be.
+ */
+
 void
 Server::start(void)
 {
@@ -313,14 +322,14 @@ Server::start(void)
     // set each server socket's fd in the fd set that will be used by select
     for (HostMap::const_iterator cit = _hosts.begin(); cit != _hosts.end();
          ++cit) {
-        FD_SET(cit->second.ssockFd, &_fdset);
+        FD_SET(cit->second.ssockFd, &_rset);
     }
 
     std::cout << "> webserv is running\nHit Ctrl-C to exit." << std::endl;
 
     while (isWebservAlive) {
-        fd_set set = _fdset; // make a copy of the set that will be mutated by select
-        int nready = select(FD_SETSIZE, &set, 0, 0, &timeout);
+        fd_set rset = _rset, wset = _wset; // make a copy of the set that will be mutated by select
+        int nready = select(FD_SETSIZE, &rset, &wset, 0, &timeout);
 
         if (nready == -1) {
             perror("select: ");
@@ -328,9 +337,9 @@ Server::start(void)
 
         (void) nready;
 
-        _handleServerEvents(set);
-        _handleCGIEvents(set);
-        _handleClientEvents(set);
+        _handleServerEvents(rset, wset);
+        _handleCGIEvents(rset, wset);
+        _handleClientEvents(rset, wset);
 
         /*
         if (reqs.find(csock) != reqs.end()) {
