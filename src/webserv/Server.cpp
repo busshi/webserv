@@ -319,7 +319,7 @@ _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
 void
 Server::start(void)
 {
-    struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 }; // select timeout
+    struct timeval timeout = { .tv_sec = 1, .tv_usec = 0 }; // select timeout
 
     // set each server socket's fd in the fd set that will be used by select
     for (HostMap::const_iterator cit = _hosts.begin(); cit != _hosts.end();
@@ -337,15 +337,13 @@ Server::start(void)
             perror("select: ");
         }
 
-        std::cout << "ready " << ready << std::endl;
-
         (void) nready;
         
-        std::cout << "Server events" << std::endl;
+        // std::cout << "Server events" << std::endl;
         _handleServerEvents(rset, wset);
-        std::cout << "CGI events" << std::endl;
+        // std::cout << "CGI events" << std::endl;
         _handleCGIEvents(rset, wset);
-        std::cout << "client events" << std::endl;
+        // std::cout << "client events" << std::endl;
         _handleClientEvents(rset, wset);
 
         /*

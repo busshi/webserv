@@ -14,12 +14,15 @@ class CommonGatewayInterface {
     HTTP::Response _res;
     enum { STREAMING_HEADER, STREAMING_BODY } _state;
     bool _isDone;
+    bool _hasStarted;
 
     public:
         CommonGatewayInterface(int csockFd, fd_set& rset, fd_set& wset, HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath);
         ~CommonGatewayInterface(void);
 
         void start(void);
+
+        bool hasStarted(void) const;
 
         int getOutputFd(void) const;
         int getInputFd(void) const;

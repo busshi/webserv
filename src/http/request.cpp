@@ -35,7 +35,7 @@ void HTTP::Request::parseChunk(const std::string& buf)
 
             currentChunk.chunkSize = parseInt(s.substr(0, pos), 16);
             std::cout << "Chunk of size " << currentChunk.chunkSize << std::endl;
-            if (currentChunk.chunkSize == 0) {
+            if (currentChunk.chunkSize == 0) {\
                 _state = DONE;
                 return ;
             }

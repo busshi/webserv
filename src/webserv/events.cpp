@@ -24,9 +24,8 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
 
         /* BEGIN - IF CLIENT FD IS READABLE */
 
-        std::cout << "Check fd " << std::endl;
         if (FD_ISSET(csockfd, &rset)) {
-            std::cout << "Handle client read: " << it->first << std::endl;
+           //std::cout << "Handle client read: " << it->first << std::endl;
 
             char buf[1024];
             buf[recv(csockfd, buf, 1023, 0)] = 0;
@@ -52,6 +51,8 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                     // actual parsing of the header
                     req.parseHeaderFromData();
 
+                    req.data.str("");
+
                     // get port to which the connection is addressed
                     socklen_t slen = sizeof(sockaddr_in);
                     sockaddr_in addr;
@@ -67,7 +68,7 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                     HTTP::Response res(csockfd);
 
                     _createResponse(req, res, req.getServerBlock());
-                    req.data.str(res.str());
+                    req.body.str(res.str());
                 }
             }
 
@@ -78,7 +79,7 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                 // NOTE: this is a naive and uncomplete way of handling non-CGI requests
                 // Do not enter this if header is being parsed because we can't know if request will be cgi handled or not at this point
                 if (_cgis.find(csockfd) == _cgis.end() && req.getState() != HTTP::Request::W4_HEADER) {
-                    send(csockfd, req.data.str().c_str(), req.data.str().size(), 0);
+                    send(csockfd, req.body.str().c_str(), req.body.str().size(), 0);
                         
                     // increment before closing connection as it will invalidate the current iterator
                     ++it;
@@ -97,9 +98,7 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                 // if request is handled by CGI AND cgi output file descriptor is ready for writing
                 if (cgi != _cgis.end()) {
                     // unchunk incoming request body
-                    std::cout << "chunked: " << req.isChunked() << " state: " << req.getState() << std::endl;
                     if (req.isChunked() && req.getState() != HTTP::Request::DONE) {
-                        std::cout << "Chunk parsing" << std::endl;
                         req.parseChunk(buf);
                         if (req.getState() == HTTP::Request::DONE) {
                             std::ostringstream oss;
@@ -113,9 +112,6 @@ Server::_handleClientEvents(const fd_set& rset, const fd_set& wset)
                     if (!req.isChunked()) {
                         req.data << buf;
                     }
-
-                    std::cout << "END" << std::endl;
-                    
                 }
             }
         }
@@ -140,27 +136,28 @@ Server::_handleCGIEvents(const fd_set& rset, const fd_set& wset)
          cit != _cgis.end();) {
         CommonGatewayInterface* cgi = cit->second;
 
-        std::cout << "Write attempt" << std::endl;
+        // not started yet: most likely waiting for a chunked request
+        if (!cgi->hasStarted()) {
+            ++cit;
+            continue ;
+        }
+
         if (FD_ISSET(cgi->getOutputFd(), &wset)) {
             HTTP::Request& req = _reqs[cit->first];
 
-            std::cout << "Wordivangue" << std::endl;
             if (
                 !req.data.str().empty() &&
                 (!req.isChunked() || (req.isChunked() && req.getState() == HTTP::Request::DONE))
             ) {
-                std::cout << "WRITE " << req.data.str() << std::endl;
                 std::string s = req.data.str();
                 write(cgi->getOutputFd(), s.c_str(), s.size());
                 req.data.str("");
             }
         }
-        std::cout << "After ISSET" << std::endl;
 
         // increment before possible item erasure
         ++cit;
 
-        std::cout << "Read attempt" << std::endl; 
         // We've got data to read from the php-cgi, now let's process it
         if (FD_ISSET(cgi->getInputFd(), &rset)) {
             cgi->stream();
@@ -188,8 +185,7 @@ Server::_handleServerEvents(const fd_set& rset, const fd_set& wset)
 
     for (HostMap::iterator it = _hosts.begin(); it != _hosts.end(); ++it) {
 
-        // server socket is readable without blocking, we've got a new
-        // connection
+        // server socket is readable without blocking, we've got a new connection
         if (FD_ISSET(it->second.ssockFd, &rset)) {
             socklen_t slen = sizeof(it->second.addr);
             int connection =

@@ -21,6 +21,7 @@ CommonGatewayInterface::CommonGatewayInterface(int csockFd,
   , _proc(-1)
   , _state(STREAMING_HEADER)
   , _isDone(false)
+  , _hasStarted(false)
 {
     _inputFd[0] = -1;
     _inputFd[1] = -1;
@@ -34,12 +35,20 @@ transformClientHeaders(const std::pair<const std::string, std::string>& p)
     return make_pair(std::string("HTTP_" + toUpperCase(p.first)), p.second);
 }
 
+bool
+CommonGatewayInterface::hasStarted(void) const
+{
+    return _hasStarted;
+}
+
 void
 CommonGatewayInterface::start(void)
 {
     std::map<std::string, std::string> cgiEnv;
     std::string tmp;
     std::ostringstream oss;
+
+    _hasStarted = true;
 
     if (pipe(_inputFd) == -1) {
         perror("CGI pipe input: ");
