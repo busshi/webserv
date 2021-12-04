@@ -151,7 +151,6 @@ CommonGatewayInterface::getInputFd() const
 int
 CommonGatewayInterface::getOutputFd() const
 {
-    std::cout << "Get output fd" << std::endl;
     return _outputFd[1];
 }
 

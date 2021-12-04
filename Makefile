@@ -12,7 +12,7 @@ else
 	OPEN := open
 endif
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp events.cpp  Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
+SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp cgi_events.cpp client_events.cpp server_events.cpp event_utils.cpp Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
 SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp utils/os.cpp utils/ErrorPageGenerator.cpp)
 SRCS		+= $(addprefix src/logger/, Logger.cpp)
 SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp)
