@@ -1,6 +1,7 @@
 #include "HttpParser.hpp"
 #include "core.hpp"
 #include "logger/Logger.hpp"
+#include <fcntl.h>
 #include <signal.h>
 #include <sys/select.h>
 #include <unistd.h>
@@ -49,8 +50,10 @@ listenToServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
             glogger << Logger::getTimestamp() << " New connection to port "
                     << it->first << " accepted\n";
 
+            fcntl(connection, F_SETFL, O_NONBLOCK);
             FD_SET(connection, &select_rset);
             FD_SET(connection, &select_wset);
+
             requests.insert(std::make_pair(
               connection, new HTTP::Request(connection, parserConf)));
         }

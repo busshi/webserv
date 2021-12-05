@@ -2,6 +2,7 @@
 #include "logger/Logger.hpp"
 #include "webserv/config-parser/ConfigParser.hpp"
 #include <cstring>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
@@ -53,6 +54,7 @@ initHosts(ConfigItem* global)
                     return;
                 }
 
+                fcntl(ssockFd, F_SETFL, O_NONBLOCK);
                 FD_SET(ssockFd, &select_rset);
             }
 
