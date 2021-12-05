@@ -9,6 +9,8 @@
 std::map<int, HTTP::Request*> requests;
 std::map<int, CommonGatewayInterface*> cgis;
 std::map<uint16_t, Host> hosts;
+fd_set select_rset, select_wset;
+
 bool isWebservAlive = true;
 Logger glogger;
 
@@ -35,12 +37,10 @@ main(int argc, char** argv)
         glogger.setWebservLogLevel(Logger::parseLogLevel(logLevel->getValue()));
     }
 
-    fd_set rset, wset;
+    FD_ZERO(&select_rset);
+    FD_ZERO(&select_wset);
 
-    FD_ZERO(&rset);
-    FD_ZERO(&wset);
-
-    initHosts(global, rset);
+    initHosts(global);
 
     HttpParser::Config parserConf;
 
@@ -51,7 +51,7 @@ main(int argc, char** argv)
     parserConf.onBodyFragment = onBodyFragment;
     parserConf.onHeaderParsed = onHeaderParsed;
 
-    lifecycle(parserConf, rset, wset);
+    lifecycle(parserConf);
 
     destroyHosts();
 

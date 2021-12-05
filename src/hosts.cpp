@@ -10,7 +10,7 @@ using std::map;
 using std::vector;
 
 void
-initHosts(ConfigItem* global, fd_set& rset)
+initHosts(ConfigItem* global)
 {
     vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
@@ -53,7 +53,7 @@ initHosts(ConfigItem* global, fd_set& rset)
                     return;
                 }
 
-                FD_SET(ssockFd, &rset);
+                FD_SET(ssockFd, &select_rset);
             }
 
             /* in any case, the current block becomes a candidate for that host

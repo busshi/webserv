@@ -6,13 +6,13 @@
 #include <netinet/in.h>
 
 void
-initHosts(ConfigItem* global, fd_set& rset);
+initHosts(ConfigItem* global);
 
 void
 destroyHosts(void);
 
 void
-lifecycle(const HttpParser::Config& parserConf, fd_set& rset, fd_set& wset);
+lifecycle(const HttpParser::Config& parserConf);
 
 void
 onHeaderField(const std::string& name,
@@ -40,4 +40,6 @@ struct Host
 extern std::map<int, HTTP::Request*> requests;
 extern std::map<int, CommonGatewayInterface*> cgis;
 extern std::map<uint16_t, Host> hosts;
+extern fd_set select_rset;
+extern fd_set select_wset;
 extern bool isWebservAlive;

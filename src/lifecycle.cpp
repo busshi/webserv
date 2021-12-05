@@ -30,13 +30,8 @@ listenToClientEvents(fd_set& rsetc)
 }
 
 static void
-listenToServerEvents(const HttpParser::Config& parserConf,
-                     fd_set& rsetc,
-                     fd_set& rset,
-                     fd_set& wset)
+listenToServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
 {
-    (void)parserConf;
-
     for (map<uint16_t, Host>::iterator it = hosts.begin(); it != hosts.end();
          ++it) {
 
@@ -54,8 +49,8 @@ listenToServerEvents(const HttpParser::Config& parserConf,
             glogger << Logger::getTimestamp() << " New connection to port "
                     << it->first << " accepted\n";
 
-            FD_SET(connection, &rset);
-            FD_SET(connection, &wset);
+            FD_SET(connection, &select_rset);
+            FD_SET(connection, &select_wset);
             requests.insert(std::make_pair(
               connection, new HTTP::Request(connection, parserConf)));
         }
@@ -63,12 +58,12 @@ listenToServerEvents(const HttpParser::Config& parserConf,
 }
 
 void
-lifecycle(const HttpParser::Config& parserConf, fd_set& rset, fd_set& wset)
+lifecycle(const HttpParser::Config& parserConf)
 {
     signal(SIGINT, &handleSigint);
 
     while (isWebservAlive) {
-        fd_set rsetc = rset, wsetc = wset;
+        fd_set rsetc = select_rset, wsetc = select_wset;
 
         /* according to the man, it is better to initialize it each time */
         struct timeval timeout = { .tv_sec = 6, .tv_usec = 0 };
@@ -80,9 +75,7 @@ lifecycle(const HttpParser::Config& parserConf, fd_set& rset, fd_set& wset)
             return;
         }
 
-        listenToServerEvents(parserConf, rsetc, rset, wset);
         listenToClientEvents(rsetc);
-
-        /* events will take place here */
+        listenToServerEvents(parserConf, rsetc);
     }
 }
