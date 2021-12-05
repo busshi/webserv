@@ -1,4 +1,5 @@
 #include "cgi/cgi.hpp"
+#include "core.hpp"
 #include "utils/string.hpp"
 #include <cstdlib>
 #include <cstring>
@@ -6,19 +7,50 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define GET_CGI(loc) reinterpret_cast<CommonGatewayInterface*>(loc)
+
+static void
+onCgiHeaderField(const std::string& name,
+                 const std::string& value,
+                 uintptr_t cgiLoc)
+{
+    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+
+    cgi->header().setField(name, value);
+}
+
+static void
+onCgiHeaderParsed(uintptr_t cgiLoc)
+{
+    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+    HTTP::Request* req = cgi->request();
+    HTTP::Response* res = req->response();
+
+    res->header().merge(cgi->header());
+
+    // TODO: special header field status blize
+
+    std::cout << "Cgi header parsed" << std::endl;
+
+    res->data << res->str();
+}
+
+static void
+onCgiBodyFragment(const std::string& fragment, uintptr_t cgiLoc)
+{
+    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+
+    cgi->request()->response()->data << fragment;
+}
+
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,
-                                               fd_set& rset,
-                                               fd_set& wset,
                                                HTTP::Request& req,
                                                const std::string& cgiExecName,
                                                const std::string& filepath)
   : _cgiExecName(cgiExecName)
   , _filepath(filepath)
   , _csockFd(csockFd)
-  , _rset(rset)
-  , _wset(wset)
   , _req(req)
-  , _proc(-1)
   , _state(STREAMING_HEADER)
   , _isDone(false)
   , _hasStarted(false)
@@ -42,11 +74,27 @@ CommonGatewayInterface::hasStarted(void) const
 }
 
 void
+CommonGatewayInterface::stopParser(void)
+{
+    _parser->stop();
+}
+
+void
 CommonGatewayInterface::start(void)
 {
     std::map<std::string, std::string> cgiEnv;
     std::string tmp;
     std::ostringstream oss;
+
+    HttpParser::Config conf;
+
+    memset(&conf, 0, sizeof(conf));
+    conf.onHeaderField = onCgiHeaderField;
+    conf.onHeaderParsed = onCgiHeaderParsed;
+    conf.onBodyFragment = onCgiBodyFragment;
+    conf.parseFullBody = true;
+
+    _parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
 
     _hasStarted = true;
 
@@ -88,13 +136,13 @@ CommonGatewayInterface::start(void)
     henv.setField("REQUEST_METHOD", _req.getMethod());
     henv.setField("PATH_INFO", _filepath);
 
-    _proc = fork();
+    pid_t pid = fork();
 
-    if (_proc == -1) {
+    if (pid == -1) {
         perror("CGI fork: ");
     }
 
-    if (_proc == 0) {
+    if (pid == 0) {
         if (dup2(_outputFd[0], STDIN_FILENO) == -1) {
             perror("CGI dup2 output: ");
         }
@@ -115,17 +163,33 @@ CommonGatewayInterface::start(void)
     }
 
     fcntl(_inputFd[0], F_SETFL, O_NONBLOCK);
-    FD_SET(_inputFd[0], &_rset); // where cgi response will come from
-    FD_SET(_outputFd[1], &_wset); // write end of the pipe used to provide cgi's body
+    FD_SET(_inputFd[0], &select_rset); // where cgi response will come from
+    FD_SET(_outputFd[1],
+           &select_wset); // write end of the pipe used to provide cgi's body
 
     close(_outputFd[0]); // used by the CGI to read body
     close(_inputFd[1]);
 }
 
+HTTP::Request*
+CommonGatewayInterface::request(void)
+{
+    return &_req;
+}
+
+bool
+CommonGatewayInterface::parse(const std::string& data)
+{
+    _parser->parse(data, reinterpret_cast<uintptr_t>(this));
+    return *_parser;
+}
+
 CommonGatewayInterface::~CommonGatewayInterface(void)
 {
-    FD_CLR(_inputFd[0], &_rset);
-    FD_CLR(_outputFd[1], &_wset);
+    delete _parser;
+
+    FD_CLR(_inputFd[0], &select_rset);
+    FD_CLR(_outputFd[1], &select_wset);
 
     if (_inputFd[0] != -1) {
         close(_inputFd[0]);
@@ -160,10 +224,16 @@ CommonGatewayInterface::getData(void) const
     return _data;
 }
 
+HTTP::Header&
+CommonGatewayInterface::header(void)
+{
+    return _header;
+}
+
 bool
 CommonGatewayInterface::isDone(void) const
 {
-    return _isDone;
+    return _parser->getState() == HttpParser::DONE;
 }
 
 /**

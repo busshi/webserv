@@ -174,13 +174,8 @@ Server::_noAutoIndexResponse(std::string path,
 
                     std::cout << csock << std::endl;
 
-                    CommonGatewayInterface* cgi =
-                      new CommonGatewayInterface(csock,
-                                                 _rset,
-                                                 _wset,
-                                                 _reqs[csock],
-                                                 directives.getCgiExecutable(),
-                                                 path);
+                    CommonGatewayInterface* cgi = new CommonGatewayInterface(
+                      csock, _reqs[csock], directives.getCgiExecutable(), path);
 
                     // do not launch cgi if this is chunked
                     _cgis[csock] = cgi;

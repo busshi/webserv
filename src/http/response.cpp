@@ -148,6 +148,12 @@ HTTP::Response::_sendHeader(void)
     return oss.str();
 }
 
+HTTP::Header&
+HTTP::Response::header(void)
+{
+    return _header;
+}
+
 /**
  * @brief Send a file as the response's body, automatically figuring out its
  media type. Use of this member function will overwrite any previously set

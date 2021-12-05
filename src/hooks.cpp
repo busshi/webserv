@@ -49,20 +49,29 @@ onHeaderParsed(uintptr_t requestLoc)
     HTTP::Response& res = *req.createResponse();
 
     createResponse(req, res, serverBlock);
+
+    /* if not handled by CGI */
+
+    if (cgis.find(req.getClientFd()) == cgis.end()) {
+        res.data << res.str();
+        res._body = "";
+    }
 }
 
 void
 onBodyFragment(const string& fragment, uintptr_t requestLoc)
 {
-    (void)fragment;
-    (void)requestLoc;
+    HTTP::Request& req = GET_REQ(requestLoc);
+
+    req.response()->data << fragment;
 }
 
 void
 onBodyChunk(const string& chunk, uintptr_t requestLoc)
 {
-    (void)requestLoc;
-    (void)chunk;
+    HTTP::Request& req = GET_REQ(requestLoc);
+
+    req.response()->data << chunk;
 }
 
 void

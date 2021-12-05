@@ -139,7 +139,6 @@ class Response : public Message
 {
     StatusCode _statusCode;
     Request _req;
-    std::string _body;
     int _csock;
 
     std::string _sendHeader(void);
@@ -153,6 +152,9 @@ class Response : public Message
     std::string _detectMediaType(const std::string& resource) const;
 
   public:
+    std::string _body;
+    std::ostringstream data;
+
     Response(int csock = -1);
     Response(const Request& req);
     Response(const Response& other);
@@ -167,6 +169,8 @@ class Response : public Message
     Response& sendFile(const std::string& filepath);
     Response& send(const std::string& s);
     Response& append(const std::string& s);
+
+    Header& header(void);
 
     int getClientSocket(void) const;
 

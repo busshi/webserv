@@ -42,6 +42,8 @@ noAutoIndexResponse(std::string path,
 
     ifstream ifs;
 
+    std::cout << path.c_str() << std::endl;
+
     ifs.open(path.c_str());
     if (!ifs) {
         ErrorPageGenerator errorGen;
@@ -80,14 +82,18 @@ noAutoIndexResponse(std::string path,
 
                     CommonGatewayInterface* cgi =
                       new CommonGatewayInterface(csock,
-                                                 select_rset,
-                                                 select_wset,
                                                  *requests[csock],
                                                  directives.getCgiExecutable(),
                                                  path);
 
                     // do not launch cgi if this is chunked
                     cgis[csock] = cgi;
+
+                    std::cout << "start cgi" << std::endl;
+
+                    cgi->start();
+
+                    glogger << "CGI started for fd " << csock << "\n";
 
                     return;
                 }

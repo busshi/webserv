@@ -22,6 +22,8 @@ closeConnection(int sockfd)
     FD_CLR(sockfd, &select_wset);
     FD_CLR(sockfd, &select_rset);
     close(sockfd);
+
+    glogger << "Closed connection fd " << sockfd << "\n";
 }
 
 static void
@@ -47,6 +49,13 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         // we have something to read from the cgi
 
         if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
+            char buf[BUFSIZE + 1] = { 0 };
+
+            if (read(cgi->getInputFd(), buf, BUFSIZE) <= 0) {
+                cgi->stopParser();
+            } else {
+                cgi->parse(buf);
+            }
         }
     }
 }
@@ -73,12 +82,25 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         /* if we can write */
 
         if (FD_ISSET(csockfd, &wsetc)) {
-            if (reqp->isDone()) {
-                std::string resData = reqp->response()->str();
+            HTTP::Response* resp = reqp->response();
 
-                send(csockfd, resData.c_str(), resData.size(), 0);
+            if (resp) {
+                std::string resData = resp->data.str();
 
-                closeConnection(csockfd);
+                if (!resData.empty()) {
+                    send(csockfd, resData.c_str(), resData.size(), 0);
+                    resp->data.str(""); // empty data buf
+                }
+
+                // if we are done, then close the connection
+                // TODO: specialize this behaviour to add Keep-Alive feature
+                if (cgis.find(csockfd) != cgis.end()) {
+                    if (cgis[csockfd]->isDone()) {
+                        closeConnection(csockfd);
+                    }
+                } else if (reqp->isDone()) {
+                    closeConnection(csockfd);
+                }
             }
         }
     }
@@ -135,5 +157,6 @@ lifecycle(const HttpParser::Config& parserConf)
         handleClientEvents(rsetc, wsetc);
         handleServerEvents(parserConf, rsetc);
         handleCgiEvents(rsetc, wsetc);
+        (void)handleCgiEvents;
     }
 }

@@ -5,6 +5,8 @@
 #include <map>
 #include <netinet/in.h>
 
+#define BUFSIZE 1024
+
 void
 initHosts(ConfigItem* global);
 

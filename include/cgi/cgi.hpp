@@ -1,37 +1,55 @@
 #pragma once
+#include "HttpParser.hpp"
+#include "http/header.hpp"
 #include "http/message.hpp"
 #include <cstdio>
 #include <cstring>
 #include <sys/select.h>
 
-class CommonGatewayInterface {
+class CommonGatewayInterface
+{
     int _inputFd[2], _outputFd[2];
     std::string _cgiExecName, _filepath, _data;
     int _csockFd;
-    fd_set &_rset, &_wset;
     HTTP::Request& _req;
-    pid_t _proc;
     HTTP::Response _res;
-    enum { STREAMING_HEADER, STREAMING_BODY } _state;
+    HttpParser* _parser;
+    HTTP::Header _header;
+
+    enum
+    {
+        STREAMING_HEADER,
+        STREAMING_BODY
+    } _state;
     bool _isDone;
     bool _hasStarted;
 
-    public:
-        CommonGatewayInterface(int csockFd, fd_set& rset, fd_set& wset, HTTP::Request& req, const std::string& cgiExecName, const std::string& filepath);
-        ~CommonGatewayInterface(void);
+  public:
+    CommonGatewayInterface(int csockFd,
+                           HTTP::Request& req,
+                           const std::string& cgiExecName,
+                           const std::string& filepath);
+    ~CommonGatewayInterface(void);
 
-        void start(void);
+    HTTP::Request* request(void);
 
-        bool hasStarted(void) const;
+    void start(void);
 
-        int getOutputFd(void) const;
-        int getInputFd(void) const;
-        int getClientFd(void) const;
-        bool isDone(void) const;
+    HTTP::Header& header(void);
 
-        const std::string& getData(void) const;
+    bool parse(const std::string& data);
 
-        int read(void);
+    bool hasStarted(void) const;
+    void stopParser(void);
 
-        void stream(void);
+    int getOutputFd(void) const;
+    int getInputFd(void) const;
+    int getClientFd(void) const;
+    bool isDone(void) const;
+
+    const std::string& getData(void) const;
+
+    int read(void);
+
+    void stream(void);
 };
