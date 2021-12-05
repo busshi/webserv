@@ -12,8 +12,8 @@ else
 	OPEN := open
 endif
 
-SRCS		= $(addprefix src/webserv/, main.cpp Server.cpp cgi_events.cpp client_events.cpp server_events.cpp event_utils.cpp Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
-SRCS		+= $(addprefix src/, utils/Formatter.cpp utils/string.cpp utils/os.cpp utils/ErrorPageGenerator.cpp)
+SRCS		= $(addprefix src/webserv/, Server.cpp cgi_events.cpp event_utils.cpp Directives.cpp config-parser/Lexer.cpp config-parser/ConfigParser.cpp config-parser/validator.cpp config-parser/ConfigItem.cpp config-parser/parser.cpp)
+SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp utils/Formatter.cpp utils/string.cpp utils/os.cpp utils/ErrorPageGenerator.cpp)
 SRCS		+= $(addprefix src/logger/, Logger.cpp)
 SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp)
 SRCS		+= $(addprefix src/net/, socket.cpp)
@@ -28,7 +28,7 @@ HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
-CXX_FLAGS	= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address
+CXX_FLAGS	= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address -Ihttp-parser
 
 CC			= @c++
 
@@ -42,8 +42,8 @@ FORMATTER   := clang-format
 		$(CC) $(CXX_FLAGS) $< -c -o $@
 		@printf "\033[1;33mCC\033[0;m\t$@\n"
 
-$(NAME): $(OBJS) $(HEADER)
-	$(CC) $(CXX_FLAGS) $(OBJS) -o $@
+$(NAME): http-parser http-parser/libhttpparser.a $(OBJS) $(HEADER)
+	$(CC) -Lhttp-parser -lhttpparser -fsanitize=address $(OBJS) -o $@
 	@printf "BIN \033[1;32m=>\033[0m \t$@\n"
 			
 all: $(NAME)
@@ -85,3 +85,9 @@ redoc: cleandoc doc
 	@printf "Doc REgenerated successfully.\n"
 
 .PHONY: doc
+
+http-parser:
+	git clone https://github.com/aurelien-brabant/http-parser.git
+
+http-parser/libhttpparser.a:
+	make re -C http-parser

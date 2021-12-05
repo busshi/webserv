@@ -18,19 +18,14 @@ Server::_handleCGIEvents(const fd_set& rset, const fd_set& wset)
         // not started yet: most likely waiting for a chunked request
         if (!cgi->hasStarted()) {
             ++cit;
-            continue ;
+            continue;
         }
 
         if (FD_ISSET(cgi->getOutputFd(), &wset)) {
             HTTP::Request& req = _reqs[cit->first];
+            (void)req;
 
-            if (
-                !req.data.str().empty() &&
-                (!req.isChunked() || (req.isChunked() && req.getState() == HTTP::Request::DONE))
-            ) {
-                std::string s = req.data.str();
-                write(cgi->getOutputFd(), s.c_str(), s.size());
-                req.data.str("");
+            if (1) {
             }
         }
 

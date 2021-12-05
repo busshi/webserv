@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "HttpParser.hpp"
 #include "cgi/cgi.hpp"
 #include "http/message.hpp"
 #include "logger/Logger.hpp"
@@ -24,7 +25,8 @@
 
 Server::Server(ConfigItem* global)
 {
-    FD_ZERO(&_rset); FD_ZERO(&_wset);
+    FD_ZERO(&_rset);
+    FD_ZERO(&_wset);
     std::vector<ConfigItem*> serverBlocks = global->findBlocks("server");
 
     _config = global;
@@ -172,20 +174,22 @@ Server::_noAutoIndexResponse(std::string path,
 
                     std::cout << csock << std::endl;
 
-                    CommonGatewayInterface* cgi = new CommonGatewayInterface(
-                      csock, _rset, _wset, _reqs[csock], directives.getCgiExecutable(), path);
+                    CommonGatewayInterface* cgi =
+                      new CommonGatewayInterface(csock,
+                                                 _rset,
+                                                 _wset,
+                                                 _reqs[csock],
+                                                 directives.getCgiExecutable(),
+                                                 path);
 
                     // do not launch cgi if this is chunked
-                    if (!_reqs[csock].isChunked()) {
-                        cgi->start();
-                    }
                     _cgis[csock] = cgi;
 
-                    return ;
+                    return;
                 }
             }
         }
-        
+
         res.sendFile(path);
     }
 }
@@ -309,10 +313,11 @@ _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
 
 /**
  * @brief How does the Server loop work:
- * 
- * For each loop cycle, the select system call selects all the file descriptors that are readable and/or writable WITHOUT BLOCKING
- * given a read and write sets of file descriptors.
- * 
+ *
+ * For each loop cycle, the select system call selects all the file descriptors
+ * that are readable and/or writable WITHOUT BLOCKING given a read and write
+ * sets of file descriptors.
+ *
  * A file descriptor MUST only be read or written if selects has set it to be.
  */
 
@@ -330,21 +335,21 @@ Server::start(void)
     std::cout << "> webserv is running\nHit Ctrl-C to exit." << std::endl;
 
     while (isWebservAlive) {
-        fd_set rset = _rset, wset = _wset; // make a copy of the set that will be mutated by select
+        fd_set rset = _rset,
+               wset =
+                 _wset; // make a copy of the set that will be mutated by select
         int nready = select(FD_SETSIZE, &rset, &wset, 0, &timeout);
 
         if (nready == -1) {
             perror("select: ");
         }
 
-        (void) nready;
-        
+        (void)nready;
+
         // std::cout << "Server events" << std::endl;
-        _handleServerEvents(rset, wset);
         // std::cout << "CGI events" << std::endl;
         _handleCGIEvents(rset, wset);
         // std::cout << "client events" << std::endl;
-        _handleClientEvents(rset, wset);
 
         /*
         if (reqs.find(csock) != reqs.end()) {

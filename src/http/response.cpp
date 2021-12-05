@@ -140,11 +140,10 @@ HTTP::Response::_sendHeader(void)
     std::ostringstream oss;
 
     oss << "HTTP/1.1"
-        << " " << _statusCode << " " << toStatusCodeString(_statusCode)
-        << HTTP::CRLF;
+        << " " << _statusCode << " " << toStatusCodeString(_statusCode) << CRLF;
 
     oss << _header.format();
-    oss << HTTP::CRLF;
+    oss << CRLF;
 
     return oss.str();
 }
