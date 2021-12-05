@@ -63,6 +63,8 @@ class Message
  * parsing it so that critical information are made available in an easier way.
  */
 
+class Response; // forward decl
+
 class Request : public Message
 {
   public:
@@ -73,12 +75,15 @@ class Request : public Message
         DONE
     };
 
+    std::ostringstream body;
+
   private:
     HttpParser* _parser;
     State _state;
-    std::string _method, _resourceURI, _URI, _protocol;
+    std::string _method, _location, _resourceURI, _URI, _protocol;
     ConfigItem* _serverBlock;
     int _csockFd;
+    Response* _res;
 
   public:
     Request(void);
@@ -88,19 +93,25 @@ class Request : public Message
     Request& operator=(const Request& rhs);
     ~Request(void);
 
-    /* No mutators are provided for these: it would make no sense to mutate them
-     */
-
+    bool isDone(void) const;
+    int getClientFd(void) const;
     bool parse(const std::string& data);
     const std::string& getMethod(void) const;
     const std::string& getResourceURI(void) const;
     const std::string& getURI(void) const;
     const std::string& getProtocol(void) const;
+    const std::string& getLocation(void) const;
     const std::string getBody(void) const;
     State getState(void) const;
 
+    void setProtocol(const std::string& protocol);
+    void setLocation(const std::string& loc);
+    void setMethod(const std::string& method);
     Request& setServerBlock(ConfigItem* serverBlock);
     ConfigItem* getServerBlock(void) const;
+
+    Response* createResponse(void);
+    Response* response(void);
 
     HTTP::Request& parseHeaderFromData(void);
 

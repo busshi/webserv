@@ -15,6 +15,12 @@ void
 lifecycle(const HttpParser::Config& parserConf);
 
 void
+onHeader(const std::string& method,
+         const std::string& loc,
+         const std::string& protocol,
+         uintptr_t requestLoc);
+
+void
 onHeaderField(const std::string& name,
               const std::string& value,
               uintptr_t requestLoc);
@@ -27,6 +33,18 @@ onBodyFragment(const std::string& fragment, uintptr_t requestLoc);
 
 void
 onBodyChunk(const std::string& chunk, uintptr_t requestLoc);
+
+void
+onBodyUnchunked(uintptr_t requestLoc);
+
+void
+onBodyParsed(uintptr_t requestLoc);
+
+void
+createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
+
+ConfigItem*
+selectServer(std::vector<ConfigItem*>& candidates, const std::string& host);
 
 struct Host
 {

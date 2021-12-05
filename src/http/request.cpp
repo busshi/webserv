@@ -13,13 +13,63 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   : _parser(0)
   , _state(W4_HEADER)
   , _csockFd(csockFd)
+  , _res(0)
 {
     _parser = new HttpParser(parserConf);
 }
 
 HTTP::Request::~Request(void)
 {
+    delete _res;
     delete _parser;
+}
+
+bool
+HTTP::Request::isDone(void) const
+{
+    return _parser->getState() == HttpParser::DONE;
+}
+
+HTTP::Response*
+HTTP::Request::createResponse(void)
+{
+    return _res = new HTTP::Response(_csockFd);
+}
+
+HTTP::Response*
+HTTP::Request::response(void)
+{
+    return _res;
+}
+
+int
+HTTP::Request::getClientFd(void) const
+{
+    return _csockFd;
+}
+
+const std::string&
+HTTP::Request::getLocation(void) const
+{
+    return _location;
+}
+
+void
+HTTP::Request::setProtocol(const std::string& protocol)
+{
+    _protocol = protocol;
+}
+
+void
+HTTP::Request::setMethod(const std::string& method)
+{
+    _method = method;
+}
+
+void
+HTTP::Request::setLocation(const std::string& location)
+{
+    _location = location;
 }
 
 bool
@@ -36,11 +86,6 @@ HTTP::Request::parseHeaderFromData(void)
     std::cout << "Hi!" << std::endl;
     return *this;
 }
-
-/**
- * @brief Destroy the HTTP::Request::Request object
- *
- */
 
 /**
  * @brief Construct a new HTTP::Request::Request object
@@ -82,7 +127,8 @@ HTTP::Request::getState(void) const
 }
 
 /**
- * @brief Get the HTTP verb that corresponds to the request's method as a string
+ * @brief Get the HTTP verb that corresponds to the request's method as a
+ * string
  *
  * @return const std::string&
  */
@@ -94,10 +140,10 @@ HTTP::Request::getMethod(void) const
 }
 
 /**
- * @brief Get the ressourceURI, i.e the original URI without the protocol and
- host information. To get the whole URI @see HTTP::Request::getURI. As an
- example, the ressourceURI of http://aurelienbrabant.fr/content/style.css is
- /content/style.css
+ * @brief Get the ressourceURI, i.e the original URI without the protocol
+ and host information. To get the whole URI @see HTTP::Request::getURI. As
+ an example, the ressourceURI of http://aurelienbrabant.fr/content/style.css
+ is /content/style.css
  *
  * @return const std::string&
  */
@@ -122,8 +168,8 @@ HTTP::Request::getURI(void) const
 
 /**
  * @brief Get the protocol used and its version, under the form of
- <PROTOCOL>/<VERSION>. Given this project's purpose it should always be HTTP/1.1
- for HTTP protocol version 1.1.
+ <PROTOCOL>/<VERSION>. Given this project's purpose it should always be
+ HTTP/1.1 for HTTP protocol version 1.1.
  *
  * @return const std::string&
  */
@@ -135,8 +181,8 @@ HTTP::Request::getProtocol(void) const
 }
 
 /**
- * @brief Get the body of the request. If no body is provided, the empty string
- * is returned.
+ * @brief Get the body of the request. If no body is provided, the empty
+ * string is returned.
  *
  * @return const std::string&
  */

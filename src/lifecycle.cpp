@@ -15,23 +15,77 @@ handleSigint(int)
 }
 
 static void
-listenToClientEvents(fd_set& rsetc)
+closeConnection(int sockfd)
 {
-    for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
-         cit != requests.end();
-         ++cit) {
-        if (FD_ISSET(cit->first, &rsetc)) {
-            HTTP::Request* reqp = cit->second;
-            char buf[1024];
+    requests.erase(sockfd);
+    cgis.erase(sockfd);
+    FD_CLR(sockfd, &select_wset);
+    FD_CLR(sockfd, &select_rset);
+    close(sockfd);
+}
 
-            recv(cit->first, buf, 1023, 0);
-            reqp->parse(buf);
+static void
+handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
+{
+    for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
+         cit != cgis.end();
+         ++cit) {
+        int csockfd = cit->first;
+        CommonGatewayInterface* cgi = cit->second;
+        HTTP::Request* reqp = requests[csockfd];
+
+        // we can write to cgi output
+
+        if (FD_ISSET(cgi->getOutputFd(), &wsetc)) {
+            std::string body = reqp->body.str();
+
+            if (!body.empty()) {
+                write(cgi->getOutputFd(), body.c_str(), body.size());
+            }
+        }
+
+        // we have something to read from the cgi
+
+        if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
         }
     }
 }
 
 static void
-listenToServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
+handleClientEvents(fd_set& rsetc, fd_set& wsetc)
+{
+    for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
+         cit != requests.end();) {
+        int csockfd = cit->first;
+        HTTP::Request* reqp = cit->second;
+
+        ++cit;
+
+        /* if there is something to read */
+
+        if (FD_ISSET(csockfd, &rsetc)) {
+            char buf[1024];
+
+            recv(csockfd, buf, 1023, 0);
+            reqp->parse(buf);
+        }
+
+        /* if we can write */
+
+        if (FD_ISSET(csockfd, &wsetc)) {
+            if (reqp->isDone()) {
+                std::string resData = reqp->response()->str();
+
+                send(csockfd, resData.c_str(), resData.size(), 0);
+
+                closeConnection(csockfd);
+            }
+        }
+    }
+}
+
+static void
+handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
 {
     for (map<uint16_t, Host>::iterator it = hosts.begin(); it != hosts.end();
          ++it) {
@@ -78,7 +132,8 @@ lifecycle(const HttpParser::Config& parserConf)
             return;
         }
 
-        listenToClientEvents(rsetc);
-        listenToServerEvents(parserConf, rsetc);
+        handleClientEvents(rsetc, wsetc);
+        handleServerEvents(parserConf, rsetc);
+        handleCgiEvents(rsetc, wsetc);
     }
 }

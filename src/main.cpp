@@ -46,10 +46,13 @@ main(int argc, char** argv)
 
     memset(&parserConf, 0, sizeof(parserConf));
 
+    parserConf.onHeader = onHeader;
     parserConf.onHeaderField = onHeaderField;
     parserConf.onBodyChunk = onBodyChunk;
     parserConf.onBodyFragment = onBodyFragment;
     parserConf.onHeaderParsed = onHeaderParsed;
+    parserConf.onBodyUnchunked = onBodyUnchunked;
+    parserConf.onBodyParsed = onBodyParsed;
 
     lifecycle(parserConf);
 
