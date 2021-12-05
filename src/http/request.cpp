@@ -33,6 +33,7 @@ HTTP::Request::parse(const std::string& data)
 HTTP::Request&
 HTTP::Request::parseHeaderFromData(void)
 {
+    std::cout << "Hi!" << std::endl;
     return *this;
 }
 

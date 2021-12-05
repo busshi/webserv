@@ -14,6 +14,20 @@ destroyHosts(void);
 void
 lifecycle(const HttpParser::Config& parserConf, fd_set& rset, fd_set& wset);
 
+void
+onHeaderField(const std::string& name,
+              const std::string& value,
+              uintptr_t requestLoc);
+
+void
+onHeaderParsed(uintptr_t requestLoc);
+
+void
+onBodyFragment(const std::string& fragment, uintptr_t requestLoc);
+
+void
+onBodyChunk(const std::string& chunk, uintptr_t requestLoc);
+
 struct Host
 {
     int ssockFd;

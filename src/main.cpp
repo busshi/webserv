@@ -12,14 +12,6 @@ std::map<uint16_t, Host> hosts;
 bool isWebservAlive = true;
 Logger glogger;
 
-void
-logHeader(const std::string& name, const std::string& value, uintptr_t request)
-{
-    (void)request;
-
-    std::cout << name << ": " << value << std::endl;
-}
-
 int
 main(int argc, char** argv)
 {
@@ -53,7 +45,11 @@ main(int argc, char** argv)
     HttpParser::Config parserConf;
 
     memset(&parserConf, 0, sizeof(parserConf));
-    parserConf.onHeaderField = logHeader;
+
+    parserConf.onHeaderField = onHeaderField;
+    parserConf.onBodyChunk = onBodyChunk;
+    parserConf.onBodyFragment = onBodyFragment;
+    parserConf.onHeaderParsed = onHeaderParsed;
 
     lifecycle(parserConf, rset, wset);
 
