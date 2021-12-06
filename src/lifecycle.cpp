@@ -1,8 +1,10 @@
 #include "HttpParser.hpp"
 #include "core.hpp"
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+#include <cstring>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/errno.h>
 #include <sys/select.h>
 #include <unistd.h>
 
@@ -23,7 +25,8 @@ closeConnection(int sockfd)
     FD_CLR(sockfd, &select_rset);
     close(sockfd);
 
-    glogger << "Closed connection fd " << sockfd << "\n";
+    glogger << Logger::INFO << Logger::getTimestamp()
+            << " Closed connection to fd " << sockfd << "\n";
 }
 
 static void
@@ -34,6 +37,11 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
          ++cit) {
         int csockfd = cit->first;
         CommonGatewayInterface* cgi = cit->second;
+
+        if (!cgi->hasStarted()) {
+            continue;
+        }
+
         HTTP::Request* reqp = requests[csockfd];
 
         // we can write to cgi output
@@ -43,17 +51,27 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 
             if (!body.empty()) {
                 write(cgi->getOutputFd(), body.c_str(), body.size());
+                reqp->body.str("");
             }
         }
 
         // we have something to read from the cgi
 
         if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
-            char buf[BUFSIZE + 1] = { 0 };
+            char buf[BUFSIZE + 1];
 
-            if (read(cgi->getInputFd(), buf, BUFSIZE) <= 0) {
+            int ret = read(cgi->getInputFd(), buf, BUFSIZE);
+
+            if (ret == -1) {
+                perror("cgi read:");
+            }
+
+            else if (ret == 0) {
                 cgi->stopParser();
-            } else {
+            }
+
+            else {
+                buf[ret] = 0;
                 cgi->parse(buf);
             }
         }
@@ -73,10 +91,21 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         /* if there is something to read */
 
         if (FD_ISSET(csockfd, &rsetc)) {
-            char buf[1024];
+            char buf[BUFSIZE + 1];
+            int ret = recv(csockfd, buf, 1023, 0);
 
-            recv(csockfd, buf, 1023, 0);
-            reqp->parse(buf);
+            if (ret == -1) {
+                glogger << Logger::INFO << Logger::getTimestamp() << " "
+                        << strerror(errno) << "\n";
+                closeConnection(csockfd);
+                continue;
+            }
+
+            if (ret > 0) {
+                buf[ret] = 0;
+
+                reqp->parse(buf);
+            }
         }
 
         /* if we can write */
@@ -98,7 +127,9 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     if (cgis[csockfd]->isDone()) {
                         closeConnection(csockfd);
                     }
-                } else if (reqp->isDone()) {
+                }
+
+                else if (reqp->isDone()) {
                     closeConnection(csockfd);
                 }
             }
@@ -124,7 +155,7 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
             }
 
             glogger << Logger::getTimestamp() << " New connection to port "
-                    << it->first << " accepted\n";
+                    << it->first << " accepted (fd=" << connection << ")\n";
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
             FD_SET(connection, &select_rset);
@@ -157,6 +188,5 @@ lifecycle(const HttpParser::Config& parserConf)
         handleClientEvents(rsetc, wsetc);
         handleServerEvents(parserConf, rsetc);
         handleCgiEvents(rsetc, wsetc);
-        (void)handleCgiEvents;
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "webserv/config-parser/ConfigItem.hpp"
-#include "webserv/config-parser/Lexer.hpp"
+#include "config/ConfigItem.hpp"
+#include "config/Lexer.hpp"
 #include <map>
 #include <stdexcept>
 #include <stdint.h>

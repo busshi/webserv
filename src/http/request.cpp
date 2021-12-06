@@ -30,6 +30,12 @@ HTTP::Request::isDone(void) const
     return _parser->getState() == HttpParser::DONE;
 }
 
+bool
+HTTP::Request::isBodyChunked(void) const
+{
+    return _parser->isBodyChunked();
+}
+
 HTTP::Response*
 HTTP::Request::createResponse(void)
 {

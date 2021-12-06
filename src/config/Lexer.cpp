@@ -1,4 +1,4 @@
-#include "webserv/config-parser/Lexer.hpp"
+#include "config/Lexer.hpp"
 #include "utils/Formatter.hpp"
 #include <cctype>
 #include <iomanip>
@@ -71,7 +71,7 @@ Lexer::getKey(void)
     }
 
     if (ch() != '{' && !isspace(ch())) {
-		std::cout << ch() << "\n";
+        std::cout << ch() << "\n";
         throw LexerException(
           _lineNb,
           _columnNb,
@@ -97,68 +97,73 @@ Lexer::getValue(void)
     return makeToken(VALUE, _s.substr(begPos, _pos - begPos));
 }
 
-Lexer::TokenType Lexer::nextTokenType(void)
+Lexer::TokenType
+Lexer::nextTokenType(void)
 {
-	size_t save_pos = _pos;
-	TokenType type = UNKNOWN;
+    size_t save_pos = _pos;
+    TokenType type = UNKNOWN;
 
-	while (ch() != '\n' && isspace(ch())) {
-		++_pos;
-	}
+    while (ch() != '\n' && isspace(ch())) {
+        ++_pos;
+    }
 
-	if (_pos >= _s.size()) {
-	return END_OF_FILE;
-	}
+    if (_pos >= _s.size()) {
+        return END_OF_FILE;
+    }
 
     if (!isreservedc(ch())) {
-	return _tokenHistory.back().getType() == KEY ? VALUE : KEY;
-	}
+        return _tokenHistory.back().getType() == KEY ? VALUE : KEY;
+    }
 
-	switch (ch()) {
-	case ';':
-		type = SEMICOLON;
-		break;
-	case '{':
-		type = BLOCK_START;
-		break;
-	case '}':
-		type = BLOCK_END;
-		break;
-	case '\n':
-		type = NEWLINE;
-		break;
-	}
+    switch (ch()) {
+        case ';':
+            type = SEMICOLON;
+            break;
+        case '{':
+            type = BLOCK_START;
+            break;
+        case '}':
+            type = BLOCK_END;
+            break;
+        case '\n':
+            type = NEWLINE;
+            break;
+    }
 
-	_pos = save_pos;
+    _pos = save_pos;
 
-	return type;
+    return type;
 }
 
-Lexer::TokenType Lexer::getLastRealTokenType(void)
+Lexer::TokenType
+Lexer::getLastRealTokenType(void)
 {
-	for (std::vector<Token>::const_reverse_iterator rite = _tokenHistory.rbegin(); rite != _tokenHistory.rend(); ++rite) {
-		if (rite->getType() != NEWLINE) {
-			return rite->getType();
-		}
-	}
-	return UNKNOWN;
+    for (std::vector<Token>::const_reverse_iterator rite =
+           _tokenHistory.rbegin();
+         rite != _tokenHistory.rend();
+         ++rite) {
+        if (rite->getType() != NEWLINE) {
+            return rite->getType();
+        }
+    }
+    return UNKNOWN;
 }
 
 Lexer::Token
 Lexer::makeToken(TokenType type, const std::string& value = "")
 {
-	_tokenHistory.push_back(Token(type, value));
+    _tokenHistory.push_back(Token(type, value));
     return Token(type, value);
 }
 
-Lexer::Lexer(const std::string& data):
-  _s(data)
+Lexer::Lexer(const std::string& data)
+  : _s(data)
   , _pos(0)
   , _blockDepth(0)
   , _lineNb(0)
   , _columnNb(0)
 {
-	_tokenHistory.push_back(Token(UNKNOWN, "unknown"));
+    _tokenHistory.push_back(Token(UNKNOWN, "unknown"));
 }
 
 Lexer::Lexer(const Lexer& other)
@@ -203,7 +208,7 @@ Lexer::processOne(void)
         return makeToken(END_OF_FILE, "EOF");
     }
 
-	/* tokenize key-value pair */
+    /* tokenize key-value pair */
 
     if (!isreservedc(ch())) {
         if (getLastRealTokenType() != KEY) {
@@ -213,39 +218,39 @@ Lexer::processOne(void)
         }
     }
 
-	/* tokenize special char */
+    /* tokenize special char */
 
     char c = ch();
     movePos(1);
 
-	TokenType type;
+    TokenType type;
 
     switch (c) {
-		case '\n':
-			type = _tokenHistory.back().getType();
-			if (type == VALUE && nextTokenType() != BLOCK_START) {
+        case '\n':
+            type = _tokenHistory.back().getType();
+            if (type == VALUE && nextTokenType() != BLOCK_START) {
                 throw LexerException(
                   _lineNb,
                   _columnNb,
                   "Unexpected line break, did you forget a ';' ?");
-			}
-			_columnNb = 0;
-			++_lineNb;
-			return makeToken(NEWLINE, "NL");
+            }
+            _columnNb = 0;
+            ++_lineNb;
+            return makeToken(NEWLINE, "NL");
         case ';':
-			type = _tokenHistory.back().getType();
+            type = _tokenHistory.back().getType();
             if (type != VALUE) {
                 throw LexerException(
                   _lineNb,
                   _columnNb,
                   "A semicolon is only valid after a directive's value");
             }
-			while (ch() == ';') {
-				movePos(1);
-			}
+            while (ch() == ';') {
+                movePos(1);
+            }
             return makeToken(SEMICOLON, ";");
         case '{':
-			type = getLastRealTokenType();
+            type = getLastRealTokenType();
             if (type != VALUE && type != KEY) {
                 throw LexerException(
                   _lineNb, _columnNb, "A block must have a name");

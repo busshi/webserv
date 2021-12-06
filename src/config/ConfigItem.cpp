@@ -1,4 +1,4 @@
-#include "webserv/config-parser/ConfigItem.hpp"
+#include "config/ConfigItem.hpp"
 #include <iomanip>
 #include <stdexcept>
 
@@ -14,9 +14,11 @@ ConfigItem::ConfigItem(const std::string& name,
 
 ConfigItem::~ConfigItem(void)
 {
-	for (std::vector<ConfigItem*>::const_iterator ite = children.begin(); ite != children.end(); ++ite) {
-		delete *ite;
-	}
+    for (std::vector<ConfigItem*>::const_iterator ite = children.begin();
+         ite != children.end();
+         ++ite) {
+        delete *ite;
+    }
 }
 
 BlockType
@@ -43,11 +45,11 @@ ConfigItem::getParent(void) const
     return _parent;
 }
 
-
 const ConfigItem*
 ConfigItem::findNearest(const std::string& key) const
 {
-    const ConfigItem *current = getType() == NOT_A_BLOCK ? getParent() : this, *atom = 0;
+    const ConfigItem *current = getType() == NOT_A_BLOCK ? getParent() : this,
+                     *atom = 0;
 
     while (current) {
         atom = current->findAtomInBlock(key);
@@ -62,14 +64,16 @@ ConfigItem::findNearest(const std::string& key) const
 ConfigItem*
 ConfigItem::findNearest(const std::string& key)
 {
-    return const_cast<ConfigItem*>(static_cast<const ConfigItem*>(this)->findNearest(key));
+    return const_cast<ConfigItem*>(
+      static_cast<const ConfigItem*>(this)->findNearest(key));
 }
 
 const ConfigItem*
 ConfigItem::findAtomInBlock(const std::string& key) const
 {
     if (getType() == NOT_A_BLOCK) {
-        throw std::runtime_error("findAtomInBlock can only be used on config blocks");
+        throw std::runtime_error(
+          "findAtomInBlock can only be used on config blocks");
     }
 
     for (std::vector<ConfigItem*>::const_iterator ite = children.begin();
@@ -86,7 +90,8 @@ ConfigItem::findAtomInBlock(const std::string& key) const
 ConfigItem*
 ConfigItem::findAtomInBlock(const std::string& key)
 {
-    return const_cast<ConfigItem*>(static_cast<const ConfigItem*>(this)->findAtomInBlock(key));
+    return const_cast<ConfigItem*>(
+      static_cast<const ConfigItem*>(this)->findAtomInBlock(key));
 }
 
 const std::vector<const ConfigItem*>
@@ -94,9 +99,10 @@ ConfigItem::findBlocks(const std::string& key) const
 {
     std::vector<const ConfigItem*> blocks;
 
-	if (getType() == NOT_A_BLOCK) {
-        throw std::runtime_error("findBlocks can only be used on config blocks");
-	}
+    if (getType() == NOT_A_BLOCK) {
+        throw std::runtime_error(
+          "findBlocks can only be used on config blocks");
+    }
 
     for (std::vector<ConfigItem*>::const_iterator ite = children.begin();
          ite != children.end();
@@ -114,9 +120,10 @@ ConfigItem::findBlocks(const std::string& key)
 {
     std::vector<ConfigItem*> blocks;
 
-	if (getType() == NOT_A_BLOCK) {
-        throw std::runtime_error("findBlocks can only be used on config blocks");
-	}
+    if (getType() == NOT_A_BLOCK) {
+        throw std::runtime_error(
+          "findBlocks can only be used on config blocks");
+    }
 
     for (std::vector<ConfigItem*>::const_iterator ite = children.begin();
          ite != children.end();

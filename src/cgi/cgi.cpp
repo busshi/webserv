@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 #define GET_CGI(loc) reinterpret_cast<CommonGatewayInterface*>(loc)
@@ -30,8 +29,6 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 
     // TODO: special header field status blize
 
-    std::cout << "Cgi header parsed" << std::endl;
-
     res->data << res->str();
 }
 
@@ -54,6 +51,7 @@ CommonGatewayInterface::CommonGatewayInterface(int csockFd,
   , _state(STREAMING_HEADER)
   , _isDone(false)
   , _hasStarted(false)
+  , _parser(0)
 {
     _inputFd[0] = -1;
     _inputFd[1] = -1;
@@ -163,6 +161,7 @@ CommonGatewayInterface::start(void)
     }
 
     fcntl(_inputFd[0], F_SETFL, O_NONBLOCK);
+    fcntl(_outputFd[1], F_SETFL, O_NONBLOCK);
     FD_SET(_inputFd[0], &select_rset); // where cgi response will come from
     FD_SET(_outputFd[1],
            &select_wset); // write end of the pipe used to provide cgi's body
@@ -233,7 +232,7 @@ CommonGatewayInterface::header(void)
 bool
 CommonGatewayInterface::isDone(void) const
 {
-    return _parser->getState() == HttpParser::DONE;
+    return _parser && _parser->getState() == HttpParser::DONE;
 }
 
 /**

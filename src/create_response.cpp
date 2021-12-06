@@ -1,24 +1,26 @@
+#include "Directives.hpp"
 #include "cgi/cgi.hpp"
+#include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "http/message.hpp"
-#include "logger/Logger.hpp"
 #include "utils/ErrorPageGenerator.hpp"
+#include "utils/Logger.hpp"
 #include "utils/os.hpp"
-#include "webserv/Directives.hpp"
-#include "webserv/config-parser/ConfigParser.hpp"
 
 #include <dirent.h>
 #include <sstream>
 
 using std::ifstream;
+using std::string;
+using std::stringstream;
 
 ConfigItem*
-selectServer(std::vector<ConfigItem*>& candidates, const std::string& host)
+selectServer(std::vector<ConfigItem*>& candidates, const string& host)
 {
-    std::string serverName;
+    string serverName;
     ConfigItem* serverNameItem = 0;
     ConfigItem* noServerName = 0;
-    std::string strippedHost = host.substr(0, host.find(':'));
+    string strippedHost = host.substr(0, host.find(':'));
 
     for (std::vector<ConfigItem*>::iterator it = candidates.begin();
          it != candidates.end();
@@ -35,19 +37,18 @@ selectServer(std::vector<ConfigItem*>& candidates, const std::string& host)
 }
 
 static void
-noAutoIndexResponse(std::string path,
+noAutoIndexResponse(string path,
+                    HTTP::Request& req,
                     HTTP::Response& res,
                     Directives& directives)
 {
 
     ifstream ifs;
 
-    std::cout << path.c_str() << std::endl;
-
     ifs.open(path.c_str());
     if (!ifs) {
         ErrorPageGenerator errorGen;
-        std::string errorPage;
+        string errorPage;
 
         if (directives.getRoot() == "none") {
             res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
@@ -70,7 +71,7 @@ noAutoIndexResponse(std::string path,
     } else {
         // look for cgi extension
         if (!directives.getCgiExecutable().empty()) {
-            for (std::vector<std::string>::const_iterator cit =
+            for (std::vector<string>::const_iterator cit =
                    directives.getCgiExtensions().begin();
                  cit != directives.getCgiExtensions().end();
                  ++cit) {
@@ -78,20 +79,19 @@ noAutoIndexResponse(std::string path,
                 if (hasFileExtension(path, *cit)) {
                     int csock = res.getClientSocket();
 
-                    std::cout << csock << std::endl;
-
                     CommonGatewayInterface* cgi =
                       new CommonGatewayInterface(csock,
                                                  *requests[csock],
                                                  directives.getCgiExecutable(),
                                                  path);
 
-                    // do not launch cgi if this is chunked
                     cgis[csock] = cgi;
 
-                    std::cout << "start cgi" << std::endl;
-
-                    cgi->start();
+                    // in case we're dealing with a chunked body CGI must be
+                    // started when it gets unchunked
+                    if (!req.isBodyChunked()) {
+                        cgi->start();
+                    }
 
                     glogger << "CGI started for fd " << csock << "\n";
 
@@ -105,10 +105,10 @@ noAutoIndexResponse(std::string path,
 }
 
 static void
-autoIndexResponse(std::string path, HTTP::Request& req, HTTP::Response& res)
+autoIndexResponse(string path, HTTP::Request& req, HTTP::Response& res)
 {
 
-    std::stringstream buf;
+    stringstream buf;
 
     glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE
             << " Autoindex is ON... Listing directory: " << path << CLR << "\n";
@@ -138,7 +138,7 @@ void
 createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 {
     Directives directives;
-    std::string location;
+    string location;
     bool haveLoc = false;
 
     std::vector<ConfigItem*> locations = server->findBlocks("location");
@@ -181,7 +181,7 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
             else {
                 ErrorPageGenerator errorGen;
 
-                std::string errorPage = errorGen.checkErrorPage(
+                string errorPage = errorGen.checkErrorPage(
                   directives.getDefaultErrorFile(),
                   "403",
                   "Forbidden",
@@ -194,9 +194,9 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
                 res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
             }
         } else
-            noAutoIndexResponse(directives.getPath(), res, directives);
+            noAutoIndexResponse(directives.getPath(), req, res, directives);
     } else {
-        noAutoIndexResponse(directives.getPath(), res, directives);
+        noAutoIndexResponse(directives.getPath(), req, res, directives);
     }
 
     res.setHeaderField("Last-Modified", getLastModified(directives.getPath()));

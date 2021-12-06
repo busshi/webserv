@@ -1,9 +1,9 @@
 #include "HttpParser.hpp"
 #include "cgi/cgi.hpp"
+#include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "http/message.hpp"
-#include "logger/Logger.hpp"
-#include "webserv/config-parser/ConfigParser.hpp"
+#include "utils/Logger.hpp"
 #include <map>
 
 std::map<int, HTTP::Request*> requests;

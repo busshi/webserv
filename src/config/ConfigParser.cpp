@@ -1,7 +1,7 @@
-#include "webserv/config-parser/ConfigParser.hpp"
+#include "config/ConfigParser.hpp"
+#include "config/validator.hpp"
 #include "utils/Formatter.hpp"
 #include "utils/string.hpp"
-#include "webserv/config-parser/validator.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -26,8 +26,11 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "upload_max_size", validateSize, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK },
-    { "redirect", validateRedirect, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
-    { "cgi_pass", validateCgiPass, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },    
+    { "redirect",
+      validateRedirect,
+      BLOCK_SERVER | BLOCK_LOCATION,
+      NOT_A_BLOCK },
+    { "cgi_pass", validateCgiPass, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
 };
 
 static void

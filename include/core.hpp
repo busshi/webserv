@@ -1,7 +1,7 @@
 #pragma once
 #include "cgi/cgi.hpp"
+#include "config/ConfigParser.hpp"
 #include "http/message.hpp"
-#include "webserv/config-parser/ConfigParser.hpp"
 #include <map>
 #include <netinet/in.h>
 

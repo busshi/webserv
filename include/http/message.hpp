@@ -7,11 +7,10 @@
 
 #include "HttpParser.hpp"
 
+#include "config/ConfigParser.hpp"
 #include "http/header.hpp"
 #include "http/status.hpp"
-#include "net/socket.hpp"
 #include "utils/string.hpp"
-#include "webserv/config-parser/ConfigParser.hpp"
 
 /* Everything related to the HTTP protocol */
 namespace HTTP {
@@ -93,6 +92,7 @@ class Request : public Message
     Request& operator=(const Request& rhs);
     ~Request(void);
 
+    bool isBodyChunked(void) const;
     bool isDone(void) const;
     int getClientFd(void) const;
     bool parse(const std::string& data);

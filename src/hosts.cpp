@@ -1,6 +1,6 @@
+#include "config/ConfigParser.hpp"
 #include "core.hpp"
-#include "logger/Logger.hpp"
-#include "webserv/config-parser/ConfigParser.hpp"
+#include "utils/Logger.hpp"
 #include <cstring>
 #include <fcntl.h>
 #include <sys/socket.h>

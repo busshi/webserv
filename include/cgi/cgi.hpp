@@ -13,7 +13,6 @@ class CommonGatewayInterface
     int _csockFd;
     HTTP::Request& _req;
     HTTP::Response _res;
-    HttpParser* _parser;
     HTTP::Header _header;
 
     enum
@@ -23,6 +22,8 @@ class CommonGatewayInterface
     } _state;
     bool _isDone;
     bool _hasStarted;
+
+    HttpParser* _parser;
 
   public:
     CommonGatewayInterface(int csockFd,

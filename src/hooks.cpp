@@ -1,6 +1,6 @@
 #include "core.hpp"
 #include "http/message.hpp"
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -63,7 +63,7 @@ onBodyFragment(const string& fragment, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.response()->data << fragment;
+    req.body << fragment;
 }
 
 void
@@ -71,13 +71,23 @@ onBodyChunk(const string& chunk, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.response()->data << chunk;
+    req.body << chunk;
 }
 
 void
 onBodyUnchunked(uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
+
+    int csockfd = req.getClientFd();
+
+    if (cgis.find(csockfd) != cgis.end() && !cgis[csockfd]->hasStarted()) {
+        std::ostringstream oss;
+
+        oss << req.body.str().size();
+        req.header().setField("Content-Length", oss.str());
+        cgis[csockfd]->start();
+    }
 
     (void)req;
 }
