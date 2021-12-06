@@ -67,19 +67,11 @@ class Response; // forward decl
 class Request : public Message
 {
   public:
-    enum State
-    {
-        W4_HEADER,
-        W4_BODY,
-        DONE
-    };
-
     std::ostringstream body;
 
   private:
     HttpParser* _parser;
-    State _state;
-    std::string _method, _location, _resourceURI, _URI, _protocol;
+    std::string _method, _location, _protocol;
     ConfigItem* _serverBlock;
     int _csockFd;
     Response* _res;
@@ -92,17 +84,15 @@ class Request : public Message
     Request& operator=(const Request& rhs);
     ~Request(void);
 
+    bool parse(const std::string& data);
+
     bool isBodyChunked(void) const;
     bool isDone(void) const;
+
     int getClientFd(void) const;
-    bool parse(const std::string& data);
     const std::string& getMethod(void) const;
-    const std::string& getResourceURI(void) const;
-    const std::string& getURI(void) const;
     const std::string& getProtocol(void) const;
     const std::string& getLocation(void) const;
-    const std::string getBody(void) const;
-    State getState(void) const;
 
     void setProtocol(const std::string& protocol);
     void setLocation(const std::string& loc);
@@ -112,8 +102,6 @@ class Request : public Message
 
     Response* createResponse(void);
     Response* response(void);
-
-    HTTP::Request& parseHeaderFromData(void);
 
     std::ostream& printHeader(std::ostream& os = std::cout) const;
 };
@@ -159,6 +147,7 @@ class Response : public Message
     Response(const Request& req);
     Response(const Response& other);
     ~Response(void);
+
     Response& operator=(const Response& res);
 
     Response& setStatus(StatusCode statusCode);

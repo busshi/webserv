@@ -11,11 +11,22 @@ HTTP::Request::Request(void) {}
 
 HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   : _parser(0)
-  , _state(W4_HEADER)
   , _csockFd(csockFd)
   , _res(0)
 {
     _parser = new HttpParser(parserConf);
+}
+
+/**
+ * @brief Construct a new HTTP::Request::Request object
+ *
+ * @param other
+ */
+
+HTTP::Request::Request(const HTTP::Request& other)
+  : Message()
+{
+    *this = other;
 }
 
 HTTP::Request::~Request(void)
@@ -86,25 +97,6 @@ HTTP::Request::parse(const std::string& data)
     return *_parser;
 }
 
-HTTP::Request&
-HTTP::Request::parseHeaderFromData(void)
-{
-    std::cout << "Hi!" << std::endl;
-    return *this;
-}
-
-/**
- * @brief Construct a new HTTP::Request::Request object
- *
- * @param other
- */
-
-HTTP::Request::Request(const HTTP::Request& other)
-  : Message()
-{
-    *this = other;
-}
-
 /**
  * @brief Copy data of rhs to lhs
  *
@@ -118,18 +110,9 @@ HTTP::Request::operator=(const HTTP::Request& rhs)
     Message::operator=(rhs);
     if (this != &rhs) {
         _method = rhs._method;
-        _resourceURI = rhs._resourceURI;
-        _URI = rhs._URI;
         _protocol = rhs._protocol;
-        _state = rhs._state;
     }
     return *this;
-}
-
-HTTP::Request::State
-HTTP::Request::getState(void) const
-{
-    return _state;
 }
 
 /**
@@ -146,33 +129,6 @@ HTTP::Request::getMethod(void) const
 }
 
 /**
- * @brief Get the ressourceURI, i.e the original URI without the protocol
- and host information. To get the whole URI @see HTTP::Request::getURI. As
- an example, the ressourceURI of http://aurelienbrabant.fr/content/style.css
- is /content/style.css
- *
- * @return const std::string&
- */
-
-const std::string&
-HTTP::Request::getResourceURI(void) const
-{
-    return _resourceURI;
-}
-
-/**
- * @brief Get the full URI of the request as typed in the browser's bar.
- *
- * @return const std::string&
- */
-
-const std::string&
-HTTP::Request::getURI(void) const
-{
-    return _URI;
-}
-
-/**
  * @brief Get the protocol used and its version, under the form of
  <PROTOCOL>/<VERSION>. Given this project's purpose it should always be
  HTTP/1.1 for HTTP protocol version 1.1.
@@ -184,19 +140,6 @@ const std::string&
 HTTP::Request::getProtocol(void) const
 {
     return _protocol;
-}
-
-/**
- * @brief Get the body of the request. If no body is provided, the empty
- * string is returned.
- *
- * @return const std::string&
- */
-
-const std::string
-HTTP::Request::getBody(void) const
-{
-    return "";
 }
 
 HTTP::Request&
