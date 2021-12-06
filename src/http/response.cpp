@@ -170,8 +170,10 @@ HTTP::Response::sendFile(const std::string& filepath)
     std::string fileContent;
 
     if (!ifs) {
+#ifdef LOGGER
         glogger << "Failed to open file " << filepath
                 << " while building a response\n";
+#endif
     } else {
         fileContent = std::string(std::istreambuf_iterator<char>(ifs),
                                   std::istreambuf_iterator<char>());

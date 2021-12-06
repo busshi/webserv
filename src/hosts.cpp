@@ -46,8 +46,10 @@ initHosts(ConfigItem* global)
                     return;
                 }
 
+#ifdef LOGGER
                 glogger << Logger::getTimestamp() << " New host bound to port "
                         << ldata.port << "\n";
+#endif
 
                 if (listen(ssockFd, 1024) == -1) {
                     perror("listen: ");

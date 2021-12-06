@@ -1,3 +1,4 @@
+#include "Constants.hpp"
 #include "HttpParser.hpp"
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
@@ -12,7 +13,10 @@ std::map<uint16_t, Host> hosts;
 fd_set select_rset, select_wset;
 
 bool isWebservAlive = true;
+
+#ifdef LOGGER
 Logger glogger;
+#endif
 
 int
 main(int argc, char** argv)
@@ -22,20 +26,36 @@ main(int argc, char** argv)
         return 1;
     }
 
+#ifdef LOGGER
     glogger << Logger::getTimestamp() << " Webserv started\n";
+#endif
 
     ConfigParser cfgp;
-    ConfigItem* global = cfgp.loadConfig(argv[1]);
+    ConfigItem* global;
 
+    try {
+        global = cfgp.loadConfig(argv[1]);
+    } catch (Lexer::LexerException& e) {
+        e.printFormatted(std::cerr) << "\n";
+        return 1;
+    } catch (ConfigParser::ParserException& e) {
+        e.printFormatted(std::cerr) << "\n";
+        return 1;
+    }
+
+#ifdef LOGGER
     glogger << Logger::getTimestamp() << " Configuration loaded from file "
             << argv[1] << "\n";
+#endif
 
+#ifdef LOGGER
     ConfigItem* logLevel = global->findNearest("logLevel");
 
     if (logLevel) {
         glogger << "Log level set to \"" << logLevel->getValue() << "\"\n";
         glogger.setWebservLogLevel(Logger::parseLogLevel(logLevel->getValue()));
     }
+#endif
 
     FD_ZERO(&select_rset);
     FD_ZERO(&select_wset);

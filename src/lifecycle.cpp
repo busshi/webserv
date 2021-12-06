@@ -25,8 +25,10 @@ closeConnection(int sockfd)
     FD_CLR(sockfd, &select_rset);
     close(sockfd);
 
+#ifdef LOGGER
     glogger << Logger::INFO << Logger::getTimestamp()
             << " Closed connection to fd " << sockfd << "\n";
+#endif
 }
 
 static void
@@ -95,8 +97,10 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             int ret = recv(csockfd, buf, 1023, 0);
 
             if (ret == -1) {
+#ifdef LOGGER
                 glogger << Logger::INFO << Logger::getTimestamp() << " "
                         << strerror(errno) << "\n";
+#endif
                 closeConnection(csockfd);
                 continue;
             }
@@ -154,8 +158,10 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
                 continue;
             }
 
+#ifdef LOGGER
             glogger << Logger::getTimestamp() << " New connection to port "
                     << it->first << " accepted (fd=" << connection << ")\n";
+#endif
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
             FD_SET(connection, &select_rset);

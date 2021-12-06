@@ -99,14 +99,17 @@ ErrorPageGenerator::checkErrorPage(std::string defaultPage,
 
     if (stat(defaultPage.c_str(), &s) == 0) {
 
+#ifdef LOGGER
         glogger << Logger::DEBUG << Logger::getTimestamp()
                 << " Default error page exists. Using " << defaultPage << "\n";
+#endif
         return defaultPage;
     } else {
-
+#ifdef LOGGER
         glogger << Logger::DEBUG << Logger::getTimestamp()
                 << " Default error page does not exist. Using webserv default "
                    "error page\n";
+#endif
         _generate(ERROR_SAMPLE, code, errorMsg, errorSentence);
         return ERROR_PAGE;
     }

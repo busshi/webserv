@@ -93,7 +93,10 @@ noAutoIndexResponse(string path,
                         cgi->start();
                     }
 
-                    glogger << "CGI started for fd " << csock << "\n";
+#ifdef LOGGER
+                    glogger << Logger::DEBUG << "CGI started for fd " << csock
+                            << "\n";
+#endif
 
                     return;
                 }
@@ -110,8 +113,10 @@ autoIndexResponse(string path, HTTP::Request& req, HTTP::Response& res)
 
     stringstream buf;
 
+#ifdef LOGGER
     glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE
             << " Autoindex is ON... Listing directory: " << path << CLR << "\n";
+#endif
 
     DIR* folder = opendir(path.c_str());
 
@@ -124,12 +129,16 @@ autoIndexResponse(string path, HTTP::Request& req, HTTP::Response& res)
                 << req.getLocation() << (req.getLocation() == "/" ? "" : "/")
                 << dir->d_name << "\">" << dir->d_name << "</a><br/>"
                 << std::endl;
+#ifdef LOGGER
             glogger << Logger::DEBUG << dir->d_name << "\n";
+#endif
         }
 
         res.send(buf.str());
 
+#ifdef LOGGER
         glogger << Logger::DEBUG << "\n";
+#endif
         closedir(folder);
     }
 }
@@ -151,29 +160,39 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 
         if ((haveLoc = directives.haveLocation(req.getLocation(), location)) ==
             true) {
+#ifdef LOGGER
             glogger << Logger::DEBUG << Logger::getTimestamp()
                     << " haveLoc is true\n";
+#endif
             directives.getConfig(*it, req.getLocation());
             break;
         }
     }
 
     if (haveLoc == false) {
+#ifdef LOGGER
         glogger << Logger::DEBUG << " haveLoc is false\n";
+#endif
         directives.getConfig(server, req.getLocation());
     }
 
+#ifdef LOGGER
     glogger << Logger::DEBUG << Logger::getTimestamp()
             << " Path: " << directives.getPath() << "\n";
     glogger << Logger::DEBUG << Logger::getTimestamp()
             << " Root: " << directives.getRoot() << "\n";
+#endif
 
     if (isFolder(directives.getPath()) == true) {
+#ifdef LOGGER
         glogger << Logger::DEBUG << " IS FOLDER\n";
+#endif
         directives.setPathWithIndex();
 
+#ifdef LOGGER
         glogger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
                 << directives.getPath() << "]\n";
+#endif
         if (isFolder(directives.getPath()) == true) {
 
             if (directives.getAutoIndex() == "on")
@@ -187,8 +206,10 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
                   "Forbidden",
                   "the access is permanently forbidden");
 
+#ifdef LOGGER
                 glogger << Logger::DEBUG << Logger::getTimestamp()
                         << "Error page: " << errorPage << "\n";
+#endif
 
                 res.setHeaderField("Content-Type", "text/html");
                 res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
