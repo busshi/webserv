@@ -17,9 +17,16 @@ handleSigint(int)
 }
 
 static void
+handleSigpipe(int)
+{
+    std::cout << "Received SIGPIPE" << std::endl;
+}
+
+static void
 closeConnection(int sockfd)
 {
     requests.erase(sockfd);
+    delete cgis[sockfd];
     cgis.erase(sockfd);
     FD_CLR(sockfd, &select_wset);
     FD_CLR(sockfd, &select_rset);
@@ -94,7 +101,7 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
 
         if (FD_ISSET(csockfd, &rsetc)) {
             char buf[BUFSIZE + 1];
-            int ret = recv(csockfd, buf, 1023, 0);
+            int ret = recv(csockfd, buf, BUFSIZE, 0);
 
             if (ret == -1) {
 #ifdef LOGGER
@@ -177,6 +184,7 @@ void
 lifecycle(const HttpParser::Config& parserConf)
 {
     signal(SIGINT, &handleSigint);
+    signal(SIGPIPE, &handleSigpipe);
 
     while (isWebservAlive) {
         fd_set rsetc = select_rset, wsetc = select_wset;

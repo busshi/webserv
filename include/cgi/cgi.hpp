@@ -12,18 +12,12 @@ class CommonGatewayInterface
     std::string _cgiExecName, _filepath, _data;
     int _csockFd;
     HTTP::Request& _req;
-    HTTP::Response _res;
     HTTP::Header _header;
 
-    enum
-    {
-        STREAMING_HEADER,
-        STREAMING_BODY
-    } _state;
-    bool _isDone;
     bool _hasStarted;
 
     HttpParser* _parser;
+    pid_t _pid;
 
   public:
     CommonGatewayInterface(int csockFd,
@@ -47,10 +41,4 @@ class CommonGatewayInterface
     int getInputFd(void) const;
     int getClientFd(void) const;
     bool isDone(void) const;
-
-    const std::string& getData(void) const;
-
-    int read(void);
-
-    void stream(void);
 };

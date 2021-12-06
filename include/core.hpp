@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
-#define BUFSIZE 1024
+#define BUFSIZE 1
 
 void
 initHosts(ConfigItem* global);

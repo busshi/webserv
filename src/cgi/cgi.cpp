@@ -4,7 +4,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <map>
+#include <signal.h>
 #include <unistd.h>
+
+using std::map;
 
 #define GET_CGI(loc) reinterpret_cast<CommonGatewayInterface*>(loc)
 
@@ -48,10 +52,9 @@ CommonGatewayInterface::CommonGatewayInterface(int csockFd,
   , _filepath(filepath)
   , _csockFd(csockFd)
   , _req(req)
-  , _state(STREAMING_HEADER)
-  , _isDone(false)
   , _hasStarted(false)
   , _parser(0)
+  , _pid(-1)
 {
     _inputFd[0] = -1;
     _inputFd[1] = -1;
@@ -134,13 +137,31 @@ CommonGatewayInterface::start(void)
     henv.setField("REQUEST_METHOD", _req.getMethod());
     henv.setField("PATH_INFO", _filepath);
 
-    pid_t pid = fork();
+    _pid = fork();
 
-    if (pid == -1) {
+    if (_pid == -1) {
         perror("CGI fork: ");
     }
 
-    if (pid == 0) {
+    if (_pid == 0) {
+
+        destroyHosts();
+
+        for (map<int, CommonGatewayInterface*>::const_iterator cit =
+               cgis.begin();
+             cit != cgis.end();
+             ++cit) {
+            CommonGatewayInterface* cgi = cit->second;
+            close(cgi->getInputFd());
+            close(cgi->getOutputFd());
+        }
+
+        for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
+             cit != requests.end();
+             ++cit) {
+            close(cit->first);
+        }
+
         if (dup2(_outputFd[0], STDIN_FILENO) == -1) {
             perror("CGI dup2 output: ");
         }
@@ -149,8 +170,8 @@ CommonGatewayInterface::start(void)
             perror("CGI dup2 input");
         }
 
-        close(_inputFd[0]);
-        close(_outputFd[1]);
+        close(_outputFd[0]);
+        close(_inputFd[1]);
 
         char** envp = henv.toEnv();
 
@@ -197,6 +218,19 @@ CommonGatewayInterface::~CommonGatewayInterface(void)
     if (_outputFd[1] != -1) {
         close(_outputFd[1]);
     }
+
+    if (_pid != -1) {
+        int ret = kill(_pid, SIGKILL);
+
+        if (ret == -1) {
+            perror("kill: ");
+        } else {
+            std::cout << "killed pid " << _pid << std::endl;
+        }
+
+        // make sure not to create a zombie
+        waitpid(_pid, 0, 0);
+    }
 }
 
 int
@@ -217,12 +251,6 @@ CommonGatewayInterface::getOutputFd() const
     return _outputFd[1];
 }
 
-const std::string&
-CommonGatewayInterface::getData(void) const
-{
-    return _data;
-}
-
 HTTP::Header&
 CommonGatewayInterface::header(void)
 {
@@ -234,58 +262,3 @@ CommonGatewayInterface::isDone(void) const
 {
     return _parser && _parser->getState() == HttpParser::DONE;
 }
-
-/**
- * @brief parse response from php-cgi and send a proper HTTP response to the
- * user agent
- *
- */
-
-void
-CommonGatewayInterface::stream(void)
-{
-    char buf[1024] = { 0 };
-
-    int ret = ::read(getInputFd(), buf, 1023);
-
-    // EOF reached
-    if (ret <= 0) {
-        _isDone = true;
-        return;
-    }
-
-    // we need to wait for the complete header before we can actually process
-    // the request
-    if (_state == STREAMING_HEADER) {
-        _data += buf;
-        std::string::size_type pos = _data.find(HTTP::BODY_DELIMITER);
-
-        if (pos != std::string::npos) {
-            HTTP::Header cgiHeader;
-
-            cgiHeader.parse(_data.substr(0, pos));
-
-            std::cout << cgiHeader.format() << std::endl;
-
-            // Change status according to what php-cgi (may) say
-            std::string status = cgiHeader.getField("status");
-            if (!status.empty()) {
-                std::vector<std::string> ss = split(status, " ");
-                _res.setStatus(parseInt(ss[0], 10));
-            }
-
-            _res.send(_data.substr(pos + 4, std::string::npos));
-
-            _res.header().merge(cgiHeader);
-
-            _state = STREAMING_BODY;
-
-            send(_csockFd, _res.str().c_str(), _res.str().size(), 0);
-        }
-        // If we've already got the header then we can send to the client what
-        // the CGI just sent
-    } else {
-        send(_csockFd, buf, ret, 0);
-    }
-}
-
