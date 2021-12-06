@@ -4,6 +4,7 @@
 #include "http/message.hpp"
 #include <map>
 #include <netinet/in.h>
+#include <stdint.h>
 
 #define BUFSIZE 1024
 
