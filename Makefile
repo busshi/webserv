@@ -49,7 +49,7 @@ FORMATTER   := clang-format
 		@printf "\033[1;33mCC\033[0;m\t$@\n"
 
 $(NAME): http-parser http-parser/libhttpparser.a $(OBJS) $(HEADER)
-	$(CC) -Lhttp-parser -lhttpparser -fsanitize=address $(OBJS) -o $@
+	$(CC)  $(OBJS) -Lhttp-parser -lhttpparser -fsanitize=address -o $@
 	@printf "BIN \033[1;32m=>\033[0m \t$@\n"
 			
 all: $(NAME)

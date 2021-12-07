@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <map>
 #include <signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 using std::map;
