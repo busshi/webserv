@@ -6,6 +6,9 @@
 #include "http/message.hpp"
 #include "utils/Logger.hpp"
 #include <map>
+#include <unistd.h>
+
+using std::map;
 
 std::map<int, HTTP::Request*> requests;
 std::map<int, CommonGatewayInterface*> cgis;
@@ -90,6 +93,21 @@ main(int argc, char** argv)
     lifecycle(parserConf);
 
     destroyHosts();
+
+    for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
+         cit != cgis.end();
+         ++cit) {
+        delete cit->second;
+    }
+
+    for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
+         cit != requests.end();
+         ++cit) {
+        delete cit->second;
+        close(cit->first);
+    }
+
+    delete global;
 
     return 0;
 }
