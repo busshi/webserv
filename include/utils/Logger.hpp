@@ -35,6 +35,9 @@ class Logger
 
     void setWebservLogLevel(LogLevel logLevel);
 
+    LogLevel getWebservLogLevel(void) const;
+    std::string getLogPath(void) const;
+
     template<typename T>
     Logger& operator<<(const T& t)
     {

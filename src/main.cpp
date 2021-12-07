@@ -74,6 +74,19 @@ main(int argc, char** argv)
     parserConf.onBodyUnchunked = onBodyUnchunked;
     parserConf.onBodyParsed = onBodyParsed;
 
+    std::cout << "webserv - a tiny HTTP server implementation\nBy abrabant and "
+                 "aldubar\n\nConfiguration loaded from: "
+              << argv[1] << "\n";
+
+#ifdef LOGGER
+    std::cout << "This version of webserv has been compiled with event logging "
+                 "support\nLog file is located at "
+              << glogger.getLogPath() << "\nLog level is "
+              << (logLevel ? logLevel->getValue() : "INFO") << "\n";
+#endif
+
+    std::cout << "\n";
+
     lifecycle(parserConf);
 
     destroyHosts();

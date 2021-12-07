@@ -73,3 +73,15 @@ Logger::setWebservLogLevel(Logger::LogLevel logLevel)
 {
     _webservLogLevel = logLevel;
 }
+
+Logger::LogLevel
+Logger::getWebservLogLevel(void) const
+{
+    return _webservLogLevel;
+}
+
+std::string
+Logger::getLogPath(void) const
+{
+    return _logDir + "/" + _logFile;
+}
