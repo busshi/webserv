@@ -50,12 +50,7 @@ onHeaderParsed(uintptr_t requestLoc)
 
     createResponse(req, res, serverBlock);
 
-    /* if not handled by CGI */
-
-    if (cgis.find(req.getClientFd()) == cgis.end()) {
-        res.data << res.str();
-        res._body = "";
-    }
+    res.data = res.data.append(res.formatHeader()) + res.body;
 }
 
 void

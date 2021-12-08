@@ -16,7 +16,7 @@ SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp create_res
 
 SRCS		+= $(addprefix src/config/, Lexer.cpp ConfigParser.cpp validator.cpp ConfigItem.cpp parser.cpp)
 
-SRCS		+= $(addprefix src/utils/, Formatter.cpp Logger.cpp string.cpp os.cpp ErrorPageGenerator.cpp)
+SRCS		+= $(addprefix src/utils/, Formatter.cpp Logger.cpp string.cpp os.cpp ErrorPageGenerator.cpp BinBuffer.cpp)
 
 SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp)
 
@@ -26,7 +26,7 @@ HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp)
 
 HEADER		+= $(addprefix include/config/, validator.hpp ConfigParser.hpp ConfigItem.hpp Lexer.hpp)
 
-HEADER		+= $(addprefix include/utils/, Formatter.hpp string.hpp os.hpp ErrorPageGenerator.hpp Logger.hpp)
+HEADER		+= $(addprefix include/utils/, Formatter.hpp string.hpp os.hpp ErrorPageGenerator.hpp Logger.hpp BinBuffer.hpp)
 
 HEADER		+= $(addprefix include/http/, header.hpp status.hpp message.hpp)
 

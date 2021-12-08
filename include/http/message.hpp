@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include "utils/BinBuffer.hpp"
+
 #include "HttpParser.hpp"
 
 #include "config/ConfigParser.hpp"
@@ -129,8 +131,6 @@ class Response : public Message
     Request _req;
     int _csock;
 
-    std::string _sendHeader(void);
-
     struct MediaTypeEntry
     {
         std::string mediaType;
@@ -140,8 +140,7 @@ class Response : public Message
     std::string _detectMediaType(const std::string& resource) const;
 
   public:
-    std::string _body;
-    std::ostringstream data;
+    BinBuffer data, body;
 
     Response(int csock = -1);
     Response(const Request& req);
@@ -164,5 +163,9 @@ class Response : public Message
     int getClientSocket(void) const;
 
     std::string str(void);
+
+    std::string formatHeader(void) const;
+
+    BinBuffer format(void);
 };
 }

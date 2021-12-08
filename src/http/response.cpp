@@ -75,7 +75,7 @@ HTTP::Response::~Response(void) {}
 std::string
 HTTP::Response::str(void)
 {
-    return _sendHeader() + _body;
+    return "";
 }
 
 /**
@@ -135,7 +135,7 @@ HTTP::Response::getReq(void) const
  */
 
 std::string
-HTTP::Response::_sendHeader(void)
+HTTP::Response::formatHeader(void) const
 {
     std::ostringstream oss;
 
@@ -166,21 +166,17 @@ HTTP::Response::header(void)
 HTTP::Response&
 HTTP::Response::sendFile(const std::string& filepath)
 {
-    std::ifstream ifs(filepath.c_str());
-    std::string fileContent;
+    std::ifstream ifs(filepath.c_str(), std::ios::binary | std::ios::in);
+    std::ostringstream oss;
 
-    if (!ifs) {
-#ifdef LOGGER
-        glogger << "Failed to open file " << filepath
-                << " while building a response\n";
-#endif
-    } else {
-        fileContent = std::string(std::istreambuf_iterator<char>(ifs),
-                                  std::istreambuf_iterator<char>());
+    if (ifs) {
+        body.clear();
+        body.append(ifs);
     }
 
-    _body = fileContent;
     setHeaderField("Content-Type", _detectMediaType(filepath));
+    oss << body.size();
+    setHeaderField("Content-Length", oss.str());
 
     return *this;
 }
@@ -197,7 +193,8 @@ HTTP::Response::sendFile(const std::string& filepath)
 HTTP::Response&
 HTTP::Response::send(const std::string& s)
 {
-    _body = s;
+    body.clear();
+    body.append(s);
 
     return *this;
 }
@@ -212,7 +209,7 @@ HTTP::Response::send(const std::string& s)
 HTTP::Response&
 HTTP::Response::append(const std::string& s)
 {
-    _body += s;
+    body.append(s);
 
     return *this;
 }
@@ -245,5 +242,13 @@ HTTP::Response::_detectMediaType(const std::string& resource) const
     }
 
     return "text/plain";
+}
+
+BinBuffer
+HTTP::Response::format(void)
+{
+    BinBuffer bbuf;
+
+    return bbuf;
 }
 

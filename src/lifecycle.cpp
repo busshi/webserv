@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/errno.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 using std::map;
@@ -126,11 +127,12 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             HTTP::Response* resp = reqp->response();
 
             if (resp) {
-                std::string resData = resp->data.str();
+                BinBuffer& bbuf = resp->data;
 
-                if (!resData.empty()) {
-                    send(csockfd, resData.c_str(), resData.size(), 0);
-                    resp->data.str(""); // empty data buf
+                if (!bbuf.isConsumed()) {
+                    std::pair<const uint8_t*, size_t> c = bbuf.getbuf();
+                    int ret = send(csockfd, c.first, c.second, 0);
+                    bbuf.consume(ret);
                 }
 
                 // if we are done, then close the connection
@@ -141,7 +143,8 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     }
                 }
 
-                else if (reqp->isDone()) {
+                else if (reqp->isDone() && bbuf.isConsumed()) {
+                    std::cout << "Cloclose!" << std::endl;
                     closeConnection(csockfd);
                 }
             }
@@ -190,8 +193,8 @@ lifecycle(const HttpParser::Config& parserConf)
     size_t dotN = 0;
 
     while (isWebservAlive) {
-        std::cout << "Webserv is running" << std::left << std::setw(3)
-                  << std::string(dotN, '.') << "\r" << std::flush;
+        /*std::cout << "Webserv is running" << std::left << std::setw(3)
+                  << std::string(dotN, '.') << "\r" << std::flush;*/
         if (++dotN > 3) {
             dotN = 0;
         }

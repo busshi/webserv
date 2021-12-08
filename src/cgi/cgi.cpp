@@ -34,7 +34,7 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 
     // TODO: special header field status blize
 
-    res->data << res->str();
+    res->data.append(res->formatHeader());
 }
 
 static void
@@ -42,7 +42,7 @@ onCgiBodyFragment(const std::string& fragment, uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
-    cgi->request()->response()->data << fragment;
+    cgi->request()->response()->data.append(fragment);
 }
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,

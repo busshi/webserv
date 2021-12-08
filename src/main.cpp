@@ -4,6 +4,7 @@
 #include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "http/message.hpp"
+#include "utils/BinBuffer.hpp"
 #include "utils/Logger.hpp"
 #include <map>
 #include <unistd.h>
