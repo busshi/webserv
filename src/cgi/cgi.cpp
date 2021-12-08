@@ -225,8 +225,6 @@ CommonGatewayInterface::~CommonGatewayInterface(void)
 
         if (ret == -1) {
             perror("kill: ");
-        } else {
-            std::cout << "killed pid " << _pid << std::endl;
         }
 
         // make sure not to create a zombie

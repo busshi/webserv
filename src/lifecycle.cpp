@@ -144,7 +144,6 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                 }
 
                 else if (reqp->isDone() && bbuf.isConsumed()) {
-                    std::cout << "Cloclose!" << std::endl;
                     closeConnection(csockfd);
                 }
             }
