@@ -1,104 +1,462 @@
 [
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/config-parser/ConfigBlock.o",
-            "src/webserv/config-parser/ConfigBlock.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/config-parser/ConfigBlock.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/main.o",
-            "src/webserv/main.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/main.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/utils/Formatter.o",
-            "src/utils/Formatter.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/utils/Formatter.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/config-parser/Lexer.o",
-            "src/webserv/config-parser/Lexer.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/config-parser/Lexer.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/config-parser/ConfigParser.o",
-            "src/webserv/config-parser/ConfigParser.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/config-parser/ConfigParser.cpp"
-    },
-    {
-        "arguments": [
-            "clang++",
-            "-c",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-std=c++98",
-            "-Iinclude/webserv/",
-            "-Iinclude",
-            "-o",
-            "src/webserv/Server.o",
-            "src/webserv/Server.cpp"
-        ],
-        "directory": "/home/abrabant/Prog/webserv",
-        "file": "src/webserv/Server.cpp"
-    }
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/main.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/hosts.o",
+      "src/hosts.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/hosts.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/hosts.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/lifecycle.o",
+      "src/lifecycle.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/lifecycle.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/lifecycle.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/hooks.o",
+      "src/hooks.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/hooks.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/hooks.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/create_response.o",
+      "src/create_response.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/create_response.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/create_response.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/Directives.o",
+      "src/Directives.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/Directives.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/Directives.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/config/Lexer.o",
+      "src/config/Lexer.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/config/Lexer.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/config/Lexer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/config/ConfigParser.o",
+      "src/config/ConfigParser.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/config/ConfigParser.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/config/ConfigParser.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/config/validator.o",
+      "src/config/validator.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/config/validator.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/config/validator.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/config/ConfigItem.o",
+      "src/config/ConfigItem.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/config/ConfigItem.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/config/ConfigItem.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/config/parser.o",
+      "src/config/parser.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/config/parser.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/config/parser.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/Formatter.o",
+      "src/utils/Formatter.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/Formatter.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/Formatter.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/Logger.o",
+      "src/utils/Logger.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/Logger.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/Logger.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/string.o",
+      "src/utils/string.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/string.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/string.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/os.o",
+      "src/utils/os.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/os.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/os.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/ErrorPageGenerator.o",
+      "src/utils/ErrorPageGenerator.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/ErrorPageGenerator.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/ErrorPageGenerator.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/utils/BinBuffer.o",
+      "src/utils/BinBuffer.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/utils/BinBuffer.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/utils/BinBuffer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/http/header.o",
+      "src/http/header.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/http/header.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/http/header.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/http/status.o",
+      "src/http/status.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/http/status.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/http/status.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/http/message.o",
+      "src/http/message.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/http/message.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/http/message.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/http/request.o",
+      "src/http/request.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/http/request.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/http/request.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/http/response.o",
+      "src/http/response.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/http/response.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/http/response.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-Iinclude/webserv/",
+      "-Iinclude",
+      "-fsanitize=address",
+      "-Ihttp-parser",
+      "-c",
+      "-o",
+      "src/cgi/cgi.o",
+      "src/cgi/cgi.cpp"
+    ],
+    "directory": "/home/aurelle/Prog/webserv",
+    "file": "/home/aurelle/Prog/webserv/src/cgi/cgi.cpp",
+    "output": "/home/aurelle/Prog/webserv/src/cgi/cgi.o"
+  }
 ]

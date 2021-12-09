@@ -97,7 +97,5 @@ onBodyParsed(uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    std::cout << "On body parsed" << std::endl;
-
     (void)req;
 }

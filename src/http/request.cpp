@@ -53,7 +53,7 @@ HTTP::Request::createResponse(void)
     return _res = new HTTP::Response(_csockFd);
 }
 
-HTTP::Response*
+HTTP::Response*&
 HTTP::Request::response(void)
 {
     return _res;

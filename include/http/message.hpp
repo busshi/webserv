@@ -103,7 +103,7 @@ class Request : public Message
     ConfigItem* getServerBlock(void) const;
 
     Response* createResponse(void);
-    Response* response(void);
+    Response*& response(void);
 
     std::ostream& printHeader(std::ostream& os = std::cout) const;
 };
@@ -128,7 +128,6 @@ class Request : public Message
 class Response : public Message
 {
     StatusCode _statusCode;
-    Request _req;
     int _csock;
 
     struct MediaTypeEntry
@@ -151,8 +150,6 @@ class Response : public Message
 
     Response& setStatus(StatusCode statusCode);
     Response& setStatus(unsigned intStatusCode);
-
-    const Request& getReq(void) const;
 
     Response& sendFile(const std::string& filepath);
     Response& send(const std::string& s);

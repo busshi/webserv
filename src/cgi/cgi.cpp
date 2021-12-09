@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <map>
 #include <signal.h>
+#include <stdint.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -31,6 +32,7 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
     HTTP::Response* res = req->response();
 
     res->header().merge(cgi->header());
+    res->header().setField("Transfer-Encoding", "chunked");
 
     // TODO: special header field status blize
 
@@ -42,8 +44,17 @@ onCgiBodyFragment(const std::string& fragment, uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
-    std::cout << "Body fragment" << std::endl;
-    cgi->request()->response()->data.append(fragment);
+    // send each CGI body fragment as a chunk
+    cgi->request()->response()->data.append(ntos(fragment.size(), 16) + CRLF +
+                                            fragment + CRLF);
+}
+
+static void
+onCgiBodyParsed(uintptr_t cgiLoc)
+{
+    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+
+    cgi->request()->response()->data.append("0" CRLF CRLF);
 }
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,
@@ -67,6 +78,12 @@ CommonGatewayInterface::CommonGatewayInterface(int csockFd,
 static std::pair<const std::string, std::string>
 transformClientHeaders(const std::pair<const std::string, std::string>& p)
 {
+    // in case header is prefixed by 'X-' don't transform it
+    if (p.first.size() >= 2 && toupper(p.first[0]) == 'X' &&
+        p.first[1] == '-') {
+        return make_pair(toUpperCase(p.first), p.second);
+    }
+
     return make_pair(std::string("HTTP_" + toUpperCase(p.first)), p.second);
 }
 
@@ -79,7 +96,7 @@ CommonGatewayInterface::hasStarted(void) const
 void
 CommonGatewayInterface::stopParser(void)
 {
-    _parser->stop();
+    _parser->stopBodyParsing();
 }
 
 void
@@ -96,6 +113,7 @@ CommonGatewayInterface::start(void)
     conf.onHeaderParsed = onCgiHeaderParsed;
     conf.onBodyFragment = onCgiBodyFragment;
     conf.parseFullBody = true;
+    conf.onBodyParsed = onCgiBodyParsed;
 
     _parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
 

@@ -35,6 +35,7 @@ void
 BinBuffer::clear(void)
 {
     _data.clear();
+    _index = 0;
 }
 
 size_t

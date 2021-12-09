@@ -9,19 +9,6 @@ HTTP::Response::Response(int csock)
     setHeaderField("Server", "webserv/1.0");
 }
 
-/**
- * @brief Construct a new HTTP::Response::Response object
- *
- * @param req
- */
-
-HTTP::Response::Response(const HTTP::Request& req)
-  : _statusCode(HTTP::OK)
-  , _req(req)
-{
-    setHeaderField("Server", "webserv/1.0");
-}
-
 int
 HTTP::Response::getClientSocket(void) const
 {
@@ -113,18 +100,6 @@ HTTP::Header&
 HTTP::Message::header(void)
 {
     return _header;
-}
-
-/**
- * @brief Get the original request the response is answering too.
- *
- * @return const HTTP::Request&
- */
-
-const HTTP::Request&
-HTTP::Response::getReq(void) const
-{
-    return _req;
 }
 
 /**

@@ -41,6 +41,24 @@ closeConnection(int sockfd)
 }
 
 static void
+keepAlive(int sockfd)
+{
+    if (cgis.find(sockfd) != cgis.end()) {
+        delete cgis[sockfd];
+        cgis.erase(sockfd);
+    }
+
+    HTTP::Request* reqp = requests[sockfd];
+
+    reqp->parser->reset();
+    reqp->header().clear();
+    reqp->body.str("");
+
+    delete reqp->response();
+    reqp->response() = 0;
+}
+
+static void
 handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 {
     for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
@@ -75,6 +93,10 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 
             if (ret == -1) {
                 perror("cgi read:");
+            }
+
+            if (ret == 0) {
+                cgi->stopParser();
             }
         }
 
@@ -126,27 +148,33 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     std::pair<const uint8_t*, size_t> c = bbuf.getbuf();
 
                     int ret = send(csockfd, c.first, c.second, 0);
-                    std::cout << "Sent " << ret << std::endl;
+
+                    if (ret == -1) {
+                        perror("client send: ");
+                    }
+
+                    // std::cout << "Sent " << ret << std::endl;
                     bbuf.consume(ret);
                 }
 
-                // if we are done, then close the connection
-                // TODO: specialize this behaviour to add Keep-Alive feature
-                if (cgis.find(csockfd) != cgis.end()) {
-                    if (cgis[csockfd]->isDone() && bbuf.isConsumed()) {
-                        send(csockfd, "0" CRLF CRLF, 5, 0);
+                /*
+                 * if data buf has been consumed entirely, MAYBE it means we're
+                 * done processing the current request.
+                 * - if request is handled by CGI make sure CGI is done with
+                 * its work.
+                 * - if no CGI is involved just make sure that the request has
+                 * been fully processed.
+                 */
+
+                if (bbuf.isConsumed() &&
+                    ((cgis.find(csockfd) != cgis.end() &&
+                      cgis[csockfd]->isDone()) ||
+                     (cgis.find(csockfd) == cgis.end() && reqp->isDone()))) {
+                    if (reqp->getHeaderField("Connection") == "close") {
                         closeConnection(csockfd);
+                    } else {
+                        keepAlive(csockfd);
                     }
-                }
-
-                else if (reqp->isDone() && bbuf.isConsumed()) {
-                    reqp->parser->reset();
-                    reqp->header().clear();
-                    reqp->body.str("");
-
-                    resp->body.clear();
-                    resp->data.clear();
-                    resp->header().clear();
                 }
             }
         }
