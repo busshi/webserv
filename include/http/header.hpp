@@ -31,19 +31,22 @@ class Header
     Fields _fields;
 
   public:
-        Header(void);
-        ~Header(void);
-        Header(const Header& other);
-        Header& operator=(const Header& rhs);
+    Header(void);
+    ~Header(void);
+    Header(const Header& other);
+    Header& operator=(const Header& rhs);
 
-        std::string getField(const std::string& name) const;
-        Header& setField(const std::string& name, const std::string& value);
-        Header& parse(const std::string& rawData);
-        Header& merge(const Header& other,
-        std::pair<const std::string, std::string> (*transformer)(const std::pair<const std::string, std::string>& p) = 0);
-        char** toEnv(void) const;
+    std::string getField(const std::string& name) const;
+    Header& setField(const std::string& name, const std::string& value);
+    Header& parse(const std::string& rawData);
+    Header& merge(const Header& other,
+                  std::pair<const std::string, std::string> (*transformer)(
+                    const std::pair<const std::string, std::string>& p) = 0);
+    char** toEnv(void) const;
 
-        std::string format(void) const;
+    Header& clear(void);
+
+    std::string format(void) const;
 };
 
 }

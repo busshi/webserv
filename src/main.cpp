@@ -98,7 +98,9 @@ main(int argc, char** argv)
     for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
          cit != cgis.end();
          ++cit) {
-        delete cit->second;
+        CommonGatewayInterface* cgi = cit->second;
+
+        delete cgi;
     }
 
     for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();

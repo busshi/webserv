@@ -41,6 +41,10 @@ initHosts(ConfigItem* global)
                     return;
                 }
 
+                int reuse = 1;
+                socklen_t n = sizeof(reuse);
+                setsockopt(ssockFd, SOL_SOCKET, SO_REUSEADDR, &reuse, n);
+
                 if (bind(ssockFd, (sockaddr*)&sin, sizeof(sin)) == -1) {
                     perror("bind: ");
                     return;

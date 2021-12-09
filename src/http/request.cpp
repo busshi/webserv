@@ -10,11 +10,11 @@ HTTP::Request::Request(void) {}
  */
 
 HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
-  : _parser(0)
+  : parser(0)
   , _csockFd(csockFd)
   , _res(0)
 {
-    _parser = new HttpParser(parserConf);
+    parser = new HttpParser(parserConf);
 }
 
 /**
@@ -32,19 +32,19 @@ HTTP::Request::Request(const HTTP::Request& other)
 HTTP::Request::~Request(void)
 {
     delete _res;
-    delete _parser;
+    delete parser;
 }
 
 bool
 HTTP::Request::isDone(void) const
 {
-    return _parser->getState() == HttpParser::DONE;
+    return parser->getState() == HttpParser::DONE;
 }
 
 bool
 HTTP::Request::isBodyChunked(void) const
 {
-    return _parser->isBodyChunked();
+    return parser->isBodyChunked();
 }
 
 HTTP::Response*
@@ -92,9 +92,9 @@ HTTP::Request::setLocation(const std::string& location)
 bool
 HTTP::Request::parse(const std::string& data)
 {
-    _parser->parse(data, reinterpret_cast<uintptr_t>(this));
+    parser->parse(data, reinterpret_cast<uintptr_t>(this));
 
-    return *_parser;
+    return *parser;
 }
 
 /**

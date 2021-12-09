@@ -70,9 +70,9 @@ class Request : public Message
 {
   public:
     std::ostringstream body;
+    HttpParser* parser;
 
   private:
-    HttpParser* _parser;
     std::string _method, _location, _protocol;
     ConfigItem* _serverBlock;
     int _csockFd;

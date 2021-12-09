@@ -42,6 +42,7 @@ onCgiBodyFragment(const std::string& fragment, uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
+    std::cout << "Body fragment" << std::endl;
     cgi->request()->response()->data.append(fragment);
 }
 
@@ -202,7 +203,8 @@ bool
 CommonGatewayInterface::parse(const std::string& data)
 {
     _parser->parse(data, reinterpret_cast<uintptr_t>(this));
-    return *_parser;
+
+    return true;
 }
 
 CommonGatewayInterface::~CommonGatewayInterface(void)

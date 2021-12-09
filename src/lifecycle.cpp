@@ -66,26 +66,20 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
+        char buf[BUFSIZE + 1];
+        int ret = 0;
+
         // we have something to read from the cgi
-
         if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
-            char buf[BUFSIZE + 1];
-
-            int ret = read(cgi->getInputFd(), buf, BUFSIZE);
+            ret = read(cgi->getInputFd(), buf, BUFSIZE);
 
             if (ret == -1) {
                 perror("cgi read:");
             }
-
-            else if (ret == 0) {
-                cgi->stopParser();
-            }
-
-            else {
-                buf[ret] = 0;
-                cgi->parse(buf);
-            }
         }
+
+        buf[ret] = 0;
+        cgi->parse(buf);
     }
 }
 
@@ -99,11 +93,13 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
 
         ++cit;
 
+        int ret = 0;
+        char buf[BUFSIZE + 1];
+
         /* if there is something to read */
 
         if (FD_ISSET(csockfd, &rsetc)) {
-            char buf[BUFSIZE + 1];
-            int ret = recv(csockfd, buf, BUFSIZE, 0);
+            ret = recv(csockfd, buf, BUFSIZE, 0);
 
             if (ret == -1) {
 #ifdef LOGGER
@@ -113,13 +109,10 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                 closeConnection(csockfd);
                 continue;
             }
-
-            if (ret > 0) {
-                buf[ret] = 0;
-
-                reqp->parse(buf);
-            }
         }
+
+        buf[ret] = 0;
+        reqp->parse(buf);
 
         /* if we can write */
 
@@ -131,20 +124,29 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
 
                 if (!bbuf.isConsumed()) {
                     std::pair<const uint8_t*, size_t> c = bbuf.getbuf();
+
                     int ret = send(csockfd, c.first, c.second, 0);
+                    std::cout << "Sent " << ret << std::endl;
                     bbuf.consume(ret);
                 }
 
                 // if we are done, then close the connection
                 // TODO: specialize this behaviour to add Keep-Alive feature
                 if (cgis.find(csockfd) != cgis.end()) {
-                    if (cgis[csockfd]->isDone()) {
+                    if (cgis[csockfd]->isDone() && bbuf.isConsumed()) {
+                        send(csockfd, "0" CRLF CRLF, 5, 0);
                         closeConnection(csockfd);
                     }
                 }
 
                 else if (reqp->isDone() && bbuf.isConsumed()) {
-                    closeConnection(csockfd);
+                    reqp->parser->reset();
+                    reqp->header().clear();
+                    reqp->body.str("");
+
+                    resp->body.clear();
+                    resp->data.clear();
+                    resp->header().clear();
                 }
             }
         }

@@ -90,6 +90,7 @@ noAutoIndexResponse(string path,
                     // in case we're dealing with a chunked body CGI must be
                     // started when it gets unchunked
                     if (!req.isBodyChunked()) {
+                        std::cout << "CGI!!!" << std::endl;
                         cgi->start();
                     }
 

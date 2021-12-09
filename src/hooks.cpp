@@ -2,6 +2,7 @@
 #include "http/message.hpp"
 #include "utils/Logger.hpp"
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unistd.h>
 
@@ -50,7 +51,11 @@ onHeaderParsed(uintptr_t requestLoc)
 
     createResponse(req, res, serverBlock);
 
-    res.data = res.data.append(res.formatHeader()) + res.body;
+    if (cgis.find(req.getClientFd()) == cgis.end()) {
+        res.data = res.data.append(res.formatHeader());
+    }
+
+    res.data = res.data + res.body;
 }
 
 void
@@ -91,6 +96,8 @@ void
 onBodyParsed(uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
+
+    std::cout << "On body parsed" << std::endl;
 
     (void)req;
 }

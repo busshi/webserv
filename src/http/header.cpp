@@ -106,3 +106,11 @@ HTTP::Header::format(void) const
 
     return oss.str();
 }
+
+HTTP::Header&
+HTTP::Header::clear(void)
+{
+    _fields.clear();
+
+    return *this;
+}
