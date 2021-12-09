@@ -17,12 +17,14 @@ isIPv4(const std::string& s);
 std::string
 toLowerCase(const std::string& s);
 
-
 std::string
 toUpperCase(const std::string& s);
 
 long long
 parseInt(const std::string& s, int radix);
+
+std::string
+ntos(long long n, int radix = 10, bool lower = false);
 
 bool
 hasFileExtension(const std::string& path, const std::string& fileExtension);
