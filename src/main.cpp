@@ -24,28 +24,6 @@ bool isWebservAlive = true;
 Logger glogger;
 #endif
 
-static void
-onEntryHeaderField(const std::string& name,
-                   const std::string& value,
-                   uintptr_t param)
-{
-    (void)param;
-
-    std::cout << name << ": " << value << std::endl;
-}
-
-static void
-onEntryHeaderParsed(uintptr_t)
-{
-    std::cout << "Header parsed" << std::endl;
-}
-
-static void
-onEntryBodyFragment(const std::string& s, uintptr_t)
-{
-    std::cout << "Frag: " << s << std::endl;
-}
-
 int
 main(int argc, char** argv)
 {
@@ -53,31 +31,6 @@ main(int argc, char** argv)
         std::cerr << "Usage: ./webserv <path/to/config/file>\n";
         return 1;
     }
-
-    HTTP::FormDataParser::CallbackList list;
-
-    memset(&list, 0, sizeof(list));
-
-    list.onEntryHeaderField = onEntryHeaderField;
-    list.onEntryHeaderParsed = onEntryHeaderParsed;
-    list.onEntryBodyFragment = onEntryBodyFragment;
-
-    HTTP::FormDataParser parser("---BRABANT\r\n", list);
-
-    parser.parse(
-      "---BRABANT\r\nContent-Type: application/javascript\r\nX-Authorization: "
-      "Bronte\r\n\r\ncontent---BRABANT--\r\n");
-
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-    parser.parse("");
-
-    return 0;
 
 #ifdef LOGGER
     glogger << Logger::getTimestamp() << " Webserv started\n";
