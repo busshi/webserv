@@ -179,6 +179,15 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
     glogger << Logger::DEBUG << Logger::getTimestamp()
             << " Root: " << directives.getRoot() << "\n";
 #endif
+    // if upload_store is defined then upload is possible
+
+    std::cout << req.getMethod() << std::endl;
+    std::cout << "upload_store: " << directives.getUploadStore() << std::endl;
+    if (req.getMethod() == "POST" && !directives.getUploadStore().empty()) {
+        std::cout << "Considering file upload" << std::endl;
+
+        return;
+    }
 
     if (isFolder(directives.getPath()) == true) {
 #ifdef LOGGER
@@ -190,6 +199,7 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
         glogger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
                 << directives.getPath() << "]\n";
 #endif
+
         if (isFolder(directives.getPath()) == true) {
 
             if (directives.getAutoIndex() == "on")

@@ -254,7 +254,7 @@ HttpParser::parse(const std::string& data, uintptr_t paramLoc)
 {
     if (!data.empty()) {
         _ibuf.seekp(0, std::ios::end);
-        _ibuf.write(data.c_str(), data.size());
+        _ibuf.write(data.data(), data.size());
     }
 
     // std::cout << "CONTENT OF IBUF:\n" << _ibuf.str();
