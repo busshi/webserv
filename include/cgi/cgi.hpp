@@ -11,7 +11,7 @@ class CommonGatewayInterface
     int _inputFd[2], _outputFd[2];
     std::string _cgiExecName, _filepath, _data;
     int _csockFd;
-    HTTP::Request& _req;
+    HTTP::Request* _req;
     HTTP::Header _header;
 
     bool _hasStarted;
@@ -21,7 +21,7 @@ class CommonGatewayInterface
 
   public:
     CommonGatewayInterface(int csockFd,
-                           HTTP::Request& req,
+                           HTTP::Request* req,
                            const std::string& cgiExecName,
                            const std::string& filepath);
     ~CommonGatewayInterface(void);

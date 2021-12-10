@@ -77,13 +77,12 @@ class Request : public Message
     ConfigItem* _serverBlock;
     int _csockFd;
     Response* _res;
-
-  public:
-    Request(void);
-    Request(int csockfd, const HttpParser::Config& parserConf);
-
     Request(const Request& other);
     Request& operator=(const Request& rhs);
+
+  public:
+    Request(int csockfd, const HttpParser::Config& parserConf);
+
     ~Request(void);
 
     bool parse(const std::string& data);

@@ -58,7 +58,7 @@ onCgiBodyParsed(uintptr_t cgiLoc)
 }
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,
-                                               HTTP::Request& req,
+                                               HTTP::Request* req,
                                                const std::string& cgiExecName,
                                                const std::string& filepath)
   : _cgiExecName(cgiExecName)
@@ -130,11 +130,11 @@ CommonGatewayInterface::start(void)
     HTTP::Header henv;
     // Merge all the request header fields into the CGI environment, prefixing
     // each field with "HTTP_"
-    henv.merge(_req.header(), &transformClientHeaders);
+    henv.merge(_req->header(), &transformClientHeaders);
 
     // Server information
 
-    henv.setField("SERVER_PROTOCOL", _req.getProtocol());
+    henv.setField("SERVER_PROTOCOL", _req->getProtocol());
     henv.setField("SERVER_SOFTWARE", henv.getField("Server"));
 
     henv.setField("REDIRECT_STATUS", "200");
@@ -154,7 +154,7 @@ CommonGatewayInterface::start(void)
 
     henv.setField("REMOTE_HOST", henv.getField("Host"));
     henv.setField("HTTPS", "off");
-    henv.setField("REQUEST_METHOD", _req.getMethod());
+    henv.setField("REQUEST_METHOD", _req->getMethod());
     henv.setField("PATH_INFO", _filepath);
 
     _pid = fork();
@@ -214,7 +214,7 @@ CommonGatewayInterface::start(void)
 HTTP::Request*
 CommonGatewayInterface::request(void)
 {
-    return &_req;
+    return _req;
 }
 
 bool

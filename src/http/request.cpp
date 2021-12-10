@@ -1,7 +1,5 @@
 #include "http/message.hpp"
 
-HTTP::Request::Request(void) {}
-
 /**
  * @brief Construct a new HTTP::Request::Request object (with a client socket
  * only)
@@ -15,18 +13,6 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   , _res(0)
 {
     parser = new HttpParser(parserConf);
-}
-
-/**
- * @brief Construct a new HTTP::Request::Request object
- *
- * @param other
- */
-
-HTTP::Request::Request(const HTTP::Request& other)
-  : Message()
-{
-    *this = other;
 }
 
 HTTP::Request::~Request(void)
@@ -94,25 +80,7 @@ HTTP::Request::parse(const std::string& data)
 {
     parser->parse(data, reinterpret_cast<uintptr_t>(this));
 
-    return *parser;
-}
-
-/**
- * @brief Copy data of rhs to lhs
- *
- * @param rhs
- * @return HTTP::Request&
- */
-
-HTTP::Request&
-HTTP::Request::operator=(const HTTP::Request& rhs)
-{
-    Message::operator=(rhs);
-    if (this != &rhs) {
-        _method = rhs._method;
-        _protocol = rhs._protocol;
-    }
-    return *this;
+    return true;
 }
 
 /**

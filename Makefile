@@ -12,7 +12,7 @@ else
 	OPEN := open
 endif
 
-SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp create_response.cpp Directives.cpp) 
+SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp create_response.cpp Directives.cpp HttpParser.cpp)
 
 SRCS		+= $(addprefix src/config/, Lexer.cpp ConfigParser.cpp validator.cpp ConfigItem.cpp parser.cpp)
 
@@ -22,7 +22,7 @@ SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp re
 
 SRCS		+= $(addprefix src/cgi/, cgi.cpp)
 
-HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp)
+HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp HttpParser.hpp)
 
 HEADER		+= $(addprefix include/config/, validator.hpp ConfigParser.hpp ConfigItem.hpp Lexer.hpp)
 
@@ -34,7 +34,7 @@ HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
-CXX_FLAGS	= -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address -Ihttp-parser $(if $(LOGGER), -DLOGGER, )
+CXX_FLAGS	= -g3 -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address -Ihttp-parser $(if $(LOGGER), -DLOGGER, )
 
 CC			= @c++
 
@@ -49,7 +49,7 @@ FORMATTER   := clang-format
 		@printf "\033[1;33mCC\033[0;m\t$@\n"
 
 $(NAME): http-parser http-parser/libhttpparser.a $(OBJS) $(HEADER)
-	$(CC)  $(OBJS) -Lhttp-parser -lhttpparser -fsanitize=address -o $@
+	$(CC)  $(OBJS) -fsanitize=address -o $@
 	@printf "BIN \033[1;32m=>\033[0m \t$@\n"
 			
 all: $(NAME)

@@ -19,7 +19,6 @@ selectServer(std::vector<ConfigItem*>& candidates, const string& host)
 {
     string serverName;
     ConfigItem* serverNameItem = 0;
-    ConfigItem* noServerName = 0;
     string strippedHost = host.substr(0, host.find(':'));
 
     for (std::vector<ConfigItem*>::iterator it = candidates.begin();
@@ -28,12 +27,10 @@ selectServer(std::vector<ConfigItem*>& candidates, const string& host)
         serverNameItem = (*it)->findNearest("server_name");
         if (serverNameItem && serverNameItem->getValue() == strippedHost) {
             return *it;
-        } else if (!serverNameItem && !noServerName) {
-            noServerName = *it;
         }
     }
 
-    return noServerName;
+    return candidates.front();
 }
 
 static void
@@ -81,7 +78,7 @@ noAutoIndexResponse(string path,
 
                     CommonGatewayInterface* cgi =
                       new CommonGatewayInterface(csock,
-                                                 *requests[csock],
+                                                 requests[csock],
                                                  directives.getCgiExecutable(),
                                                  path);
 

@@ -10,6 +10,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define LP_CLOSE_CON(sockfd)                                                   \
+    if (errno)                                                                 \
+        perror(0);                                                             \
+    closeConnection(sockfd);                                                   \
+    continue;
+
 using std::map;
 
 static void
@@ -27,9 +33,14 @@ handleSigpipe(int)
 static void
 closeConnection(int sockfd)
 {
+    delete requests[sockfd];
     requests.erase(sockfd);
-    delete cgis[sockfd];
-    cgis.erase(sockfd);
+
+    if (cgis.find(sockfd) != cgis.end()) {
+        delete cgis[sockfd];
+        cgis.erase(sockfd);
+    }
+
     FD_CLR(sockfd, &select_wset);
     FD_CLR(sockfd, &select_rset);
     close(sockfd);
@@ -76,7 +87,8 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         // we can write to cgi output
 
         if (FD_ISSET(cgi->getOutputFd(), &wsetc)) {
-            std::string body = reqp->body.str();
+            // std::string body = reqp->body.str();
+            std::string body = "";
 
             if (!body.empty()) {
                 write(cgi->getOutputFd(), body.c_str(), body.size());
@@ -92,7 +104,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             ret = read(cgi->getInputFd(), buf, BUFSIZE);
 
             if (ret == -1) {
-                perror("cgi read:");
+                LP_CLOSE_CON(csockfd);
             }
 
             if (ret == 0) {
@@ -123,13 +135,8 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         if (FD_ISSET(csockfd, &rsetc)) {
             ret = recv(csockfd, buf, BUFSIZE, 0);
 
-            if (ret == -1) {
-#ifdef LOGGER
-                glogger << Logger::INFO << Logger::getTimestamp() << " "
-                        << strerror(errno) << "\n";
-#endif
-                closeConnection(csockfd);
-                continue;
+            if (ret <= 0) {
+                LP_CLOSE_CON(csockfd);
             }
         }
 
@@ -150,21 +157,12 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     int ret = send(csockfd, c.first, c.second, 0);
 
                     if (ret == -1) {
-                        perror("client send: ");
+                        LP_CLOSE_CON(csockfd);
                     }
 
                     // std::cout << "Sent " << ret << std::endl;
                     bbuf.consume(ret);
                 }
-
-                /*
-                 * if data buf has been consumed entirely, MAYBE it means we're
-                 * done processing the current request.
-                 * - if request is handled by CGI make sure CGI is done with
-                 * its work.
-                 * - if no CGI is involved just make sure that the request has
-                 * been fully processed.
-                 */
 
                 if (bbuf.isConsumed() &&
                     ((cgis.find(csockfd) != cgis.end() &&
