@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffer.hpp"
 #include "HttpParser.hpp"
 #include "http/header.hpp"
 #include "http/message.hpp"
@@ -32,7 +33,7 @@ class CommonGatewayInterface
 
     HTTP::Header& header(void);
 
-    bool parse(const std::string& data);
+    bool parse(const char* data, size_t n);
 
     bool hasStarted(void) const;
     void stopParser(void);

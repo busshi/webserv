@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffer.hpp"
 #include "FileUploader.hpp"
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
@@ -33,10 +34,10 @@ void
 onHeaderParsed(uintptr_t requestLoc);
 
 void
-onBodyFragment(const std::string& fragment, uintptr_t requestLoc);
+onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc);
 
 void
-onBodyChunk(const std::string& chunk, uintptr_t requestLoc);
+onBodyChunk(const Buffer<>& chunk, uintptr_t requestLoc);
 
 void
 onBodyUnchunked(uintptr_t requestLoc);

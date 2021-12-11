@@ -98,6 +98,8 @@ class Buffer
             _size = rhs._size;
             memcpy(_buf, rhs._buf, _size);
         }
+
+        return *this;
     }
 
     ~Buffer(void) { _alloc.deallocate(_buf, _cap); }
@@ -106,7 +108,7 @@ class Buffer
     {
         const_iterator first = begin() + pos;
         const_iterator last =
-          first + std::min(static_cast<size_type>(end() - first), n);
+          first + std::min(static_cast<size_type>(end() - first - 1), n);
 
         return Buffer(first, last);
     }
@@ -189,6 +191,13 @@ class Buffer
 
     iterator end(void) { return _buf + _size + 1; }
     const_iterator end(void) const { return _buf + _size + 1; }
+
+    std::string str(void) const
+    {
+        return std::string(reinterpret_cast<const char*>(raw()), size());
+    }
+
+    void clear(void) { _size = 0; }
 };
 
 template<typename Allocator>

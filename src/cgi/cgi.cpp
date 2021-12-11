@@ -36,17 +36,21 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 
     // TODO: special header field status blize
 
-    res->data.append(res->formatHeader());
+    res->data = res->formatHeader();
 }
 
 static void
-onCgiBodyFragment(const std::string& fragment, uintptr_t cgiLoc)
+onCgiBodyFragment(const Buffer<>& fragment, uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
+    Buffer<> chunk(ntos(fragment.size(), 16) + CRLF);
+
+    chunk += fragment;
+    chunk += Buffer<>(CRLF, 2);
+
     // send each CGI body fragment as a chunk
-    cgi->request()->response()->data.append(ntos(fragment.size(), 16) + CRLF +
-                                            fragment + CRLF);
+    cgi->request()->response()->data = chunk;
 }
 
 static void
@@ -54,7 +58,10 @@ onCgiBodyParsed(uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
-    cgi->request()->response()->data.append("0" CRLF CRLF);
+    (void)cgi;
+
+    // terminate chunk
+    cgi->request()->response()->data += Buffer<>("0" CRLF CRLF, 5);
 }
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,
@@ -218,9 +225,9 @@ CommonGatewayInterface::request(void)
 }
 
 bool
-CommonGatewayInterface::parse(const std::string& data)
+CommonGatewayInterface::parse(const char* data, size_t n)
 {
-    _parser->parse(data, reinterpret_cast<uintptr_t>(this));
+    _parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 
     return true;
 }

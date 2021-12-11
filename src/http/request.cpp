@@ -76,9 +76,9 @@ HTTP::Request::setLocation(const std::string& location)
 }
 
 bool
-HTTP::Request::parse(const std::string& data)
+HTTP::Request::parse(const char* data, size_t n)
 {
-    parser->parse(data, reinterpret_cast<uintptr_t>(this));
+    parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 
     return true;
 }

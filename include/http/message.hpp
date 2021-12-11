@@ -85,7 +85,7 @@ class Request : public Message
 
     ~Request(void);
 
-    bool parse(const std::string& data);
+    bool parse(const char* data, size_t n);
 
     bool isBodyChunked(void) const;
     bool isDone(void) const;
@@ -138,7 +138,7 @@ class Response : public Message
     std::string _detectMediaType(const std::string& resource) const;
 
   public:
-    BinBuffer data, body;
+    Buffer<> data, body;
 
     Response(int csock = -1);
     Response(const Request& req);

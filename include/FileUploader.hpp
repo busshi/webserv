@@ -19,6 +19,6 @@ class FileUploader
     FileUploader(HTTP::Request* req);
     ~FileUploader(void);
 
-    void parseFormDataFragment(const std::string& fragment);
+    void parseFormDataFragment(const char* data, size_t n);
     bool isDone(void) const;
 };

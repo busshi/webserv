@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffer.hpp"
 #include <sstream>
 #include <stdint.h>
 
@@ -32,14 +33,13 @@ class FormDataParser
                                    const std::string& value,
                                    uintptr_t param);
         void (*onEntryHeaderParsed)(uintptr_t param);
-        void (*onEntryBodyFragment)(const std::string& bodyFragment,
-                                    uintptr_t param);
+        void (*onEntryBodyFragment)(const Buffer<>& fragment, uintptr_t param);
         void (*onEntryBodyParsed)(uintptr_t param);
         void (*onFinalBoundary)(uintptr_t param);
     };
 
   private:
-    std::ostringstream _ibuf;
+    Buffer<> _buf;
     std::string _currentName, _boundary, _lastHeaderFieldName;
     size_t _fieldCount;
     CallbackList _callbacks;
@@ -49,7 +49,7 @@ class FormDataParser
     FormDataParser(const std::string& boundary, const CallbackList& callbacks);
     ~FormDataParser(void);
 
-    void parse(const std::string& data, uintptr_t param = 0);
+    void parse(const char* data, size_t n, uintptr_t param = 0);
 
     const std::string& getBoundary(void) const;
     State getState(void) const;
