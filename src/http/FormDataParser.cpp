@@ -1,6 +1,7 @@
 #include "http/FormDataParser.hpp"
 #include "http/message.hpp"
 #include <cctype>
+#include <unistd.h>
 
 HTTP::FormDataParser::FormDataParser(const std::string& boundary,
                                      const CallbackList& callbacks)
@@ -18,6 +19,8 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
         _ibuf.seekp(0, std::ios::end);
         _ibuf.write(data.data(), data.size());
     }
+
+    write(1, _ibuf.str().data(), _ibuf.str().size());
 
     const std::string s = _ibuf.str();
 
@@ -40,6 +43,8 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
             if (_callbacks.onEntryHeaderParsed) {
                 _callbacks.onEntryHeaderParsed(param);
             }
+
+            _ibuf.str(s.substr(2));
 
             return;
         }
@@ -88,11 +93,15 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
     else if (_state == PARSING_ENTRY_BODY) {
         std::string::size_type pos1, pos2;
 
-        pos1 = s.find("--" + _boundary + "--" + CRLF);
+        pos1 = s.find(std::string(CRLF) + "--" + _boundary + "--");
 
         // encountered an immediate final boundary
         if (pos1 == 0) {
             _state = DONE;
+
+            if (_callbacks.onEntryBodyParsed) {
+                _callbacks.onEntryBodyParsed(param);
+            }
 
             if (_callbacks.onFinalBoundary) {
                 _callbacks.onFinalBoundary(param);
@@ -103,7 +112,7 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
             return;
         }
 
-        pos2 = s.find("--" + _boundary + CRLF);
+        pos2 = s.find(std::string(CRLF) + "--" + _boundary + CRLF);
 
         // encountered an immediate boundary
         if (pos2 == 0) {
@@ -113,7 +122,7 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
                 _callbacks.onEntryBodyParsed(param);
             }
 
-            _ibuf.str(s.substr(pos2 + _boundary.size() + 4));
+            _ibuf.str(s.substr(pos2 + _boundary.size() + 6));
 
             return;
         }

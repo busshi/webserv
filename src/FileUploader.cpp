@@ -4,9 +4,13 @@
 #define GET_UPLOADER(loc) reinterpret_cast<FileUploader*>(loc)
 
 static void
-onFinalBoundary(uintptr_t)
+onFinalBoundary(uintptr_t param)
 {
-    std::cout << "On final boundary!" << std::endl;
+    FileUploader* uploader = GET_UPLOADER(param);
+
+    if (uploader->ofs.is_open()) {
+        uploader->ofs.close();
+    }
 }
 
 static void
@@ -23,6 +27,10 @@ onEntryHeaderField(const std::string& name,
             std::string tmp = value.substr(pos + 10);
             std::string filename = tmp.substr(0, tmp.find('"'));
 
+            if (filename.empty()) {
+                return;
+            }
+
             if (uploader->ofs.is_open()) {
                 uploader->ofs.close();
             }
@@ -38,7 +46,14 @@ onEntryBodyFragment(const std::string& fragment, uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
+    // std::cout << "FRAGMENT (" << fragment.size() << ")" << std::endl;
+    // std::cout << fragment << std::endl;
+
     uploader->ofs.write(fragment.data(), fragment.size());
+
+    if (!uploader->ofs) {
+        std::cout << "Error" << std::endl;
+    }
 }
 
 static void
@@ -46,7 +61,10 @@ onEntryBodyParsed(uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
+    uploader->ofs.flush();
     uploader->ofs.close();
+
+    std::cout << "Closed!" << std::endl;
 }
 
 FileUploader::FileUploader(HTTP::Request* request)
