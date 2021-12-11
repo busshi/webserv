@@ -149,6 +149,7 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             ret = recv(csockfd, buf, BUFSIZE, 0);
 
             if (ret <= 0) {
+                std::cout << "client read" << std::endl;
                 LP_CLOSE_CON(csockfd);
             }
         }
@@ -168,6 +169,7 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
                     if (ret == -1) {
+                        std::cout << "Client write" << std::endl;
                         LP_CLOSE_CON(csockfd);
                     }
 

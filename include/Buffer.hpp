@@ -108,7 +108,7 @@ class Buffer
     {
         const_iterator first = begin() + pos;
         const_iterator last =
-          first + std::min(static_cast<size_type>(end() - first), n);
+          first + std::min(static_cast<size_type>(end() - first - 1), n);
 
         return Buffer(first, last);
     }

@@ -40,18 +40,17 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 }
 
 static void
-onCgiBodyFragment(const Buffer<>& buf, uintptr_t cgiLoc)
+onCgiBodyFragment(const Buffer<>& fragment, uintptr_t cgiLoc)
 {
     CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
 
-    (void)cgi;
-    (void)buf;
+    Buffer<> chunk(ntos(fragment.size(), 16) + CRLF);
+
+    chunk += fragment;
+    chunk += Buffer<>(CRLF, 2);
 
     // send each CGI body fragment as a chunk
-    /*
-    cgi->request()->response()->data.append(ntos(fragment.size(), 16) + CRLF +
-                                            fragment + CRLF);
-    */
+    cgi->request()->response()->data = chunk;
 }
 
 static void
@@ -62,9 +61,7 @@ onCgiBodyParsed(uintptr_t cgiLoc)
     (void)cgi;
 
     // terminate chunk
-    /*
-    cgi->request()->response()->data.append("0" CRLF CRLF);
-    */
+    cgi->request()->response()->data += Buffer<>("0" CRLF CRLF, 5);
 }
 
 CommonGatewayInterface::CommonGatewayInterface(int csockFd,

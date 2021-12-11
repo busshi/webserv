@@ -194,9 +194,6 @@ HttpParser::parse(const char* data, size_t n, uintptr_t paramLoc)
 
             const std::string fieldValue(s.substr(begInd, pos - begInd));
 
-            // field specific settings
-            std::string fnup = toUpperCase(_lastHeaderFieldName);
-
             if (equalsIgnoreCase("TRANSFER-ENCODING", _lastHeaderFieldName) &&
                 equalsIgnoreCase(fieldValue, "CHUNKED")) {
                 _isChunked = true;
