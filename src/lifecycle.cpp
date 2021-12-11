@@ -126,7 +126,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         }
 
         buf[ret] = 0;
-        cgi->parse(buf);
+        cgi->parse(buf, ret);
     }
 }
 
@@ -154,7 +154,7 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         }
 
         buf[ret] = 0;
-        reqp->parse(buf);
+        reqp->parse(buf, ret);
 
         /* if we can write */
 
@@ -162,22 +162,20 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             HTTP::Response* resp = reqp->response();
 
             if (resp) {
-                BinBuffer& bbuf = resp->data;
+                Buffer<>& buf = resp->data;
 
-                if (!bbuf.isConsumed()) {
-                    std::pair<const uint8_t*, size_t> c = bbuf.getbuf();
-
-                    int ret = send(csockfd, c.first, c.second, 0);
+                if (buf.size()) {
+                    int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
                     if (ret == -1) {
                         LP_CLOSE_CON(csockfd);
                     }
 
-                    // std::cout << "Sent " << ret << std::endl;
-                    bbuf.consume(ret);
+                    // let buf contain the unprocessed data
+                    buf = buf.subbuf(ret);
                 }
 
-                if (bbuf.isConsumed()) {
+                if (!buf.size()) {
                     if (cgis.find(csockfd) != cgis.end()) {
                         if (cgis[csockfd]->isDone()) {
                             closeConnection(csockfd);

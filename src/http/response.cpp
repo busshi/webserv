@@ -145,8 +145,13 @@ HTTP::Response::sendFile(const std::string& filepath)
     std::ostringstream oss;
 
     if (ifs) {
+        char buf[1024];
         body.clear();
-        body.append(ifs);
+
+        while (ifs) {
+            ifs.read(buf, 1024);
+            body += Buffer<>(buf, ifs.gcount());
+        }
     }
 
     setHeaderField("Content-Type", _detectMediaType(filepath));
@@ -168,8 +173,7 @@ HTTP::Response::sendFile(const std::string& filepath)
 HTTP::Response&
 HTTP::Response::send(const std::string& s)
 {
-    body.clear();
-    body.append(s);
+    body = s;
 
     return *this;
 }
@@ -184,7 +188,7 @@ HTTP::Response::send(const std::string& s)
 HTTP::Response&
 HTTP::Response::append(const std::string& s)
 {
-    body.append(s);
+    body += s;
 
     return *this;
 }
@@ -205,6 +209,7 @@ HTTP::Response::_detectMediaType(const std::string& resource) const
         { "image/webp", "webp" },    { "image/gif", "gif" },
         { "image/bmp", "bmp" },      { "text/css", "css" },
         { "text/javascript", "js" }, { "text/html", "html|htm" },
+        { "application/pdf", "pdf" }
     };
 
     const std::string::size_type index = resource.find_last_of('.');

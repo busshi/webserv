@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffer.hpp"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -11,7 +12,7 @@ class HttpParser
     HttpParser(const HttpParser&);
     HttpParser& operator=(HttpParser&);
 
-    void _parseHeader(const std::string& header, uintptr_t paramLoc);
+    void _parseHeader(const Buffer<>& buf, uintptr_t paramLoc);
 
     /* public type definitions */
 
@@ -43,9 +44,9 @@ class HttpParser
         void (*onHeaderFieldValue)(const std::string& value,
                                    uintptr_t paramLoc);
         void (*onHeaderParsed)(uintptr_t paramLoc);
-        void (*onBodyChunk)(const std::string& decodedData, uintptr_t paramLoc);
+        void (*onBodyChunk)(const Buffer<>& chunk, uintptr_t paramLoc);
         void (*onBodyUnchunked)(uintptr_t param);
-        void (*onBodyFragment)(const std::string& fragment, uintptr_t paramLoc);
+        void (*onBodyFragment)(const Buffer<>& fragment, uintptr_t paramLoc);
         void (*onBodyParsed)(uintptr_t param);
         bool parseFullBody;
     };
@@ -65,7 +66,7 @@ class HttpParser
     Config _config;
     State _state;
     bool _isChunked;
-    std::ostringstream _ibuf;
+    Buffer<> _buf;
 
     size_t _currentChunkSize; // set to -1 (the highest integer possible for
                               // that type) when not there.
@@ -88,5 +89,5 @@ class HttpParser
 
     operator bool(void) const { return _state != DONE; }
 
-    void parse(const std::string& data, uintptr_t paramLoc = 0);
+    void parse(const char* data, size_t n, uintptr_t paramLoc = 0);
 };

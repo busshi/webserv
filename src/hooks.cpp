@@ -1,3 +1,4 @@
+#include "Buffer.hpp"
 #include "core.hpp"
 #include "http/message.hpp"
 #include "utils/Logger.hpp"
@@ -53,28 +54,28 @@ onHeaderParsed(uintptr_t requestLoc)
 
     if (cgis.find(req.getClientFd()) == cgis.end() &&
         uploaders.find(req.getClientFd()) == uploaders.end()) {
-        res.data = res.data.append(res.formatHeader());
+        res.data += res.formatHeader();
     }
 
-    res.data = res.data + res.body;
+    res.data += res.body;
 }
 
 void
-onBodyFragment(const string& fragment, uintptr_t requestLoc)
+onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
     // std::cout << "FRAGMENT=\n" << fragment;
     if (uploaders.find(req.getClientFd()) != uploaders.end()) {
         // std::cout << "Parse fragment" << std::endl;
-        uploaders[req.getClientFd()]->parseFormDataFragment(fragment);
+        // uploaders[req.getClientFd()]->parseFormDataFragment(fragment);
     } else {
         req.body << fragment;
     }
 }
 
 void
-onBodyChunk(const string& chunk, uintptr_t requestLoc)
+onBodyChunk(const Buffer<>& chunk, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
