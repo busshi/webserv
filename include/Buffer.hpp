@@ -96,7 +96,6 @@ class Buffer
             _check_resize(rhs._size); // perform reallocation if required before
                                       // updating to new size
             _size = rhs._size;
-            _cap = rhs._cap;
             memcpy(_buf, rhs._buf, _size);
         }
     }
