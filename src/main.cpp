@@ -3,17 +3,20 @@
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
 #include "core.hpp"
+#include "http/FormDataParser.hpp"
 #include "http/message.hpp"
 #include "utils/BinBuffer.hpp"
 #include "utils/Logger.hpp"
 #include <map>
+#include <stdint.h>
 #include <unistd.h>
 
 using std::map;
 
-std::map<int, HTTP::Request*> requests;
-std::map<int, CommonGatewayInterface*> cgis;
-std::map<uint16_t, Host> hosts;
+map<int, HTTP::Request*> requests;
+map<int, CommonGatewayInterface*> cgis;
+map<int, FileUploader*> uploaders;
+map<uint16_t, Host> hosts;
 fd_set select_rset, select_wset;
 
 bool isWebservAlive = true;

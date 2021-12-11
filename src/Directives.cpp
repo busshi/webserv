@@ -19,9 +19,9 @@ Directives::operator=(const Directives& rhs)
         _root = rhs._root;
         _path = rhs._path;
         _autoindex = rhs._autoindex;
-        _uploadPath = rhs._uploadPath;
+        _uploadStore = rhs._uploadStore;
         _defaultErrorFile = rhs._defaultErrorFile;
-        _uploadMaxSize = rhs._uploadMaxSize;
+        _uploadMaxFileSize = rhs._uploadMaxFileSize;
         _bodyMaxSize = rhs._bodyMaxSize;
         _indexes = rhs._indexes;
         _methods = rhs._methods;
@@ -49,9 +49,9 @@ Directives::getAutoIndex(void)
 }
 
 std::string
-Directives::getUploadPath(void)
+Directives::getUploadStore(void)
 {
-    return _uploadPath;
+    return _uploadStore;
 }
 
 std::string
@@ -61,9 +61,9 @@ Directives::getDefaultErrorFile(void)
 }
 
 std::string
-Directives::getUploadMaxSize(void)
+Directives::getUploadMaxFileSize(void)
 {
-    return _uploadMaxSize;
+    return _uploadMaxFileSize;
 }
 
 std::string
@@ -115,11 +115,11 @@ Directives::getConfig(ConfigItem* item, std::string suffix)
     if (methods)
         _methods = split(methods->getValue());
 
-    ConfigItem* uploadPath = item->findNearest("file_upload_dir");
-    if (uploadPath)
-        _uploadPath = uploadPath->getValue();
+    ConfigItem* uploadStore = item->findNearest("file_upload_dir");
+    if (uploadStore)
+        _uploadStore = uploadStore->getValue();
     else {
-        _uploadPath = UPLOAD_PATH;
+        _uploadStore = UPLOAD_PATH;
 #ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
                 << " No upload path provided! Using default path: "
@@ -140,9 +140,9 @@ Directives::getConfig(ConfigItem* item, std::string suffix)
 #endif
     }
 
-    ConfigItem* uploadMaxSize = item->findNearest("upload_max_size");
+    ConfigItem* uploadMaxSize = item->findNearest("upload_max_file_size");
     if (uploadMaxSize)
-        _uploadMaxSize = uploadMaxSize->getValue();
+        _uploadMaxFileSize = uploadMaxSize->getValue();
     else {
 #ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE

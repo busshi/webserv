@@ -1,4 +1,5 @@
 #include "config/ConfigParser.hpp"
+#include "config/ConfigItem.hpp"
 #include "config/validator.hpp"
 #include "utils/Formatter.hpp"
 #include "utils/string.hpp"
@@ -17,13 +18,16 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     /* NON-BLOCK */
     { "root", validateRoot, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
     { "index", validateIndex, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
-    { "method", validateMethod, BLOCK_SERVER, NOT_A_BLOCK },
+    { "method", validateMethod, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
     { "listen", validateListen, BLOCK_SERVER, NOT_A_BLOCK },
     { "autoindex", validateAutoindex, static_cast<uint8_t>(~0), NOT_A_BLOCK },
-    { "file_upload_dir", NULL, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },
     { "client_body_max_size", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
-    { "upload_max_size", validateSize, static_cast<uint8_t>(~0), NOT_A_BLOCK },
+    { "upload_max_file_size",
+      validateSize,
+      static_cast<uint8_t>(~0),
+      NOT_A_BLOCK },
+    { "upload_store", validateRoot, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "redirect",

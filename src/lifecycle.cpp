@@ -70,6 +70,19 @@ keepAlive(int sockfd)
 }
 
 static void
+handleUploadEvents(void)
+{
+    for (map<int, FileUploader*>::const_iterator cit = uploaders.begin();
+         cit != uploaders.end();
+         ++cit) {
+        // int csockfd = cit->first;
+        FileUploader* uploader = cit->second;
+
+        uploader->parseFormDataFragment("");
+    }
+}
+
+static void
 handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 {
     for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
@@ -164,14 +177,17 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     bbuf.consume(ret);
                 }
 
-                if (bbuf.isConsumed() &&
-                    ((cgis.find(csockfd) != cgis.end() &&
-                      cgis[csockfd]->isDone()) ||
-                     (cgis.find(csockfd) == cgis.end() && reqp->isDone()))) {
-                    if (reqp->getHeaderField("Connection") == "close") {
+                if (bbuf.isConsumed()) {
+                    if (cgis.find(csockfd) != cgis.end()) {
+                        if (cgis[csockfd]->isDone()) {
+                            closeConnection(csockfd);
+                        }
+                    } else if (uploaders.find(csockfd) != uploaders.end()) {
+                        if (uploaders[csockfd]->isDone()) {
+                            closeConnection(csockfd);
+                        }
+                    } else if (reqp->isDone()) {
                         closeConnection(csockfd);
-                    } else {
-                        keepAlive(csockfd);
                     }
                 }
             }
@@ -238,7 +254,9 @@ lifecycle(const HttpParser::Config& parserConf)
             return;
         }
 
+        (void)keepAlive;
         handleClientEvents(rsetc, wsetc);
+        handleUploadEvents();
         handleServerEvents(parserConf, rsetc);
         handleCgiEvents(rsetc, wsetc);
     }

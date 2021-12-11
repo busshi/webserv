@@ -51,7 +51,8 @@ onHeaderParsed(uintptr_t requestLoc)
 
     createResponse(req, res, serverBlock);
 
-    if (cgis.find(req.getClientFd()) == cgis.end()) {
+    if (cgis.find(req.getClientFd()) == cgis.end() &&
+        uploaders.find(req.getClientFd()) == uploaders.end()) {
         res.data = res.data.append(res.formatHeader());
     }
 
@@ -63,7 +64,13 @@ onBodyFragment(const string& fragment, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.body << fragment;
+    // std::cout << "FRAGMENT=\n" << fragment;
+    if (uploaders.find(req.getClientFd()) != uploaders.end()) {
+        // std::cout << "Parse fragment" << std::endl;
+        uploaders[req.getClientFd()]->parseFormDataFragment(fragment);
+    } else {
+        req.body << fragment;
+    }
 }
 
 void

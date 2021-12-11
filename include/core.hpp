@@ -1,4 +1,5 @@
 #pragma once
+#include "FileUploader.hpp"
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
 #include "http/message.hpp"
@@ -60,6 +61,7 @@ struct Host
 
 extern std::map<int, HTTP::Request*> requests;
 extern std::map<int, CommonGatewayInterface*> cgis;
+extern std::map<int, FileUploader*> uploaders;
 extern std::map<uint16_t, Host> hosts;
 extern fd_set select_rset;
 extern fd_set select_wset;
