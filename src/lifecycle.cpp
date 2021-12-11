@@ -78,7 +78,8 @@ handleUploadEvents(void)
         // int csockfd = cit->first;
         FileUploader* uploader = cit->second;
 
-        uploader->parseFormDataFragment("");
+        // blank parse: just tell the parser to continue its work
+        uploader->parseFormDataFragment("", 0);
     }
 }
 

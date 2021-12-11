@@ -67,8 +67,8 @@ onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc)
 
     // std::cout << "FRAGMENT=\n" << fragment;
     if (uploaders.find(req.getClientFd()) != uploaders.end()) {
-        // std::cout << "Parse fragment" << std::endl;
-        // uploaders[req.getClientFd()]->parseFormDataFragment(fragment);
+        uploaders[req.getClientFd()]->parseFormDataFragment(
+          reinterpret_cast<const char*>(fragment.raw()), fragment.size());
     } else {
         req.body << fragment;
     }

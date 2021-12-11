@@ -181,8 +181,6 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 #endif
     // if upload_store is defined then upload is possible
 
-    std::cout << req.getMethod() << std::endl;
-    std::cout << "upload_store: " << directives.getUploadStore() << std::endl;
     if (req.getMethod() == "POST" && !directives.getUploadStore().empty()) {
 
         std::cout << "New uploader" << std::endl;

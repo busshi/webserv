@@ -42,14 +42,13 @@ onEntryHeaderField(const std::string& name,
 }
 
 static void
-onEntryBodyFragment(const std::string& fragment, uintptr_t param)
+onEntryBodyFragment(const Buffer<>& fragment, uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
-    // std::cout << "FRAGMENT (" << fragment.size() << ")" << std::endl;
-    // std::cout << fragment << std::endl;
+    uploader->ofs << fragment;
 
-    uploader->ofs.write(fragment.data(), fragment.size());
+    // std::cout << fragment;
 
     if (!uploader->ofs) {
         std::cout << "Error" << std::endl;
@@ -64,7 +63,7 @@ onEntryBodyParsed(uintptr_t param)
     uploader->ofs.flush();
     uploader->ofs.close();
 
-    std::cout << "Closed!" << std::endl;
+    std::cout << "Uploaded" << std::endl;
 }
 
 FileUploader::FileUploader(HTTP::Request* request)
@@ -99,9 +98,9 @@ FileUploader::~FileUploader(void)
 }
 
 void
-FileUploader::parseFormDataFragment(const std::string& fragment)
+FileUploader::parseFormDataFragment(const char* data, size_t n)
 {
-    _parser->parse(fragment, reinterpret_cast<uintptr_t>(this));
+    _parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 }
 
 bool
