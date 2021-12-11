@@ -21,9 +21,9 @@ class Directives
     std::string getRoot(void);
     std::string getPath(void);
     std::string getAutoIndex(void);
-    std::string getUploadPath(void);
+    std::string getUploadStore(void);
     std::string getDefaultErrorFile(void);
-    std::string getUploadMaxSize(void);
+    std::string getUploadMaxFileSize(void);
     std::string getBodyMaxSize(void);
     std::vector<std::string> getIndexes(void);
     std::vector<std::string> getMethods(void);
@@ -38,9 +38,9 @@ class Directives
     std::string _root;
     std::string _path;
     std::string _autoindex;
-    std::string _uploadPath;
+    std::string _uploadStore;
     std::string _defaultErrorFile;
-    std::string _uploadMaxSize;
+    std::string _uploadMaxFileSize;
     std::string _bodyMaxSize;
     std::vector<std::string> _indexes;
     std::vector<std::string> _methods;

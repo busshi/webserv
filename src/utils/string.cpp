@@ -248,3 +248,21 @@ hasFileExtension(const std::string& path, const std::string& fileExtension)
 {
     return path.find(fileExtension) == path.size() - fileExtension.size();
 }
+
+bool
+equalsIgnoreCase(const std::string& s1, const std::string& s2)
+{
+    if (s1.size() != s2.size()) {
+        return false;
+    }
+
+    for (std::string::const_iterator first1 = s1.begin(), first2 = s2.begin();
+         first1 != s1.end();
+         ++first1, ++first2) {
+        if (tolower(*first1) != tolower(*first2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
