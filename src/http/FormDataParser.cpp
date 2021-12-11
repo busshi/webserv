@@ -22,14 +22,14 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
     const std::string s = _ibuf.str();
 
     if (_state == PARSING_BOUNDARY) {
-        std::string::size_type pos = s.find(_boundary + CRLF);
+        std::string::size_type pos = s.find("--" + _boundary + CRLF);
 
         if (pos != std::string::npos) {
             _state = PARSING_ENTRY_HEADER_FIELD_NAME;
             if (_callbacks.onBoundary) {
                 _callbacks.onBoundary(param);
             }
-            _ibuf.str(s.substr(pos + _boundary.size() + 2));
+            _ibuf.str(s.substr(pos + _boundary.size() + 4));
         }
     }
 
@@ -88,7 +88,7 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
     else if (_state == PARSING_ENTRY_BODY) {
         std::string::size_type pos1, pos2;
 
-        pos1 = s.find(_boundary + "--" + CRLF);
+        pos1 = s.find("--" + _boundary + "--" + CRLF);
 
         // encountered an immediate final boundary
         if (pos1 == 0) {
@@ -98,18 +98,22 @@ HTTP::FormDataParser::parse(const std::string& data, uintptr_t param)
                 _callbacks.onFinalBoundary(param);
             }
 
+            _ibuf.str(s.substr(pos1 + _boundary.size() + 6));
+
             return;
         }
 
-        pos2 = s.find(_boundary + CRLF);
+        pos2 = s.find("--" + _boundary + CRLF);
 
         // encountered an immediate boundary
         if (pos2 == 0) {
             _state = PARSING_ENTRY_HEADER_FIELD_NAME;
 
-            if (_callbacks.onBoundary) {
-                _callbacks.onBoundary(param);
+            if (_callbacks.onEntryBodyParsed) {
+                _callbacks.onEntryBodyParsed(param);
             }
+
+            _ibuf.str(s.substr(pos2 + _boundary.size() + 4));
 
             return;
         }
@@ -137,4 +141,10 @@ size_t
 HTTP::FormDataParser::getFieldCount(void) const
 {
     return _fieldCount;
+}
+
+HTTP::FormDataParser::State
+HTTP::FormDataParser::getState(void) const
+{
+    return _state;
 }

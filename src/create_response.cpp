@@ -184,7 +184,10 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
     std::cout << req.getMethod() << std::endl;
     std::cout << "upload_store: " << directives.getUploadStore() << std::endl;
     if (req.getMethod() == "POST" && !directives.getUploadStore().empty()) {
-        std::cout << "Considering file upload" << std::endl;
+
+        std::cout << "New uploader" << std::endl;
+
+        uploaders[req.getClientFd()] = new FileUploader(&req);
 
         return;
     }

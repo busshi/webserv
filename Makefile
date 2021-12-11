@@ -12,7 +12,7 @@ else
 	OPEN := open
 endif
 
-SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp create_response.cpp Directives.cpp HttpParser.cpp)
+SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp create_response.cpp Directives.cpp HttpParser.cpp FileUploader.cpp)
 
 SRCS		+= $(addprefix src/config/, Lexer.cpp ConfigParser.cpp validator.cpp ConfigItem.cpp parser.cpp)
 
@@ -22,7 +22,7 @@ SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp re
 
 SRCS		+= $(addprefix src/cgi/, cgi.cpp)
 
-HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp HttpParser.hpp)
+HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp HttpParser.hpp FileUploader.hpp)
 
 HEADER		+= $(addprefix include/config/, validator.hpp ConfigParser.hpp ConfigItem.hpp Lexer.hpp)
 

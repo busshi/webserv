@@ -52,6 +52,7 @@ class FormDataParser
     void parse(const std::string& data, uintptr_t param = 0);
 
     const std::string& getBoundary(void) const;
+    State getState(void) const;
     size_t getFieldCount(void) const;
 };
 
