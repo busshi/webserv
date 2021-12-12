@@ -127,13 +127,14 @@ class Buffer
 
     size_type findDangling(const std::string& s)
     {
-        size_type i = size() - s.size();
+        size_type i = s.size() > size() ? 0 : size() - s.size();
 
         while (i != size()) {
             size_type j = i;
 
-            for (size_type k = 0; j < size() && _buf[j] == s[k]; ++j, ++k)
-                ;
+            for (size_type k = 0; j < size() && _buf[j] == s[k]; ++k) {
+                ++j;
+            }
 
             // if j equals size we've found a dangling substring of s at the end
             // of the buffer

@@ -39,9 +39,19 @@ min4(Buffer<>::size_type pos1,
 void
 HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
 {
+
+    const std::string delimiter = CRLF "--" + _boundary + CRLF,
+                      end = CRLF "--" + _boundary + "--" + CRLF;
+
     _buf += Buffer<>(data, n);
 
+    if (!_buf.size()) {
+        return;
+    }
+
     if (_state == PARSING_BOUNDARY) {
+        // leading CRLF has already been parsed so don't expect it in the first
+        // boundary
         Buffer<>::size_type pos = _buf.find("--" + _boundary + CRLF);
 
         if (pos != Buffer<>::npos) {
@@ -112,7 +122,7 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
     else if (_state == PARSING_ENTRY_BODY) {
         Buffer<>::size_type pos1, pos2;
 
-        pos1 = _buf.find(std::string(CRLF) + "--" + _boundary + "--");
+        pos1 = _buf.find(end);
 
         // encountered an immediate final boundary
         if (pos1 == 0) {
@@ -126,32 +136,28 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
                 _callbacks.onFinalBoundary(param);
             }
 
-            _buf = _buf.subbuf(pos1 + _boundary.size() + 6);
+            _buf = _buf.subbuf(end.size());
 
             return;
         }
 
-        pos2 = _buf.find(std::string(CRLF) + "--" + _boundary);
+        pos2 = _buf.find(delimiter);
 
-        // encountered an immediate boundary
-        if (pos2 == 0) {
+        if (pos2 == 0 && _buf.size() > end.size()) {
             _state = PARSING_ENTRY_HEADER_FIELD_NAME;
 
             if (_callbacks.onEntryBodyParsed) {
                 _callbacks.onEntryBodyParsed(param);
             }
 
-            _buf = _buf.subbuf(pos2 + _boundary.size() + 6);
+            _buf = _buf.subbuf(delimiter.size());
 
             return;
         }
 
-        Buffer<>::size_type pos3 =
-          _buf.findDangling(std::string(CRLF) + "--" + _boundary);
-        Buffer<>::size_type pos4 =
-          _buf.findDangling(std::string(CRLF) + "--" + _boundary + "--");
+        Buffer<>::size_type pos3 = _buf.findDangling(delimiter);
+        Buffer<>::size_type pos4 = _buf.findDangling(end);
 
-        // entry body to parse
         Buffer<> fragment = _buf.subbuf(0, min4(pos1, pos2, pos3, pos4));
 
         if (_callbacks.onEntryBodyFragment) {

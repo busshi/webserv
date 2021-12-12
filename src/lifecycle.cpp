@@ -175,7 +175,6 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
                     if (ret == -1) {
-                        std::cout << "Client write" << std::endl;
                         LP_CLOSE_CON(csockfd);
                     }
 
@@ -239,19 +238,11 @@ lifecycle(const HttpParser::Config& parserConf)
     signal(SIGINT, &handleSigint);
     signal(SIGPIPE, &handleSigpipe);
 
-    size_t dotN = 0;
-
     while (isWebservAlive) {
-        /*std::cout << "Webserv is running" << std::left << std::setw(3)
-                  << std::string(dotN, '.') << "\r" << std::flush;*/
-        if (++dotN > 3) {
-            dotN = 0;
-        }
-
         fd_set rsetc = select_rset, wsetc = select_wset;
 
         /* according to the man, it is better to initialize it each time */
-        struct timeval timeout = { .tv_sec = 1, .tv_usec = 0 };
+        struct timeval timeout = { .tv_sec = 6, .tv_usec = 0 };
 
         int nready = select(FD_SETSIZE, &rsetc, &wsetc, 0, &timeout);
 

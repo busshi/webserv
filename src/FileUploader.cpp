@@ -1,4 +1,5 @@
 #include "FileUploader.hpp"
+#include "utils/string.hpp"
 #include <cstring>
 
 #define GET_UPLOADER(loc) reinterpret_cast<FileUploader*>(loc)
@@ -8,11 +9,12 @@ onFinalBoundary(uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
-    if (uploader->isUploading()) {
-        uploader->stopUpload();
-    }
+    HTTP::Response* res = uploader->request()->response();
 
-    std::cout << "Final boundary" << std::endl;
+    res->setStatus(HTTP::CREATED);
+
+    res->data = res->formatHeader();
+    res->data += res->body;
 }
 
 static void
@@ -22,16 +24,12 @@ onEntryHeaderField(const std::string& name,
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
-    std::cout << "Hidore" << std::endl;
-
     if (equalsIgnoreCase(name, "Content-Disposition")) {
         std::string::size_type pos = value.find("filename=\"");
 
         if (pos != std::string::npos) {
             std::string tmp = value.substr(pos + 10);
             std::string filename = tmp.substr(0, tmp.find('"'));
-
-            std::cout << "filename " << filename << std::endl;
 
             if (filename.empty()) {
                 return;
@@ -47,8 +45,6 @@ onEntryBodyFragment(const Buffer<>& fragment, uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
-    std::cout << "Uploading data..." << std::endl;
-
     uploader->uploadData(fragment);
 }
 
@@ -58,10 +54,8 @@ onEntryBodyParsed(uintptr_t param)
     FileUploader* uploader = GET_UPLOADER(param);
 
     if (uploader->isUploading()) {
-        uploader->stopUpload();
+        uploader->finishUpload();
     }
-
-    std::cout << "Uploaded" << std::endl;
 }
 
 FileUploader::FileUploader(HTTP::Request* req,
@@ -123,16 +117,15 @@ FileUploader::isUploading(void) const
 void
 FileUploader::startUpload(const char* filename)
 {
-    if (isUploading()) {
-        stopUpload();
-    }
-
     _isUploading = true;
     _currentUploadFilePath = _uploadPath + "/" + filename;
-
-    std::cout << "Will upload " << _currentUploadFilePath << std::endl;
+    _origFilename = filename;
 
     ofs.open(_currentUploadFilePath.c_str(), std::ios::out);
+
+    if (!ofs) {
+        std::cerr << "Open error" << std::endl;
+    }
 }
 
 bool
@@ -141,12 +134,16 @@ FileUploader::uploadData(const Buffer<>& data)
     if (isUploading()) {
         if (_maxUploadFileSize > 0 &&
             _currentUploadFileSize + data.size() >= _maxUploadFileSize) {
-            std::cerr << "Upload cancelled: max upload size reached"
-                      << std::endl;
-            stopUpload();
+            _req->response()->append(_origFilename +
+                                     " - FAILED: file too big\n");
+            _isUploading = false;
+            ofs.close();
             return false;
         }
         ofs << data;
+        if (!ofs) {
+            std::cout << "Stream error!" << std::endl;
+        }
         _currentUploadFileSize += data.size();
     }
 
@@ -154,12 +151,20 @@ FileUploader::uploadData(const Buffer<>& data)
 }
 
 void
-FileUploader::stopUpload(void)
+FileUploader::finishUpload(void)
 {
+    _req->response()->append(_origFilename + " - OK\n");
+
     _isUploading = false;
     _currentUploadFileSize = 0;
     _currentUploadFilePath = "";
     if (ofs.is_open()) {
         ofs.close();
     }
+}
+
+HTTP::Request*
+FileUploader::request()
+{
+    return _req;
 }

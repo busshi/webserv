@@ -13,7 +13,7 @@ class FileUploader
     HTTP::Request* _req;
     HTTP::FormDataParser* _parser;
     bool _isUploading;
-    std::string _uploadPath, _currentUploadFilePath;
+    std::string _uploadPath, _currentUploadFilePath, _origFilename;
     unsigned long long _maxUploadFileSize, _currentUploadFileSize;
     size_t _uploadCount;
 
@@ -32,5 +32,7 @@ class FileUploader
 
     void startUpload(const char* filepath);
     bool uploadData(const Buffer<>& data);
-    void stopUpload(void);
+    void finishUpload(void);
+
+    HTTP::Request* request(void);
 };
