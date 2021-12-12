@@ -35,6 +35,8 @@ handleSigpipe(int)
 static void
 closeConnection(int sockfd)
 {
+    requests[sockfd]->log(std::cout) << std::endl;
+
     delete requests[sockfd];
     requests.erase(sockfd);
 

@@ -1,4 +1,9 @@
+#include <iomanip>
+
+#include "Constants.hpp"
 #include "http/message.hpp"
+
+using std::setw;
 
 /**
  * @brief Construct a new HTTP::Request::Request object (with a client socket
@@ -12,6 +17,7 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   , _csockFd(csockFd)
   , _res(0)
 {
+    timer.start();
     parser = new HttpParser(parserConf);
 }
 
@@ -122,4 +128,42 @@ ConfigItem*
 HTTP::Request::getServerBlock(void) const
 {
     return _serverBlock;
+}
+
+std::ostream&
+HTTP::Request::log(std::ostream& os) const
+{
+    std::string method = toUpperCase(getMethod());
+    unsigned code = HTTP::toStatusCode(_res->getStatus());
+    const char *methodColor, *statusColor;
+
+    if (method == "GET") {
+        methodColor = GREEN;
+    } else if (method == "POST") {
+        methodColor = ORANGE;
+    } else if (method == "DELETE") {
+        methodColor = RED;
+    }
+
+    if (code >= 200 && code <= 299) {
+        statusColor = GREEN;
+    }
+
+    else if (code >= 300 && code <= 399) {
+        statusColor = GREY;
+    }
+
+    else if (code >= 400 && code <= 499) {
+        statusColor = RED;
+    }
+
+    else if (code >= 500 && code <= 599) {
+        statusColor = PURPLE;
+    }
+
+    os << methodColor << std::left << setw(7) << method << CLR << " "
+       << setw(50) << getLocation() << statusColor << setw(8) << code << CLR
+       << setw(10) << timer.getElapsed() << "ms" << CLR;
+
+    return os;
 }

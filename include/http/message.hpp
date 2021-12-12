@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 
-#include "utils/BinBuffer.hpp"
-
 #include "HttpParser.hpp"
+#include "Timer.hpp"
+#include "utils/BinBuffer.hpp"
 
 #include "config/ConfigParser.hpp"
 #include "http/header.hpp"
@@ -71,6 +71,7 @@ class Request : public Message
   public:
     std::ostringstream body;
     HttpParser* parser;
+    Timer timer;
 
   private:
     std::string _method, _location, _protocol;
@@ -105,6 +106,8 @@ class Request : public Message
     Response*& response(void);
 
     std::ostream& printHeader(std::ostream& os = std::cout) const;
+
+    std::ostream& log(std::ostream& os) const;
 };
 
 /**
@@ -149,6 +152,8 @@ class Response : public Message
 
     Response& setStatus(StatusCode statusCode);
     Response& setStatus(unsigned intStatusCode);
+
+    StatusCode getStatus(void) const;
 
     Response& sendFile(const std::string& filepath);
     Response& send(const std::string& s);
