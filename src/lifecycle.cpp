@@ -36,6 +36,11 @@ closeConnection(int sockfd)
     delete requests[sockfd];
     requests.erase(sockfd);
 
+    if (uploaders.find(sockfd) != uploaders.end()) {
+        delete uploaders[sockfd];
+        uploaders.erase(sockfd);
+    }
+
     if (cgis.find(sockfd) != cgis.end()) {
         delete cgis[sockfd];
         cgis.erase(sockfd);

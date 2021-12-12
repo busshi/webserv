@@ -115,7 +115,7 @@ Directives::getConfig(ConfigItem* item, std::string suffix)
     if (methods)
         _methods = split(methods->getValue());
 
-    ConfigItem* uploadStore = item->findNearest("file_upload_dir");
+    ConfigItem* uploadStore = item->findNearest("upload_store");
     if (uploadStore)
         _uploadStore = uploadStore->getValue();
     else {
