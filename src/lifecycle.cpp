@@ -18,6 +18,8 @@
 
 using std::map;
 
+static char rBuf[BUFSIZE + 1];
+
 static void
 handleSigint(int)
 {
@@ -106,8 +108,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         // we can write to cgi output
 
         if (FD_ISSET(cgi->getOutputFd(), &wsetc)) {
-            // std::string body = reqp->body.str();
-            std::string body = "";
+            std::string body = reqp->body.str();
 
             if (!body.empty()) {
                 write(cgi->getOutputFd(), body.c_str(), body.size());
@@ -115,12 +116,11 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        char buf[BUFSIZE + 1];
         int ret = 0;
 
         // we have something to read from the cgi
         if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
-            ret = read(cgi->getInputFd(), buf, BUFSIZE);
+            ret = read(cgi->getInputFd(), rBuf, BUFSIZE);
 
             if (ret == -1) {
                 LP_CLOSE_CON(csockfd);
@@ -131,8 +131,8 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        buf[ret] = 0;
-        cgi->parse(buf, ret);
+        rBuf[ret] = 0;
+        cgi->parse(rBuf, ret);
     }
 }
 
@@ -147,12 +147,11 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         ++cit;
 
         int ret = 0;
-        char buf[BUFSIZE + 1];
 
         /* if there is something to read */
 
         if (FD_ISSET(csockfd, &rsetc)) {
-            ret = recv(csockfd, buf, BUFSIZE, 0);
+            ret = recv(csockfd, rBuf, BUFSIZE, 0);
 
             if (ret <= 0) {
                 std::cout << "client read" << std::endl;
@@ -160,8 +159,8 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        buf[ret] = 0;
-        reqp->parse(buf, ret);
+        rBuf[ret] = 0;
+        reqp->parse(rBuf, ret);
 
         /* if we can write */
 
