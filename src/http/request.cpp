@@ -161,9 +161,9 @@ HTTP::Request::log(std::ostream& os) const
         statusColor = PURPLE;
     }
 
-    os << methodColor << method << " " << statusColor << _res->getStatus()
-       << CLR << " " << std::left << setw(50) << getLocation() << GREY
-       << timer.getElapsed() << "ms" << CLR;
+    os << methodColor << std::left << setw(7) << method << CLR << " "
+       << setw(50) << getLocation() << statusColor << setw(8) << code << CLR
+       << setw(10) << timer.getElapsed() << "ms" << CLR;
 
     return os;
 }
