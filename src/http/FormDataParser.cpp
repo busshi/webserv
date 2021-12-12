@@ -12,6 +12,30 @@ HTTP::FormDataParser::FormDataParser(const std::string& boundary,
 
 HTTP::FormDataParser::~FormDataParser(void) {}
 
+/**
+ * Return the minimum of the 4 buffer positions
+ */
+
+static Buffer<>::size_type
+min4(Buffer<>::size_type pos1,
+     Buffer<>::size_type pos2,
+     Buffer<>::size_type pos3,
+     Buffer<>::size_type pos4)
+{
+    Buffer<>::size_type min = -1;
+
+    if (pos1 < min)
+        min = pos1;
+    if (pos2 < min)
+        min = pos2;
+    if (pos3 < min)
+        min = pos3;
+    if (pos4 < min)
+        min = pos4;
+
+    return min;
+}
+
 void
 HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
 {
@@ -107,7 +131,7 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
             return;
         }
 
-        pos2 = _buf.find(std::string(CRLF) + "--" + _boundary + CRLF);
+        pos2 = _buf.find(std::string(CRLF) + "--" + _boundary);
 
         // encountered an immediate boundary
         if (pos2 == 0) {
@@ -122,11 +146,14 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
             return;
         }
 
+        Buffer<>::size_type pos3 =
+          _buf.findDangling(std::string(CRLF) + "--" + _boundary);
+        Buffer<>::size_type pos4 =
+          _buf.findDangling(std::string(CRLF) + "--" + _boundary + "--");
+
         // entry body to parse
-        Buffer<> fragment = _buf.subbuf(
-          0,
-          std::min(pos1,
-                   pos2)); // stop at nearest boundary (if there is one)
+        Buffer<> fragment = _buf.subbuf(0, min4(pos1, pos2, pos3, pos4));
+
         if (_callbacks.onEntryBodyFragment) {
             _callbacks.onEntryBodyFragment(fragment, param);
         }

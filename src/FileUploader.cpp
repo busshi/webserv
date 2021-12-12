@@ -22,6 +22,8 @@ onEntryHeaderField(const std::string& name,
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
+    std::cout << "Hidore" << std::endl;
+
     if (equalsIgnoreCase(name, "Content-Disposition")) {
         std::string::size_type pos = value.find("filename=\"");
 
@@ -44,6 +46,8 @@ static void
 onEntryBodyFragment(const Buffer<>& fragment, uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
+
+    std::cout << "Uploading data..." << std::endl;
 
     uploader->uploadData(fragment);
 }
