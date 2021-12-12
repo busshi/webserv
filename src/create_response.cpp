@@ -183,9 +183,12 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 
     if (req.getMethod() == "POST" && !directives.getUploadStore().empty()) {
 
-        std::cout << "New uploader" << std::endl;
+        std::string maxFileSize = directives.getUploadMaxFileSize();
 
-        uploaders[req.getClientFd()] = new FileUploader(&req);
+        uploaders[req.getClientFd()] =
+          new FileUploader(&req,
+                           directives.getUploadStore(),
+                           maxFileSize.empty() ? 0 : parseSize(maxFileSize));
 
         return;
     }
@@ -197,8 +200,8 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
         directives.setPathWithIndex();
 
 #ifdef LOGGER
-        glogger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
-                << directives.getPath() << "]\n";
+        logger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
+               << directives.getPath() << "]\n";
 #endif
 
         if (isFolder(directives.getPath()) == true) {

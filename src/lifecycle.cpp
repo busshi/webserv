@@ -18,6 +18,8 @@
 
 using std::map;
 
+static char rBuf[BUFSIZE + 1];
+
 static void
 handleSigint(int)
 {
@@ -35,6 +37,11 @@ closeConnection(int sockfd)
 {
     delete requests[sockfd];
     requests.erase(sockfd);
+
+    if (uploaders.find(sockfd) != uploaders.end()) {
+        delete uploaders[sockfd];
+        uploaders.erase(sockfd);
+    }
 
     if (cgis.find(sockfd) != cgis.end()) {
         delete cgis[sockfd];
@@ -101,8 +108,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         // we can write to cgi output
 
         if (FD_ISSET(cgi->getOutputFd(), &wsetc)) {
-            // std::string body = reqp->body.str();
-            std::string body = "";
+            std::string body = reqp->body.str();
 
             if (!body.empty()) {
                 write(cgi->getOutputFd(), body.c_str(), body.size());
@@ -110,12 +116,11 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        char buf[BUFSIZE + 1];
         int ret = 0;
 
         // we have something to read from the cgi
         if (FD_ISSET(cgi->getInputFd(), &rsetc)) {
-            ret = read(cgi->getInputFd(), buf, BUFSIZE);
+            ret = read(cgi->getInputFd(), rBuf, BUFSIZE);
 
             if (ret == -1) {
                 LP_CLOSE_CON(csockfd);
@@ -126,8 +131,8 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        buf[ret] = 0;
-        cgi->parse(buf, ret);
+        rBuf[ret] = 0;
+        cgi->parse(rBuf, ret);
     }
 }
 
@@ -142,12 +147,11 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         ++cit;
 
         int ret = 0;
-        char buf[BUFSIZE + 1];
 
         /* if there is something to read */
 
         if (FD_ISSET(csockfd, &rsetc)) {
-            ret = recv(csockfd, buf, BUFSIZE, 0);
+            ret = recv(csockfd, rBuf, BUFSIZE, 0);
 
             if (ret <= 0) {
                 std::cout << "client read" << std::endl;
@@ -155,8 +159,8 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        buf[ret] = 0;
-        reqp->parse(buf, ret);
+        rBuf[ret] = 0;
+        reqp->parse(rBuf, ret);
 
         /* if we can write */
 
@@ -170,7 +174,6 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
                     int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
                     if (ret == -1) {
-                        std::cout << "Client write" << std::endl;
                         LP_CLOSE_CON(csockfd);
                     }
 
@@ -234,19 +237,11 @@ lifecycle(const HttpParser::Config& parserConf)
     signal(SIGINT, &handleSigint);
     signal(SIGPIPE, &handleSigpipe);
 
-    size_t dotN = 0;
-
     while (isWebservAlive) {
-        /*std::cout << "Webserv is running" << std::left << std::setw(3)
-                  << std::string(dotN, '.') << "\r" << std::flush;*/
-        if (++dotN > 3) {
-            dotN = 0;
-        }
-
         fd_set rsetc = select_rset, wsetc = select_wset;
 
         /* according to the man, it is better to initialize it each time */
-        struct timeval timeout = { .tv_sec = 1, .tv_usec = 0 };
+        struct timeval timeout = { .tv_sec = 6, .tv_usec = 0 };
 
         int nready = select(FD_SETSIZE, &rsetc, &wsetc, 0, &timeout);
 

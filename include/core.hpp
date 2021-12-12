@@ -8,7 +8,13 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
-#define BUFSIZE 1024
+/* This is the size of the buffer used to recv data from the HTTP client.
+ * The greater this size is, the faster the server will (probably) be.
+ * In other words, setting it to 1 is funny and cool for debuging purpose but
+ * not really optimal :')
+ */
+
+#define BUFSIZE 0xFFFF
 
 void
 initHosts(ConfigItem* global);
