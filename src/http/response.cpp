@@ -232,3 +232,8 @@ HTTP::Response::format(void)
     return bbuf;
 }
 
+HTTP::StatusCode
+HTTP::Response::getStatus(void) const
+{
+    return _statusCode;
+}
