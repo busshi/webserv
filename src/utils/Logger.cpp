@@ -13,6 +13,7 @@ Logger::Logger(const std::string& logDir,
   , _webservLogLevel(webservLogLevel)
   , _currentLogLevel(INFO)
 {
+#ifdef LOGGER
     struct stat info;
 
     /* create log directory in case it does not exist or isn't a directory */
@@ -28,11 +29,13 @@ Logger::Logger(const std::string& logDir,
         std::cerr << "Logger: unrecoverable error: unable to open logFile "
                   << fullpath << ". (this logger won't be usable)\n";
     }
+#endif
 }
 
 std::string
 Logger::getTimestamp(void)
 {
+#ifdef LOGGER
     time_t rawTime;
     char buf[1024];
 
@@ -43,6 +46,9 @@ Logger::getTimestamp(void)
     buf[strftime(buf + 1, 1024, "%Y-%m-%e-%H-%M-%S", timeinfo) + 1] = ']';
 
     return buf;
+#else
+    return "";
+#endif
 }
 
 Logger::LogLevel
@@ -63,7 +69,11 @@ Logger::parseLogLevel(const std::string& s)
 Logger&
 Logger::operator<<(LogLevel logLevel)
 {
+#ifdef LOGGER
     _currentLogLevel = logLevel;
+#else
+    (void)logLevel;
+#endif
 
     return *this;
 }

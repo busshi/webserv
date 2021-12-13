@@ -3,7 +3,9 @@
 #include "FileUploader.hpp"
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
+#include "http/Exception.hpp"
 #include "http/message.hpp"
+#include "utils/Logger.hpp"
 #include <map>
 #include <netinet/in.h>
 #include <stdint.h>
@@ -15,6 +17,9 @@
  */
 
 #define BUFSIZE 0xFFFF
+
+void
+handleHttpException(HTTP::Exception& e);
 
 void
 initHosts(ConfigItem* global);
@@ -73,3 +78,4 @@ extern std::map<uint16_t, Host> hosts;
 extern fd_set select_rset;
 extern fd_set select_wset;
 extern bool isWebservAlive;
+extern Logger glogger;

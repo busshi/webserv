@@ -1,6 +1,10 @@
+#include "Constants.hpp"
 #include "HttpParser.hpp"
 #include "core.hpp"
+#include "http/Exception.hpp"
+#include "http/status.hpp"
 #include "utils/Logger.hpp"
+#include "utils/string.hpp"
 #include <cstring>
 #include <fcntl.h>
 #include <iomanip>
@@ -54,10 +58,8 @@ closeConnection(int sockfd)
     FD_CLR(sockfd, &select_rset);
     close(sockfd);
 
-#ifdef LOGGER
     glogger << Logger::INFO << Logger::getTimestamp()
             << " Closed connection to fd " << sockfd << "\n";
-#endif
 }
 
 static void
@@ -218,10 +220,8 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
                 continue;
             }
 
-#ifdef LOGGER
             glogger << Logger::getTimestamp() << " New connection to port "
                     << it->first << " accepted (fd=" << connection << ")\n";
-#endif
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
             FD_SET(connection, &select_rset);
@@ -253,9 +253,14 @@ lifecycle(const HttpParser::Config& parserConf)
         }
 
         (void)keepAlive;
-        handleClientEvents(rsetc, wsetc);
-        handleUploadEvents();
-        handleServerEvents(parserConf, rsetc);
-        handleCgiEvents(rsetc, wsetc);
+
+        try {
+            handleClientEvents(rsetc, wsetc);
+            handleUploadEvents();
+            handleServerEvents(parserConf, rsetc);
+            handleCgiEvents(rsetc, wsetc);
+        } catch (HTTP::Exception& err) {
+            handleHttpException(err);
+        }
     }
 }

@@ -21,9 +21,7 @@ fd_set select_rset, select_wset;
 
 bool isWebservAlive = true;
 
-#ifdef LOGGER
 Logger glogger;
-#endif
 
 int
 main(int argc, char** argv)
@@ -33,9 +31,7 @@ main(int argc, char** argv)
         return 1;
     }
 
-#ifdef LOGGER
     glogger << Logger::getTimestamp() << " Webserv started\n";
-#endif
 
     ConfigParser cfgp;
     ConfigItem* global;
@@ -50,19 +46,15 @@ main(int argc, char** argv)
         return 1;
     }
 
-#ifdef LOGGER
     glogger << Logger::getTimestamp() << " Configuration loaded from file "
             << argv[1] << "\n";
-#endif
 
-#ifdef LOGGER
     ConfigItem* logLevel = global->findNearest("logLevel");
 
     if (logLevel) {
         glogger << "Log level set to \"" << logLevel->getValue() << "\"\n";
         glogger.setWebservLogLevel(Logger::parseLogLevel(logLevel->getValue()));
     }
-#endif
 
     FD_ZERO(&select_rset);
     FD_ZERO(&select_wset);

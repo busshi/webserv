@@ -1,4 +1,6 @@
 #include "FileUploader.hpp"
+#include "http/Exception.hpp"
+#include "http/status.hpp"
 #include "utils/string.hpp"
 #include <cstring>
 
@@ -71,9 +73,10 @@ FileUploader::FileUploader(HTTP::Request* req,
     std::string::size_type pos = s.find("boundary=");
 
     if (pos == std::string::npos) {
-        std::cerr
-          << "Failed to retrieve boundary, can't construct FileUploader object!"
-          << std::endl;
+        throw HTTP::Exception(
+          req,
+          HTTP::BAD_REQUEST,
+          "File uploader: missing boundary in Content-Type");
         return;
     }
 

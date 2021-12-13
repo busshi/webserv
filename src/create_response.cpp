@@ -2,7 +2,9 @@
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
 #include "core.hpp"
+#include "http/Exception.hpp"
 #include "http/message.hpp"
+#include "http/status.hpp"
 #include "utils/ErrorPageGenerator.hpp"
 #include "utils/Logger.hpp"
 #include "utils/os.hpp"
@@ -44,66 +46,40 @@ noAutoIndexResponse(string path,
     ifstream ifs;
 
     ifs.open(path.c_str());
+
     if (!ifs) {
-        ErrorPageGenerator errorGen;
-        string errorPage;
+        throw HTTP::Exception(&req, HTTP::NOT_FOUND);
+    }
 
-        if (directives.getRoot() == "none") {
-            res.setStatus(HTTP::INTERNAL_SERVER_ERROR);
-            errorPage = errorGen.checkErrorPage(
-              directives.getDefaultErrorFile(),
-              "500",
-              "Internal Server Error",
-              "the server encountered an internal error");
+    // look for cgi extension
+    if (!directives.getCgiExecutable().empty()) {
+        for (std::vector<string>::const_iterator cit =
+               directives.getCgiExtensions().begin();
+             cit != directives.getCgiExtensions().end();
+             ++cit) {
+            // cgi let's go
+            if (hasFileExtension(path, *cit)) {
+                int csock = res.getClientSocket();
 
-        } else {
-            res.setStatus(HTTP::NOT_FOUND);
-            errorPage = errorGen.checkErrorPage(
-              directives.getDefaultErrorFile(),
-              "404",
-              "Not Found",
-              "the page you are looking for does not exist");
-        }
+                CommonGatewayInterface* cgi = new CommonGatewayInterface(
+                  csock, requests[csock], directives.getCgiExecutable(), path);
 
-        res.sendFile(ERROR_PAGE);
-    } else {
-        // look for cgi extension
-        if (!directives.getCgiExecutable().empty()) {
-            for (std::vector<string>::const_iterator cit =
-                   directives.getCgiExtensions().begin();
-                 cit != directives.getCgiExtensions().end();
-                 ++cit) {
-                // cgi let's go
-                if (hasFileExtension(path, *cit)) {
-                    int csock = res.getClientSocket();
+                cgis[csock] = cgi;
 
-                    CommonGatewayInterface* cgi =
-                      new CommonGatewayInterface(csock,
-                                                 requests[csock],
-                                                 directives.getCgiExecutable(),
-                                                 path);
-
-                    cgis[csock] = cgi;
-
-                    // in case we're dealing with a chunked body CGI must be
-                    // started when it gets unchunked
-                    if (!req.isBodyChunked()) {
-                        cgi->start();
-                    }
-
-#ifdef LOGGER
-                    glogger << Logger::DEBUG << "CGI started for fd " << csock
-                            << "\n";
-#endif
-
-                    return;
+                // in case we're dealing with a chunked body CGI must be
+                // started when it gets unchunked
+                if (!req.isBodyChunked()) {
+                    cgi->start();
                 }
+
+                return;
             }
         }
+    }
 
         // this is not handled by cgi
 
-        if (equalsIgnoreCase(req.getMethod(), "DELETE")) {
+     if (equalsIgnoreCase(req.getMethod(), "DELETE")) {
             // TODO: check if DELETE verb is allowed
 
             unlink(path.c_str());
@@ -111,7 +87,7 @@ noAutoIndexResponse(string path,
         } else {
             res.sendFile(path);
         }
-    }
+    
 }
 
 static void
@@ -120,10 +96,8 @@ autoIndexResponse(string path, HTTP::Request& req, HTTP::Response& res)
 
     stringstream buf;
 
-#ifdef LOGGER
     glogger << Logger::DEBUG << Logger::getTimestamp() << PURPLE
             << " Autoindex is ON... Listing directory: " << path << CLR << "\n";
-#endif
 
     DIR* folder = opendir(path.c_str());
 
@@ -136,16 +110,12 @@ autoIndexResponse(string path, HTTP::Request& req, HTTP::Response& res)
                 << req.getLocation() << (req.getLocation() == "/" ? "" : "/")
                 << dir->d_name << "\">" << dir->d_name << "</a><br/>"
                 << std::endl;
-#ifdef LOGGER
             glogger << Logger::DEBUG << dir->d_name << "\n";
-#endif
         }
 
         res.send(buf.str());
 
-#ifdef LOGGER
         glogger << Logger::DEBUG << "\n";
-#endif
         closedir(folder);
     }
 }
@@ -167,28 +137,22 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
 
         if ((haveLoc = directives.haveLocation(req.getLocation(), location)) ==
             true) {
-#ifdef LOGGER
             glogger << Logger::DEBUG << Logger::getTimestamp()
                     << " haveLoc is true\n";
-#endif
             directives.getConfig(*it, req.getLocation());
             break;
         }
     }
 
     if (haveLoc == false) {
-#ifdef LOGGER
         glogger << Logger::DEBUG << " haveLoc is false\n";
-#endif
         directives.getConfig(server, req.getLocation());
     }
 
-#ifdef LOGGER
     glogger << Logger::DEBUG << Logger::getTimestamp()
             << " Path: " << directives.getPath() << "\n";
     glogger << Logger::DEBUG << Logger::getTimestamp()
             << " Root: " << directives.getRoot() << "\n";
-#endif
     // if upload_store is defined then upload is possible
 
     if (req.getMethod() == "POST" && !directives.getUploadStore().empty()) {
@@ -204,15 +168,11 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
     }
 
     if (isFolder(directives.getPath()) == true) {
-#ifdef LOGGER
         glogger << Logger::DEBUG << " IS FOLDER\n";
-#endif
         directives.setPathWithIndex();
 
-#ifdef LOGGER
-        logger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
-               << directives.getPath() << "]\n";
-#endif
+        glogger << Logger ::DEBUG << Logger::getTimestamp() << " Path+index ["
+                << directives.getPath() << "]\n";
 
         if (isFolder(directives.getPath()) == true) {
 
@@ -227,10 +187,8 @@ createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server)
                   "Forbidden",
                   "the access is permanently forbidden");
 
-#ifdef LOGGER
                 glogger << Logger::DEBUG << Logger::getTimestamp()
                         << "Error page: " << errorPage << "\n";
-#endif
 
                 res.setHeaderField("Content-Type", "text/html");
                 res.setStatus(HTTP::FORBIDDEN).sendFile(errorPage);
