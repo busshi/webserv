@@ -18,7 +18,10 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     /* NON-BLOCK */
     { "root", validateRoot, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
     { "index", validateIndex, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
-    { "method", validateMethod, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
+    { "forbidden_methods",
+      validateMethod,
+      BLOCK_SERVER | BLOCK_LOCATION,
+      NOT_A_BLOCK },
     { "listen", validateListen, BLOCK_SERVER, NOT_A_BLOCK },
     { "autoindex", validateAutoindex, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },

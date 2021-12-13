@@ -67,16 +67,30 @@ split(const std::string& s, const std::string& set)
 }
 
 std::string
-trim(const std::string& s)
+trim(const std::string& s, const std::string& set)
 {
     std::string::size_type bpos = 0, epos = s.size() - 1;
 
-    while (isspace(s[bpos]))
+    while (set.find(s[bpos]) != std::string::npos)
         ++bpos;
-    while (epos >= bpos && isspace(s[epos]))
+    while (epos >= bpos && set.find(s[epos]) != std::string::npos)
         --epos;
 
     return s.substr(bpos, epos - bpos + 1);
+}
+
+std::string
+trimTrailing(const std::string& s, const std::string& set)
+{
+    std::string::size_type epos = s.size() - 1;
+
+    while (set.find(s[epos]) != std::string::npos) {
+        if (epos == 0)
+            return "";
+        --epos;
+    }
+
+    return s.substr(0, epos + 1);
 }
 
 static std::string

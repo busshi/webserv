@@ -25,13 +25,15 @@ onHeader(const string& method,
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.setMethod(method);
-    req.setLocation(loc);
+    req.setLocation(trimTrailing(loc, "/"));
     req.setProtocol(protocol);
 
     if (!isMethodImplemented(method)) {
+        req.setMethod("UNKNOWN");
         throw HTTP::Exception(
           &req, HTTP::NOT_IMPLEMENTED, "Method not implemented by webserv");
+    } else {
+        req.setMethod(method);
     }
 
     if (!equalsIgnoreCase(protocol, "HTTP/1.1")) {
@@ -67,7 +69,7 @@ onHeaderParsed(uintptr_t requestLoc)
 
     HTTP::Response& res = *req.response();
 
-    createResponse(req, res, serverBlock);
+    processRequest(&req, serverBlock);
 
     if (cgis.find(req.getClientFd()) == cgis.end() &&
         uploaders.find(req.getClientFd()) == uploaders.end()) {

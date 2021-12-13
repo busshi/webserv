@@ -1,5 +1,6 @@
 #include "utils/ErrorPageGenerator.hpp"
 #include "Constants.hpp"
+#include "core.hpp"
 #include "utils/Logger.hpp"
 #include <sstream>
 

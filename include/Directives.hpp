@@ -2,6 +2,7 @@
 
 #include "Constants.hpp"
 #include "config/ConfigItem.hpp"
+#include "http/message.hpp"
 #include "utils/string.hpp"
 #include <string>
 #include <vector>
@@ -16,19 +17,22 @@ class Directives
     Directives(const Directives&);
     Directives& operator=(const Directives&);
 
-    void getConfig(ConfigItem*, std::string);
+    void load(HTTP::Request* req, ConfigItem* block);
 
     std::string getRoot(void);
     std::string getPath(void);
-    std::string getAutoIndex(void);
+    bool getAutoIndex(void);
     std::string getUploadStore(void);
     std::string getDefaultErrorFile(void);
-    std::string getUploadMaxFileSize(void);
-    std::string getBodyMaxSize(void);
+    unsigned long long getUploadMaxFileSize(void);
+    unsigned long long getBodyMaxSize(void);
+    bool allowsCgi(void) const;
+    bool allowsUpload(void) const;
     std::vector<std::string> getIndexes(void);
-    std::vector<std::string> getMethods(void);
+    std::vector<std::string> getForbiddenMethods(void);
     const std::string& getCgiExecutable(void) const;
     const std::vector<std::string>& getCgiExtensions(void) const;
+    bool _allowsCgi, _allowsUpload;
 
     void setPathWithIndex(void);
 
@@ -37,13 +41,13 @@ class Directives
   private:
     std::string _root;
     std::string _path;
-    std::string _autoindex;
+    bool _autoindex;
     std::string _uploadStore;
     std::string _defaultErrorFile;
-    std::string _uploadMaxFileSize;
-    std::string _bodyMaxSize;
+    unsigned long long _uploadMaxFileSize;
+    unsigned long long _bodyMaxSize;
     std::vector<std::string> _indexes;
-    std::vector<std::string> _methods;
+    std::vector<std::string> _forbiddenMethods;
     struct
     {
         std::string cgiExec;

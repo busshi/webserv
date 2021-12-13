@@ -17,25 +17,6 @@ using std::ifstream;
 using std::string;
 using std::stringstream;
 
-ConfigItem*
-selectServer(std::vector<ConfigItem*>& candidates, const string& host)
-{
-    string serverName;
-    ConfigItem* serverNameItem = 0;
-    string strippedHost = host.substr(0, host.find(':'));
-
-    for (std::vector<ConfigItem*>::iterator it = candidates.begin();
-         it != candidates.end();
-         ++it) {
-        serverNameItem = (*it)->findNearest("server_name");
-        if (serverNameItem && serverNameItem->getValue() == strippedHost) {
-            return *it;
-        }
-    }
-
-    return candidates.front();
-}
-
 static void
 noAutoIndexResponse(string path,
                     HTTP::Request& req,
@@ -77,17 +58,16 @@ noAutoIndexResponse(string path,
         }
     }
 
-        // this is not handled by cgi
+    // this is not handled by cgi
 
-     if (equalsIgnoreCase(req.getMethod(), "DELETE")) {
-            // TODO: check if DELETE verb is allowed
+    if (equalsIgnoreCase(req.getMethod(), "DELETE")) {
+        // TODO: check if DELETE verb is allowed
 
-            unlink(path.c_str());
+        unlink(path.c_str());
 
-        } else {
-            res.sendFile(path);
-        }
-    
+    } else {
+        res.sendFile(path);
+    }
 }
 
 static void
@@ -216,3 +196,4 @@ _response = _headerParam["HTTP"] + " " + _headerParam["Status-Code"] +
             "Server: webserv" + "\r\n\r\n" + buf.str();
     */
 }
+

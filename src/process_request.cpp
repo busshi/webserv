@@ -1,0 +1,214 @@
+#include "Directives.hpp"
+#include "FileUploader.hpp"
+#include "cgi/cgi.hpp"
+#include "config/ConfigItem.hpp"
+#include "core.hpp"
+#include "http/Exception.hpp"
+#include "http/message.hpp"
+#include "http/status.hpp"
+
+#include <dirent.h>
+#include <sstream>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vector>
+
+using std::ostringstream;
+using std::string;
+using std::vector;
+
+ConfigItem*
+selectServer(vector<ConfigItem*>& candidates, const string& host)
+{
+    string serverName;
+    ConfigItem* serverNameItem = 0;
+    string strippedHost = host.substr(0, host.find(':'));
+
+    for (std::vector<ConfigItem*>::iterator it = candidates.begin();
+         it != candidates.end();
+         ++it) {
+        serverNameItem = (*it)->findNearest("server_name");
+        if (serverNameItem && serverNameItem->getValue() == strippedHost) {
+            return *it;
+        }
+    }
+
+    return candidates.front();
+}
+
+static Directives
+loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
+{
+    Directives directives;
+    vector<ConfigItem*> locations = serverBlock->findBlocks("location");
+    ConfigItem* loadFrom = serverBlock;
+
+    /* match the more specific location */
+
+    for (size_t i = 0; i != locations.size(); ++i) {
+        string locv = trimTrailing(locations[i]->getValue(), "/");
+
+        if (req->getLocation().find(locv) == 0) {
+            if (loadFrom == serverBlock ||
+                locv.size() > loadFrom->getValue().size()) {
+                loadFrom = locations[i];
+            }
+        }
+    }
+
+    directives.load(req, loadFrom);
+
+    return directives;
+}
+
+static void
+processCgiRequest(HTTP::Request* req,
+                  const std::string& cgiExecutablePath,
+                  const std::string& scriptPath)
+{
+    CommonGatewayInterface* cgi = new CommonGatewayInterface(
+      req->getClientFd(), req, cgiExecutablePath, scriptPath);
+
+    cgis[req->getClientFd()] = cgi;
+
+    // if body is chunked, we need to unchunk it before we can start the CGI
+    if (!req->isBodyChunked()) {
+        cgi->start();
+    }
+}
+
+static void
+serveFile(HTTP::Request* req, const std::string& path)
+{
+    req->response()->sendFile(path);
+}
+
+static void
+indexDirectoryContents(HTTP::Request* req, const std::string& path)
+{
+    ostringstream buf;
+
+    DIR* folder = opendir(path.c_str());
+
+    if (folder) {
+
+        struct dirent* dir;
+
+        while ((dir = readdir(folder)) != NULL) {
+            buf << "<a href=\"http://" << req->getHeaderField("Host")
+                << req->getLocation() << (req->getLocation() == "/" ? "" : "/")
+                << dir->d_name << "\">" << dir->d_name << "</a><br/>"
+                << std::endl;
+            glogger << Logger::DEBUG << dir->d_name << "\n";
+        }
+
+        req->response()->send(buf.str());
+
+        glogger << Logger::DEBUG << "\n";
+        closedir(folder);
+    }
+}
+
+static void
+processUploadPost(HTTP::Request* req,
+                  const std::string& path,
+                  unsigned long long maxUploadFileSize)
+{
+    FileUploader* uploader = new FileUploader(req, path, maxUploadFileSize);
+
+    uploaders[req->getClientFd()] = uploader;
+}
+
+static void
+processUploadDelete(const std::string& path)
+{
+    unlink(path.c_str());
+}
+
+void
+processRequest(HTTP::Request* req, ConfigItem* serverBlock)
+{
+    Directives direc = loadDirectives(req, serverBlock);
+    vector<std::string> forbiddenMethods = direc.getForbiddenMethods();
+
+    for (size_t i = 0; i != forbiddenMethods.size(); ++i) {
+        if (equalsIgnoreCase(req->getMethod(), forbiddenMethods[i])) {
+            throw HTTP::Exception(req,
+                                  HTTP::METHOD_NOT_ALLOWED,
+                                  "This method is forbidden on that route");
+        }
+    }
+
+    std::string path = direc.getPath();
+    struct stat s;
+
+    if (stat(path.c_str(), &s) == -1) {
+        if (errno == ENOENT) {
+            throw HTTP::Exception(
+              req,
+              HTTP::NOT_FOUND,
+              path + " does not point to a file on the local filesystem");
+        }
+
+        // any other system error => 500
+        else {
+            throw HTTP::Exception(
+              req, HTTP::INTERNAL_SERVER_ERROR, strerror(errno));
+        }
+    }
+
+    // In case it is a directory, try all the provided indexes
+    if (s.st_mode & S_IFDIR) {
+        vector<string> indexes = direc.getIndexes();
+
+        for (size_t i = 0; i != indexes.size(); ++i) {
+            std::string tmp = path + "/" + indexes[i];
+            stat(tmp.c_str(), &s);
+
+            // stop on first match
+            if (!(s.st_mode & S_IFDIR)) {
+                path = tmp;
+                break;
+            }
+        }
+    }
+
+    // if isDir is still true, it means that no suitable index was found. Let's
+    // try autoindex now.
+    if (s.st_mode & S_IFDIR) {
+        if (req->getMethod() == "POST" && direc.allowsUpload()) {
+            processUploadPost(req, path, direc.getUploadMaxFileSize());
+        } else if (!direc.getAutoIndex()) {
+            throw HTTP::Exception(
+              req,
+              HTTP::FORBIDDEN,
+              "Can't list contents of the directory: autoindex is turned off");
+        } else if (req->getMethod() == "GET") {
+            indexDirectoryContents(req, path);
+            return;
+        }
+    }
+
+    if (req->getMethod() == "DELETE" && direc.allowsUpload()) {
+        processUploadDelete(path);
+    }
+
+    if (direc.allowsCgi()) {
+        vector<string> exts = direc.getCgiExtensions();
+
+        for (size_t i = 0; i != exts.size(); ++i) {
+            if (hasFileExtension(path, exts[i])) {
+                processCgiRequest(req, direc.getCgiExecutable(), path);
+                return;
+            }
+        }
+    }
+
+    if (req->getMethod() == "GET") {
+        serveFile(req, path);
+    } else {
+        throw HTTP::Exception(
+          req, HTTP::METHOD_NOT_ALLOWED, "Irrelevant operation");
+    }
+}

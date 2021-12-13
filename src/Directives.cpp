@@ -1,8 +1,13 @@
 #include "Directives.hpp"
 #include "core.hpp"
+#include "http/Exception.hpp"
+#include "http/status.hpp"
 #include "utils/Logger.hpp"
 
-Directives::Directives(void) {}
+Directives::Directives(void)
+  : _allowsCgi(false)
+  , _allowsUpload(false)
+{}
 
 Directives::~Directives(void) {}
 
@@ -25,10 +30,22 @@ Directives::operator=(const Directives& rhs)
         _uploadMaxFileSize = rhs._uploadMaxFileSize;
         _bodyMaxSize = rhs._bodyMaxSize;
         _indexes = rhs._indexes;
-        _methods = rhs._methods;
+        _forbiddenMethods = rhs._forbiddenMethods;
     }
 
     return *this;
+}
+
+bool
+Directives::allowsCgi(void) const
+{
+    return _allowsCgi;
+}
+
+bool
+Directives::allowsUpload(void) const
+{
+    return _allowsUpload;
 }
 
 std::string
@@ -43,7 +60,7 @@ Directives::getPath(void)
     return _path;
 }
 
-std::string
+bool
 Directives::getAutoIndex(void)
 {
     return _autoindex;
@@ -61,13 +78,13 @@ Directives::getDefaultErrorFile(void)
     return _defaultErrorFile;
 }
 
-std::string
+unsigned long long
 Directives::getUploadMaxFileSize(void)
 {
     return _uploadMaxFileSize;
 }
 
-std::string
+unsigned long long
 Directives::getBodyMaxSize(void)
 {
     return _bodyMaxSize;
@@ -80,83 +97,58 @@ Directives::getIndexes(void)
 }
 
 std::vector<std::string>
-Directives::getMethods(void)
+Directives::getForbiddenMethods(void)
 {
-    return _methods;
+    return _forbiddenMethods;
 }
 
 void
-Directives::getConfig(ConfigItem* item, std::string suffix)
+Directives::load(HTTP::Request* req, ConfigItem* item)
 {
 
     ConfigItem* root = item->findNearest("root");
-    if (root) {
-        _root = root->getValue();
-        _path = _root.substr(0, _root.length() - (_root == "/")) + suffix;
-    } else {
-        _root = "none";
-        glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
-                << "Error: No default path provided!\n"
-                << CLR;
+
+    if (!root) {
+        throw HTTP::Exception(
+          req,
+          HTTP::INTERNAL_SERVER_ERROR,
+          "No root directive in configuration for that block");
     }
 
+    _root = trimTrailing(root->getValue(), "/");
+    _path = _root;
+    _path += req->getLocation();
+
     ConfigItem* autoindex = item->findNearest("autoindex");
-    if (autoindex)
-        _autoindex = autoindex->getValue();
-    else
-        _autoindex = "off";
+
+    _autoindex = autoindex && autoindex->getValue() == "on";
 
     ConfigItem* index = item->findNearest("index");
     if (index)
         _indexes = split(index->getValue());
 
-    ConfigItem* methods = item->findNearest("method");
+    ConfigItem* methods = item->findNearest("forbidden_methods");
     if (methods)
-        _methods = split(methods->getValue());
+        _forbiddenMethods = split(methods->getValue());
 
-    ConfigItem* uploadStore = item->findNearest("upload_store");
-    if (uploadStore)
+    ConfigItem* uploadStore = item->findAtomInBlock("upload_store");
+    if (uploadStore) {
+        _allowsUpload = true;
         _uploadStore = uploadStore->getValue();
-    else {
-        _uploadStore = UPLOAD_PATH;
-        glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
-                << " No upload path provided! Using default path: "
-                << _uploadStore << "\n"
-                << CLR;
-    }
-
-    ConfigItem* defaultErrorFile = item->findNearest("default_error_file");
-    if (defaultErrorFile)
-        _defaultErrorFile = defaultErrorFile->getValue();
-    else {
-        glogger
-          << Logger::WARNING << Logger::getTimestamp() << ORANGE
-          << " No error file path provided! Using webserv default error pages\n"
-          << CLR;
     }
 
     ConfigItem* uploadMaxSize = item->findNearest("upload_max_file_size");
-    if (uploadMaxSize)
-        _uploadMaxFileSize = uploadMaxSize->getValue();
-    else {
-        glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
-                << " No upload_max_size directive found! Using webserv default "
-                   "upload_max_size\n"
-                << CLR;
-    }
+    _uploadMaxFileSize = parseSize(uploadMaxSize ? uploadMaxSize->getValue()
+                                                 : DFLT_MAX_UPLOAD_FILE_SIZE);
 
     ConfigItem* bodyMaxSize = item->findNearest("client_body_max_size");
-    if (bodyMaxSize)
-        _bodyMaxSize = bodyMaxSize->getValue();
-    else {
-        glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
-                << " No body_max_size directive found! Using webserv default "
-                   "body_max_size\n"
-                << CLR;
-    }
+    _bodyMaxSize =
+      parseSize(bodyMaxSize ? bodyMaxSize->getValue() : DFLT_MAX_BODY_SIZE);
 
-    ConfigItem* cgiPass = item->findNearest("cgi_pass");
+    // search ONLY in the current block
+    ConfigItem* cgiPass = item->findAtomInBlock("cgi_pass");
     if (cgiPass) {
+        _allowsCgi = true;
         std::vector<std::string> components = split(cgiPass->getValue());
         _cgiPass.cgiExec = components.back();
         _cgiPass.exts = split(components.front(), ",");

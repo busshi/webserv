@@ -18,6 +18,10 @@
 
 #define BUFSIZE 0xFFFF
 
+#define DFLT_MAX_UPLOAD_FILE_SIZE "1MB"
+
+#define DFLT_MAX_BODY_SIZE "100MB"
+
 void
 handleHttpException(HTTP::Exception& e);
 
@@ -58,6 +62,9 @@ onBodyParsed(uintptr_t requestLoc);
 
 void
 createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
+
+void
+processRequest(HTTP::Request* req, ConfigItem* serverBlock);
 
 ConfigItem*
 selectServer(std::vector<ConfigItem*>& candidates, const std::string& host);
