@@ -19,6 +19,7 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
 {
     timer.start();
     parser = new HttpParser(parserConf);
+    createResponse();
 }
 
 HTTP::Request::~Request(void)
@@ -143,6 +144,8 @@ HTTP::Request::log(std::ostream& os) const
         methodColor = ORANGE;
     } else if (method == "DELETE") {
         methodColor = RED;
+    } else {
+        methodColor = BOLD;
     }
 
     if (code >= 200 && code <= 299) {
@@ -150,7 +153,7 @@ HTTP::Request::log(std::ostream& os) const
     }
 
     else if (code >= 300 && code <= 399) {
-        statusColor = GREY;
+        statusColor = CLR;
     }
 
     else if (code >= 400 && code <= 499) {

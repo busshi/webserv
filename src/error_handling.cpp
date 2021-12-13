@@ -1,6 +1,9 @@
 #include "Constants.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
+#include "http/status.hpp"
+#include "utils/ErrorPageGenerator.hpp"
+#include "utils/string.hpp"
 
 void
 handleHttpException(HTTP::Exception& e)
@@ -20,6 +23,11 @@ handleHttpException(HTTP::Exception& e)
         delete cgis[fd];
         cgis.erase(fd);
     }
+
+    ErrorPageGenerator gen;
+
+    gen.checkErrorPage(
+      "", ntos(e.status()), HTTP::toStatusCodeString(e.status()), e.what());
 
     res->setStatus(e.status());
     res->sendFile(ERROR_PAGE);

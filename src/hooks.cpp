@@ -1,7 +1,11 @@
 #include "Buffer.hpp"
 #include "core.hpp"
+#include "http/Exception.hpp"
 #include "http/message.hpp"
+#include "http/method.hpp"
+#include "http/status.hpp"
 #include "utils/Logger.hpp"
+#include "utils/string.hpp"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -10,6 +14,8 @@
 #define GET_REQ(loc) *reinterpret_cast<HTTP::Request*>(loc);
 
 using std::string;
+
+using HTTP::isMethodImplemented;
 
 void
 onHeader(const string& method,
@@ -22,6 +28,17 @@ onHeader(const string& method,
     req.setMethod(method);
     req.setLocation(loc);
     req.setProtocol(protocol);
+
+    if (!isMethodImplemented(method)) {
+        throw HTTP::Exception(
+          &req, HTTP::NOT_IMPLEMENTED, "Method not implemented by webserv");
+    }
+
+    if (!equalsIgnoreCase(protocol, "HTTP/1.1")) {
+        throw HTTP::Exception(&req,
+                              HTTP::HTTP_VERSION_NOT_SUPPORTED,
+                              "webserv exclusively supports HTTP/1.1");
+    }
 }
 
 void
@@ -48,7 +65,7 @@ onHeaderParsed(uintptr_t requestLoc)
 
     req.setServerBlock(serverBlock);
 
-    HTTP::Response& res = *req.createResponse();
+    HTTP::Response& res = *req.response();
 
     createResponse(req, res, serverBlock);
 
