@@ -41,19 +41,17 @@ class Logger
     template<typename T>
     Logger& operator<<(const T& t)
     {
+#ifdef LOGGER
         if (_currentLogLevel >= _webservLogLevel) {
             _logStream << t;
             _logStream.flush();
         }
+#else
+        (void)t;
+#endif
 
         return *this;
     }
 
     Logger& operator<<(LogLevel logLevel);
 };
-
-#ifdef LOGGER
-
-extern Logger glogger;
-
-#endif

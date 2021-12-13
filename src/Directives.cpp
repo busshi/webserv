@@ -1,4 +1,5 @@
 #include "Directives.hpp"
+#include "core.hpp"
 #include "utils/Logger.hpp"
 
 Directives::Directives(void) {}
@@ -94,11 +95,9 @@ Directives::getConfig(ConfigItem* item, std::string suffix)
         _path = _root.substr(0, _root.length() - (_root == "/")) + suffix;
     } else {
         _root = "none";
-#ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
                 << "Error: No default path provided!\n"
                 << CLR;
-#endif
     }
 
     ConfigItem* autoindex = item->findNearest("autoindex");
@@ -120,48 +119,40 @@ Directives::getConfig(ConfigItem* item, std::string suffix)
         _uploadStore = uploadStore->getValue();
     else {
         _uploadStore = UPLOAD_PATH;
-#ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
                 << " No upload path provided! Using default path: "
-                << _uploadPath << "\n"
+                << _uploadStore << "\n"
                 << CLR;
-#endif
     }
 
     ConfigItem* defaultErrorFile = item->findNearest("default_error_file");
     if (defaultErrorFile)
         _defaultErrorFile = defaultErrorFile->getValue();
     else {
-#ifdef LOGGER
         glogger
           << Logger::WARNING << Logger::getTimestamp() << ORANGE
           << " No error file path provided! Using webserv default error pages\n"
           << CLR;
-#endif
     }
 
     ConfigItem* uploadMaxSize = item->findNearest("upload_max_file_size");
     if (uploadMaxSize)
         _uploadMaxFileSize = uploadMaxSize->getValue();
     else {
-#ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
                 << " No upload_max_size directive found! Using webserv default "
                    "upload_max_size\n"
                 << CLR;
-#endif
     }
 
     ConfigItem* bodyMaxSize = item->findNearest("client_body_max_size");
     if (bodyMaxSize)
         _bodyMaxSize = bodyMaxSize->getValue();
     else {
-#ifdef LOGGER
         glogger << Logger::WARNING << Logger::getTimestamp() << ORANGE
                 << " No body_max_size directive found! Using webserv default "
                    "body_max_size\n"
                 << CLR;
-#endif
     }
 
     ConfigItem* cgiPass = item->findNearest("cgi_pass");
@@ -184,9 +175,7 @@ Directives::setPathWithIndex(void)
     for (it = _indexes.begin(); it != ite; it++) {
 
         file = _path + *it;
-#ifdef LOGGER
         glogger << Logger::DEBUG << "checking file + index => " << file << "\n";
-#endif
 
         if (stat(file.c_str(), &s) == 0)
             _path += *it;
@@ -197,27 +186,19 @@ bool
 Directives::haveLocation(std::string requestPath, std::string location)
 {
 
-#ifdef LOGGER
     glogger << Logger::DEBUG << "requestPath [" << requestPath << "] ["
             << location << "] Location to search\n";
-#endif
 
     size_t found = requestPath.find(location);
 
-#ifdef LOGGER
     glogger << Logger::DEBUG << "Found [" << found << "]\n";
     glogger << Logger::DEBUG << "npos [" << std::string::npos << "]\n";
-#endif
 
     if (found == std::string::npos) {
-#ifdef LOGGER
         glogger << Logger::DEBUG << "DO NOT HAVE LOCATION\n";
-#endif
         return false;
     } else {
-#ifdef LOGGER
         glogger << Logger::DEBUG << "HAVE LOCATION\n";
-#endif
         return true;
     }
 }
