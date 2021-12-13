@@ -9,6 +9,7 @@
 
 #include <dirent.h>
 #include <sstream>
+#include <unistd.h>
 
 using std::ifstream;
 using std::string;
@@ -100,7 +101,16 @@ noAutoIndexResponse(string path,
             }
         }
 
-        res.sendFile(path);
+        // this is not handled by cgi
+
+        if (equalsIgnoreCase(req.getMethod(), "DELETE")) {
+            // TODO: check if DELETE verb is allowed
+
+            unlink(path.c_str());
+
+        } else {
+            res.sendFile(path);
+        }
     }
 }
 
