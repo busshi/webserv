@@ -2,6 +2,7 @@
 
 #include "Constants.hpp"
 #include "http/message.hpp"
+#include "http/status.hpp"
 
 using std::setw;
 
@@ -14,10 +15,12 @@ using std::setw;
 
 HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   : parser(0)
+  , _method("UNKNOWN")
+  , _location("UNKNOWN")
+  , _protocol("UNKNOWN")
   , _csockFd(csockFd)
   , _res(0)
 {
-    timer.start();
     parser = new HttpParser(parserConf);
     createResponse();
 }
@@ -117,20 +120,6 @@ HTTP::Request::getProtocol(void) const
     return _protocol;
 }
 
-HTTP::Request&
-HTTP::Request::setServerBlock(ConfigItem* serverBlock)
-{
-    _serverBlock = serverBlock;
-
-    return *this;
-}
-
-ConfigItem*
-HTTP::Request::getServerBlock(void) const
-{
-    return _serverBlock;
-}
-
 std::ostream&
 HTTP::Request::log(std::ostream& os) const
 {
@@ -166,7 +155,12 @@ HTTP::Request::log(std::ostream& os) const
 
     os << methodColor << std::left << setw(12) << method << CLR << " "
        << setw(50) << getLocation() << statusColor << setw(8) << code << CLR
-       << setw(10) << timer.getElapsed() << "ms" << CLR;
+       << setw(10);
+    if (_res->getStatus() == REQUEST_TIMEOUT) {
+        os << BOLD << RED << "TIMEOUT" << CLR;
+    } else {
+        os << timer.getElapsed() << "ms" << CLR;
+    }
 
     return os;
 }

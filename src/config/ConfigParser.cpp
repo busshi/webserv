@@ -38,6 +38,8 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
       BLOCK_SERVER | BLOCK_LOCATION,
       NOT_A_BLOCK },
     { "cgi_pass", validateCgiPass, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
+
+    { "request_timeout", 0, BLOCK_GLOBAL, NOT_A_BLOCK },
 };
 
 static void

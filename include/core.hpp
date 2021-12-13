@@ -32,7 +32,8 @@ void
 destroyHosts(void);
 
 void
-lifecycle(const HttpParser::Config& parserConf);
+lifecycle(const HttpParser::Config& parserConf,
+          unsigned long long requestTimeout);
 
 void
 onHeader(const std::string& method,

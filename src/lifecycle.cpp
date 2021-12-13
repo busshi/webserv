@@ -86,7 +86,6 @@ handleUploadEvents(void)
     for (map<int, FileUploader*>::const_iterator cit = uploaders.begin();
          cit != uploaders.end();
          ++cit) {
-        // int csockfd = cit->first;
         FileUploader* uploader = cit->second;
 
         // blank parse: just tell the parser to continue its work
@@ -141,7 +140,9 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 }
 
 static void
-handleClientEvents(fd_set& rsetc, fd_set& wsetc)
+handleClientEvents(fd_set& rsetc,
+                   fd_set& wsetc,
+                   unsigned long long requestTimeout)
 {
     for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
          cit != requests.end();) {
@@ -149,6 +150,11 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
         HTTP::Request* reqp = cit->second;
 
         ++cit;
+
+        if (reqp->timer.getElapsed() > requestTimeout) {
+            reqp->response()->setStatus(HTTP::REQUEST_TIMEOUT);
+            LP_CLOSE_CON(csockfd);
+        }
 
         int ret = 0;
 
@@ -158,7 +164,6 @@ handleClientEvents(fd_set& rsetc, fd_set& wsetc)
             ret = recv(csockfd, rBuf, BUFSIZE, 0);
 
             if (ret <= 0) {
-                std::cout << "client read" << std::endl;
                 LP_CLOSE_CON(csockfd);
             }
         }
@@ -234,7 +239,8 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
 }
 
 void
-lifecycle(const HttpParser::Config& parserConf)
+lifecycle(const HttpParser::Config& parserConf,
+          unsigned long long requestTimeout)
 {
     signal(SIGINT, &handleSigint);
     signal(SIGPIPE, &handleSigpipe);
@@ -255,7 +261,7 @@ lifecycle(const HttpParser::Config& parserConf)
         (void)keepAlive;
 
         try {
-            handleClientEvents(rsetc, wsetc);
+            handleClientEvents(rsetc, wsetc, requestTimeout);
             handleUploadEvents();
             handleServerEvents(parserConf, rsetc);
             handleCgiEvents(rsetc, wsetc);

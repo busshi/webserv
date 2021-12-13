@@ -8,7 +8,6 @@
 Timer::Timer(void)
 {
     clock_gettime(CLOCK_MONOTONIC, &_st);
-    _ft = _st;
 }
 
 Timer::Timer(const Timer& rhs)
@@ -21,22 +20,15 @@ Timer::operator=(const Timer& rhs)
 {
     if (this != &rhs) {
         _st = rhs._st;
-        _ft = rhs._ft;
     }
 
     return *this;
 }
 
 void
-Timer::start(void)
+Timer::reset(void)
 {
     clock_gettime(CLOCK_MONOTONIC, &_st);
-}
-
-void
-Timer::finish(void)
-{
-    clock_gettime(CLOCK_MONOTONIC, &_ft);
 }
 
 double

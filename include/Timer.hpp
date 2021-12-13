@@ -3,7 +3,7 @@
 
 class Timer
 {
-    timespec _st, _ft;
+    timespec _st;
 
   public:
     Timer(void);
@@ -11,8 +11,7 @@ class Timer
 
     Timer& operator=(const Timer& rhs);
 
-    void start(void);
-    void finish(void);
+    void reset(void);
 
     double getElapsed(void) const; // expressed in ms
 };

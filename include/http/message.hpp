@@ -75,9 +75,10 @@ class Request : public Message
 
   private:
     std::string _method, _location, _protocol;
-    ConfigItem* _serverBlock;
     int _csockFd;
     Response* _res;
+    unsigned long long _timeout;
+
     Request(const Request& other);
     Request& operator=(const Request& rhs);
 
@@ -99,8 +100,6 @@ class Request : public Message
     void setProtocol(const std::string& protocol);
     void setLocation(const std::string& loc);
     void setMethod(const std::string& method);
-    Request& setServerBlock(ConfigItem* serverBlock);
-    ConfigItem* getServerBlock(void) const;
 
     Response* createResponse(void);
     Response*& response(void);

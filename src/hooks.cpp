@@ -65,8 +65,6 @@ onHeaderParsed(uintptr_t requestLoc)
     ConfigItem* serverBlock =
       selectServer(hosts[port].candidates, req.getHeaderField("host"));
 
-    req.setServerBlock(serverBlock);
-
     HTTP::Response& res = *req.response();
 
     processRequest(&req, serverBlock);

@@ -32,6 +32,8 @@ class Directives
     std::vector<std::string> getForbiddenMethods(void);
     const std::string& getCgiExecutable(void) const;
     const std::vector<std::string>& getCgiExtensions(void) const;
+    unsigned long long getRequestTimeout(void) const;
+
     bool _allowsCgi, _allowsUpload;
 
     void setPathWithIndex(void);

@@ -86,7 +86,11 @@ main(int argc, char** argv)
 
     std::cout << "\n";
 
-    lifecycle(parserConf);
+    ConfigItem* requestTimeout = global->findAtomInBlock("request_timeout");
+
+    lifecycle(parserConf,
+              requestTimeout ? parseInt(requestTimeout->getValue(), 10) * 1000
+                             : 120000);
 
     destroyHosts();
 

@@ -1,6 +1,7 @@
 #include "Directives.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
+#include "http/message.hpp"
 #include "http/status.hpp"
 #include "utils/Logger.hpp"
 
