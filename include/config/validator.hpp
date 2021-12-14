@@ -33,3 +33,6 @@ validateNumber(const std::string& value, std::string& errorMsg);
 
 bool
 validateErrorPage(const std::string& value, std::string& errorMsg);
+
+bool
+validateBool(const std::string& value, std::string& errorMsg);

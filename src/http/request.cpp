@@ -178,12 +178,11 @@ HTTP::Request::log(std::ostream& os) const
     }
 
     os << methodColor << std::left << setw(12) << method << CLR << " "
-       << setw(50) << getLocation() << statusColor << setw(8) << code << CLR
-       << setw(10);
+       << setw(50) << getLocation() << statusColor << setw(8) << code << CLR;
     if (_res->getStatus() == REQUEST_TIMEOUT) {
-        os << BOLD << RED << "TIMEOUT" << CLR;
+        os << BOLD << RED << setw(10) << "TIMEOUT" << CLR;
     } else {
-        os << timer.getElapsed() << "ms" << CLR;
+        os << setw(10) << timer.getElapsed() << "ms" << CLR;
     }
 
     return os;

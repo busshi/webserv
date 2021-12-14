@@ -25,6 +25,8 @@ class Directives
     std::string getUploadStore(void);
     std::string getDefaultErrorFile(void);
     std::string getRewrite(void) const;
+    std::string getRewriteLocation(void) const;
+    bool dropsLocationPrefix(void) const;
     unsigned long long getUploadMaxFileSize(void);
     unsigned long long getBodyMaxSize(void);
     bool allowsCgi(void) const;
@@ -47,7 +49,8 @@ class Directives
     bool _autoindex;
     std::string _uploadStore;
     std::string _defaultErrorFile;
-    std::string _rewrite;
+    std::string _rewrite, _rewrite_location;
+    bool _dropsLocationPrefix;
     unsigned long long _uploadMaxFileSize;
     unsigned long long _bodyMaxSize;
     std::vector<std::string> _indexes;

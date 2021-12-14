@@ -283,3 +283,17 @@ validateErrorPage(const std::string& value, std::string& errorMsg)
 
     return true;
 }
+
+bool
+validateBool(const std::string& value, std::string& errorMsg)
+{
+    if (!equalsIgnoreCase(value, "FALSE") && !equalsIgnoreCase(value, "TRUE")) {
+        Formatter() << "Boolean directive only accepts 'true' and 'false' as "
+                       "values (case insensitive)" >>
+          errorMsg;
+        return false;
+    }
+
+    return true;
+}
+

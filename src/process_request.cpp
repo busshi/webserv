@@ -60,7 +60,7 @@ loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
     req->setBlock(loadFrom);
     directives.load(req, loadFrom);
 
-    std::cout << "Path=" << directives.getPath() << std::endl;
+    // std::cout << "Path=" << directives.getPath() << std::endl;
 
     return directives;
 }
@@ -106,6 +106,8 @@ indexDirectoryContents(HTTP::Request* req, const std::string& path)
             glogger << Logger::DEBUG << dir->d_name << "\n";
         }
 
+        req->response()->setHeaderField("Content-Length",
+                                        ntos(buf.str().size()));
         req->response()->send(buf.str());
 
         glogger << Logger::DEBUG << "\n";
@@ -145,6 +147,18 @@ processRequest(HTTP::Request* req)
     if (!direc.getRewrite().empty()) {
         req->rewrite(direc.getRewrite());
         return;
+    }
+
+    if (!direc.getRewriteLocation().empty()) {
+        std::string vloc = req->getBlock()->getValue(),
+                    rloc = req->getLocation();
+        std::string::size_type pos = rloc.find(vloc);
+
+        if (pos != std::string::npos) {
+            req->rewrite(trimTrailing(direc.getRewriteLocation(), "/") +
+                         rloc.substr(pos + vloc.size()));
+            return;
+        }
     }
 
     vector<std::string> forbiddenMethods = direc.getForbiddenMethods();

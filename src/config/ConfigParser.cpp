@@ -23,7 +23,7 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
       BLOCK_SERVER | BLOCK_LOCATION,
       NOT_A_BLOCK },
     { "listen", validateListen, BLOCK_SERVER, NOT_A_BLOCK },
-    { "autoindex", validateAutoindex, static_cast<uint8_t>(~0), NOT_A_BLOCK },
+    { "autoindex", validateBool, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "server_name", NULL, BLOCK_SERVER, NOT_A_BLOCK },
     { "client_body_max_size", validateSize, BLOCK_SERVER, NOT_A_BLOCK },
     { "upload_max_file_size",
@@ -41,7 +41,10 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
 
     { "request_timeout", validateNumber, BLOCK_GLOBAL, NOT_A_BLOCK },
 
-    { "rewrite", validateRoot, BLOCK_LOCATION, NOT_A_BLOCK }
+    { "rewrite", validateRoot, BLOCK_LOCATION, NOT_A_BLOCK },
+    { "rewrite_location", validateRoot, BLOCK_LOCATION, NOT_A_BLOCK },
+
+    { "drop_location_prefix", validateBool, BLOCK_LOCATION, NOT_A_BLOCK }
 };
 
 static void

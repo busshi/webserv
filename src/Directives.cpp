@@ -1,5 +1,6 @@
 #include "Directives.hpp"
 #include "config/ConfigItem.hpp"
+#include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
 #include "http/message.hpp"
@@ -9,6 +10,7 @@
 Directives::Directives(void)
   : _allowsCgi(false)
   , _allowsUpload(false)
+  , _dropsLocationPrefix(false)
 {}
 
 Directives::~Directives(void) {}
@@ -36,6 +38,12 @@ Directives::operator=(const Directives& rhs)
     }
 
     return *this;
+}
+
+std::string
+Directives::getRewriteLocation() const
+{
+    return _rewrite_location;
 }
 
 std::string
@@ -114,7 +122,7 @@ void
 Directives::load(HTTP::Request* req, ConfigItem* item)
 {
 
-    ConfigItem* root = item->findNearest("root");
+    ConfigItem *root = item->findNearest("root"), *tmp = 0;
 
     if (!root) {
         throw HTTP::Exception(
@@ -125,7 +133,23 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
 
     _root = trimTrailing(root->getValue(), "/");
     _path = _root;
-    _path += req->getLocation();
+
+    // drop location prefix if asked to do so
+    if (item->getName() == "location" &&
+        (tmp = item->findAtomInBlock("drop_location_prefix")) &&
+        equalsIgnoreCase(tmp->getValue(), "TRUE")) {
+        std::string vloc = item->getValue(), rloc = req->getLocation();
+
+        _path += rloc.substr(rloc.find(vloc) + vloc.size());
+    } else {
+        _path += req->getLocation();
+    }
+
+    ConfigItem* rewrite_location = item->findAtomInBlock("rewrite_location");
+
+    if (rewrite_location) {
+        _rewrite_location = rewrite_location->getValue();
+    }
 
     ConfigItem* rewrite = item->findAtomInBlock("rewrite");
 
@@ -135,7 +159,7 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
 
     ConfigItem* autoindex = item->findNearest("autoindex");
 
-    _autoindex = autoindex && autoindex->getValue() == "on";
+    _autoindex = autoindex && equalsIgnoreCase(autoindex->getValue(), "TRUE");
 
     ConfigItem* index = item->findNearest("index");
     if (index)

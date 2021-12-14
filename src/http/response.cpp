@@ -175,6 +175,8 @@ HTTP::Response::send(const std::string& s)
 {
     body = s;
 
+    setHeaderField("Content-Length", ntos(s.size()));
+
     return *this;
 }
 

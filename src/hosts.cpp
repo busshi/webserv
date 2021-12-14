@@ -65,7 +65,7 @@ initHosts(ConfigItem* global)
             /* in any case, the current block becomes a candidate for that host
              */
 
-            hosts[ldata.port].candidates.push_back(serverBlocks[j]);
+            hosts[ldata.port].candidates.push_back(serverBlocks[i]);
         }
     }
 }

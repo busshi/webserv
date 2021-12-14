@@ -4,6 +4,25 @@
 #include "http/status.hpp"
 #include "utils/ErrorPageGenerator.hpp"
 #include "utils/string.hpp"
+#include <sstream>
+
+using std::map;
+using std::ostringstream;
+using std::string;
+
+using HTTP::StatusCode;
+using HTTP::toStatusCodeString;
+
+static string
+genDefaultErrorPage(StatusCode code)
+{
+    ostringstream oss;
+
+    oss << "<style> body { text-align: center }</style>\n<h1> " << code << " "
+        << toStatusCodeString(code) << " </h1>\n<hr/>\nwebserv";
+
+    return oss.str();
+}
 
 void
 handleHttpException(HTTP::Exception& e)
@@ -13,8 +32,7 @@ handleHttpException(HTTP::Exception& e)
     int fd = req->getClientFd();
     unsigned int code = HTTP::toStatusCode(e.status());
 
-    std::map<unsigned int, std::string> errorPages =
-      parseErrorPage(req->getBlock());
+    map<unsigned int, string> errorPages = parseErrorPage(req->getBlock());
 
     if (errorPages.find(code) != errorPages.end()) {
         req->rewrite(errorPages[code]);
@@ -36,13 +54,8 @@ handleHttpException(HTTP::Exception& e)
         cgis.erase(fd);
     }
 
-    ErrorPageGenerator gen;
-
-    gen.checkErrorPage(
-      "", ntos(e.status()), HTTP::toStatusCodeString(e.status()), e.what());
-
     res->setStatus(e.status());
-    res->sendFile(ERROR_PAGE);
+    res->send(genDefaultErrorPage(e.status()));
     res->data = res->formatHeader();
     res->data += res->body;
 }
