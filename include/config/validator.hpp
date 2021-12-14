@@ -30,3 +30,6 @@ validateCgiPass(const std::string& value, std::string& errorMsg);
 
 bool
 validateNumber(const std::string& value, std::string& errorMsg);
+
+bool
+validateErrorPage(const std::string& value, std::string& errorMsg);

@@ -87,3 +87,6 @@ parseListen(const std::string& listenDirective);
 
 unsigned long long
 parseSize(const std::string& size);
+
+std::map<unsigned int, std::string>
+parseErrorPage(ConfigItem* current);

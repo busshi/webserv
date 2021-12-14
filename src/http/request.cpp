@@ -1,6 +1,8 @@
 #include <iomanip>
 
 #include "Constants.hpp"
+#include "config/ConfigItem.hpp"
+#include "core.hpp"
 #include "http/message.hpp"
 #include "http/status.hpp"
 
@@ -20,6 +22,7 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
   , _protocol("UNKNOWN")
   , _csockFd(csockFd)
   , _res(0)
+  , _block(0)
 {
     parser = new HttpParser(parserConf);
     createResponse();
@@ -29,6 +32,27 @@ HTTP::Request::~Request(void)
 {
     delete _res;
     delete parser;
+}
+
+ConfigItem*
+HTTP::Request::getBlock(void) const
+{
+    return _block;
+}
+
+void
+HTTP::Request::setBlock(ConfigItem* block)
+{
+    _block = block;
+}
+
+void
+HTTP::Request::rewrite(const std::string& location)
+{
+    setLocation(location);
+    setMethod("GET");
+
+    onHeaderParsed(reinterpret_cast<uintptr_t>(this));
 }
 
 bool

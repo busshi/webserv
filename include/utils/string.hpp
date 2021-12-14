@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#define IS_HTTP_STATUS(code) (code >= 100 && code <= 599)
+
 std::vector<std::string>
 split(const std::string& s, const std::string& set = "\t\n\r\v ");
 

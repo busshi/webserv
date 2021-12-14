@@ -57,7 +57,10 @@ loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
         }
     }
 
+    req->setBlock(loadFrom);
     directives.load(req, loadFrom);
+
+    std::cout << "Path=" << directives.getPath() << std::endl;
 
     return directives;
 }

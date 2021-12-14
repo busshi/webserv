@@ -136,6 +136,21 @@ ConfigItem::findBlocks(const std::string& key)
     return blocks;
 }
 
+std::vector<ConfigItem*>
+ConfigItem::findNearestBlocks(const std::string& key)
+{
+    ConfigItem* current = getType() == NOT_A_BLOCK ? getParent() : this;
+    std::vector<ConfigItem*> items, tmp;
+
+    while (current) {
+        tmp = current->findBlocks(key);
+        items.insert(items.end(), tmp.begin(), tmp.end());
+        current = current->getParent();
+    }
+
+    return items;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const ConfigItem& item)
 {

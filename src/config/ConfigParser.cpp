@@ -31,7 +31,7 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
       static_cast<uint8_t>(~0),
       NOT_A_BLOCK },
     { "upload_store", validateRoot, static_cast<uint8_t>(~0), NOT_A_BLOCK },
-    { "default_error_file", NULL, BLOCK_GLOBAL, NOT_A_BLOCK },
+    { "error_page", validateErrorPage, static_cast<uint8_t>(~0), NOT_A_BLOCK },
     { "log_level", validateLogLevel, BLOCK_GLOBAL, NOT_A_BLOCK },
     { "redirect",
       validateRedirect,

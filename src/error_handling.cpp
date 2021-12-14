@@ -11,6 +11,15 @@ handleHttpException(HTTP::Exception& e)
     HTTP::Request* req = e.req();
     HTTP::Response* res = req->response();
     int fd = req->getClientFd();
+    unsigned int code = HTTP::toStatusCode(e.status());
+
+    std::map<unsigned int, std::string> errorPages =
+      parseErrorPage(req->getBlock());
+
+    if (errorPages.find(code) != errorPages.end()) {
+        req->rewrite(errorPages[code]);
+        return;
+    }
 
     // do not keep alive
     req->setHeaderField("Connection", "close");

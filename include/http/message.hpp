@@ -7,6 +7,7 @@
 
 #include "HttpParser.hpp"
 #include "Timer.hpp"
+#include "config/ConfigItem.hpp"
 #include "utils/BinBuffer.hpp"
 
 #include "config/ConfigParser.hpp"
@@ -78,6 +79,7 @@ class Request : public Message
     int _csockFd;
     Response* _res;
     unsigned long long _timeout;
+    ConfigItem* _block;
 
     Request(const Request& other);
     Request& operator=(const Request& rhs);
@@ -96,10 +98,14 @@ class Request : public Message
     const std::string& getMethod(void) const;
     const std::string& getProtocol(void) const;
     const std::string& getLocation(void) const;
+    ConfigItem* getBlock(void) const;
 
     void setProtocol(const std::string& protocol);
     void setLocation(const std::string& loc);
     void setMethod(const std::string& method);
+    void setBlock(ConfigItem* block);
+
+    void rewrite(const std::string& location);
 
     Response* createResponse(void);
     Response*& response(void);

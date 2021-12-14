@@ -1,3 +1,4 @@
+#include "config/ConfigItem.hpp"
 #include "config/ConfigParser.hpp"
 #include "utils/string.hpp"
 #include <arpa/inet.h>
@@ -62,4 +63,31 @@ parseSize(const std::string& size)
     }
 
     return n;
+}
+
+/**
+ * first: a vector that holds all the status code that are matching a given
+ * error page second: path to the error page
+ */
+
+std::map<unsigned int, std::string>
+parseErrorPage(ConfigItem* current)
+{
+    std::map<unsigned int, std::string> m;
+    std::vector<ConfigItem*> errorDirs =
+      current->findNearestBlocks("error_page");
+
+    for (size_t i = 0; i != errorDirs.size(); ++i) {
+        std::vector<std::string> vs = split(errorDirs[i]->getValue());
+
+        for (size_t j = 0; j != vs.size() - 1; ++j) {
+            unsigned int code = parseInt(vs[j], 10);
+
+            if (m.find(code) == m.end()) {
+                m[code] = vs.back();
+            }
+        }
+    }
+
+    return m;
 }
