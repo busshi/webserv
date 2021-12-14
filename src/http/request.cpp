@@ -52,7 +52,7 @@ HTTP::Request::rewrite(const std::string& location)
     setLocation(location);
     setMethod("GET");
 
-    onHeaderParsed(reinterpret_cast<uintptr_t>(this));
+    processRequest(this);
 }
 
 bool

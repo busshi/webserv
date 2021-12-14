@@ -55,19 +55,9 @@ void
 onHeaderParsed(uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
-
-    // get port to which the connection is addressed
-    socklen_t slen = sizeof(sockaddr_in);
-    sockaddr_in addr;
-    getsockname(req.getClientFd(), (sockaddr*)&addr, &slen);
-    uint16_t port = ntohs(addr.sin_port);
-
-    ConfigItem* serverBlock =
-      selectServer(hosts[port].candidates, req.getHeaderField("host"));
-
     HTTP::Response& res = *req.response();
 
-    processRequest(&req, serverBlock);
+    processRequest(&req);
 
     if (cgis.find(req.getClientFd()) == cgis.end() &&
         uploaders.find(req.getClientFd()) == uploaders.end()) {

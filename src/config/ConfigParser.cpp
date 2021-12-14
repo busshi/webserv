@@ -40,6 +40,8 @@ static const ConfigItemCaracteristics knownConfigItems[] = {
     { "cgi_pass", validateCgiPass, BLOCK_SERVER | BLOCK_LOCATION, NOT_A_BLOCK },
 
     { "request_timeout", validateNumber, BLOCK_GLOBAL, NOT_A_BLOCK },
+
+    { "rewrite", validateRoot, BLOCK_LOCATION, NOT_A_BLOCK }
 };
 
 static void

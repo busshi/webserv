@@ -18,7 +18,7 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
-ConfigItem*
+static ConfigItem*
 selectServer(vector<ConfigItem*>& candidates, const string& host)
 {
     string serverName;
@@ -130,9 +130,23 @@ processUploadDelete(const std::string& path)
 }
 
 void
-processRequest(HTTP::Request* req, ConfigItem* serverBlock)
+processRequest(HTTP::Request* req)
 {
+    socklen_t slen = sizeof(sockaddr_in);
+    sockaddr_in addr;
+    getsockname(req->getClientFd(), (sockaddr*)&addr, &slen);
+    uint16_t port = ntohs(addr.sin_port);
+
+    ConfigItem* serverBlock =
+      selectServer(hosts[port].candidates, req->getHeaderField("HOST"));
+
     Directives direc = loadDirectives(req, serverBlock);
+
+    if (!direc.getRewrite().empty()) {
+        req->rewrite(direc.getRewrite());
+        return;
+    }
+
     vector<std::string> forbiddenMethods = direc.getForbiddenMethods();
 
     for (size_t i = 0; i != forbiddenMethods.size(); ++i) {

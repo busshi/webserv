@@ -1,4 +1,5 @@
 #include "Directives.hpp"
+#include "config/ConfigItem.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
 #include "http/message.hpp"
@@ -35,6 +36,12 @@ Directives::operator=(const Directives& rhs)
     }
 
     return *this;
+}
+
+std::string
+Directives::getRewrite() const
+{
+    return _rewrite;
 }
 
 bool
@@ -119,6 +126,12 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
     _root = trimTrailing(root->getValue(), "/");
     _path = _root;
     _path += req->getLocation();
+
+    ConfigItem* rewrite = item->findAtomInBlock("rewrite");
+
+    if (rewrite) {
+        _rewrite = rewrite->getValue();
+    }
 
     ConfigItem* autoindex = item->findNearest("autoindex");
 

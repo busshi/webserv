@@ -65,10 +65,7 @@ void
 createResponse(HTTP::Request& req, HTTP::Response& res, ConfigItem* server);
 
 void
-processRequest(HTTP::Request* req, ConfigItem* serverBlock);
-
-ConfigItem*
-selectServer(std::vector<ConfigItem*>& candidates, const std::string& host);
+processRequest(HTTP::Request* req);
 
 struct Host
 {
