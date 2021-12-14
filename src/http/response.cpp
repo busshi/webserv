@@ -205,11 +205,11 @@ std::string
 HTTP::Response::_detectMediaType(const std::string& resource) const
 {
     static MediaTypeEntry entries[] = {
-        { "image/png", "png" },      { "image/jpeg", "jpg|jpeg" },
-        { "image/webp", "webp" },    { "image/gif", "gif" },
-        { "image/bmp", "bmp" },      { "text/css", "css" },
-        { "text/javascript", "js" }, { "text/html", "html|htm" },
-        { "application/pdf", "pdf" }
+        { "image/png", "png" },       { "image/jpeg", "jpg|jpeg" },
+        { "image/webp", "webp" },     { "image/gif", "gif" },
+        { "image/bmp", "bmp" },       { "text/css", "css" },
+        { "text/javascript", "js" },  { "text/html", "html|htm" },
+        { "application/pdf", "pdf" }, { "image/svg+xml", "svg" }
     };
 
     const std::string::size_type index = resource.find_last_of('.');
