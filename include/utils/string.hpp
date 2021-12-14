@@ -34,3 +34,6 @@ hasFileExtension(const std::string& path, const std::string& fileExtension);
 
 bool
 equalsIgnoreCase(const std::string& s1, const std::string& s2);
+
+bool
+isNumber(const std::string& s);

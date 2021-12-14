@@ -27,3 +27,6 @@ validateRedirect(const std::string& value, std::string& errorMsg);
 
 bool
 validateCgiPass(const std::string& value, std::string& errorMsg);
+
+bool
+validateNumber(const std::string& value, std::string& errorMsg);

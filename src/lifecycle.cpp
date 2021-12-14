@@ -15,9 +15,7 @@
 #include <unistd.h>
 
 #define LP_CLOSE_CON(sockfd)                                                   \
-    if (errno)                                                                 \
-        perror(0);                                                             \
-    closeConnection(sockfd);                                                   \
+    closeConnection(sockfd, false);                                            \
     continue;
 
 using std::map;
@@ -37,12 +35,9 @@ handleSigpipe(int)
 }
 
 static void
-closeConnection(int sockfd)
+closeConnection(int sockfd, bool keepAlive = true)
 {
-    requests[sockfd]->log(std::cout) << std::endl;
-
-    delete requests[sockfd];
-    requests.erase(sockfd);
+    HTTP::Request* req = requests[sockfd];
 
     if (uploaders.find(sockfd) != uploaders.end()) {
         delete uploaders[sockfd];
@@ -54,9 +49,23 @@ closeConnection(int sockfd)
         cgis.erase(sockfd);
     }
 
-    FD_CLR(sockfd, &select_wset);
-    FD_CLR(sockfd, &select_rset);
-    close(sockfd);
+    req->log(std::cout) << std::endl;
+
+    if (keepAlive) {
+        req->parser->reset();
+        req->header().clear();
+        req->body.str("");
+
+        delete req->response();
+        req->createResponse();
+    } else {
+        delete req;
+        requests.erase(sockfd);
+
+        FD_CLR(sockfd, &select_wset);
+        FD_CLR(sockfd, &select_rset);
+        close(sockfd);
+    }
 
     glogger << Logger::INFO << Logger::getTimestamp()
             << " Closed connection to fd " << sockfd << "\n";
@@ -190,17 +199,23 @@ handleClientEvents(fd_set& rsetc,
                     buf = buf.subbuf(ret);
                 }
 
+                // unless Connection: close header is explicitly specified,
+                // enable keep alive
+
+                bool keepAlive = !equalsIgnoreCase(
+                  reqp->getHeaderField("Connection"), "close");
+
                 if (!buf.size()) {
                     if (cgis.find(csockfd) != cgis.end()) {
                         if (cgis[csockfd]->isDone()) {
-                            closeConnection(csockfd);
+                            closeConnection(csockfd, keepAlive);
                         }
                     } else if (uploaders.find(csockfd) != uploaders.end()) {
                         if (uploaders[csockfd]->isDone()) {
-                            closeConnection(csockfd);
+                            closeConnection(csockfd, keepAlive);
                         }
                     } else if (reqp->isDone()) {
-                        closeConnection(csockfd);
+                        closeConnection(csockfd, keepAlive);
                     }
                 }
             }

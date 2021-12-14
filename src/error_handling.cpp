@@ -12,6 +12,9 @@ handleHttpException(HTTP::Exception& e)
     HTTP::Response* res = req->response();
     int fd = req->getClientFd();
 
+    // do not keep alive
+    req->setHeaderField("Connection", "close");
+
     req->parser->stop();
 
     if (uploaders.find(fd) != uploaders.end()) {

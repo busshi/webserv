@@ -17,8 +17,8 @@ isValidAddressPort(const std::string& value, std::string& errorMsg)
     }
 
     if (!isIPv4(vs[0])) {
-        Formatter() << "\"" << vs[0] << "\"" << " is not a valid IPv4." >> errorMsg;
-        return false;
+        Formatter() << "\"" << vs[0] << "\"" << " is not a valid IPv4." >>
+errorMsg; return false;
     }
 
     std::istringstream iss(vs[1]);
@@ -192,15 +192,11 @@ validateSize(const std::string& value, std::string& errorMsg)
     return true;
 }
 
-bool validateLogLevel(const std::string& value, std::string& errorMsg)
+bool
+validateLogLevel(const std::string& value, std::string& errorMsg)
 {
     std::string levelAsStr = toLowerCase(value);
-    std::string levels[] = {
-        "debug",
-        "info",
-        "warning",
-        "error"
-    };
+    std::string levels[] = { "debug", "info", "warning", "error" };
 
     for (unsigned i = 0; i != sizeof(levels) / sizeof(*levels); ++i) {
         if (levelAsStr == levels[i]) {
@@ -213,15 +209,18 @@ bool validateLogLevel(const std::string& value, std::string& errorMsg)
     return false;
 }
 
-bool validateRedirect(const std::string& value, std::string& errorMsg)
+bool
+validateRedirect(const std::string& value, std::string& errorMsg)
 {
     std::vector<std::string> vs = split(value);
 
     if (vs.size() != 1) {
-        Formatter() << "Expected a single URL for HTTP redirection, but found extra tokens!" >> errorMsg;
+        Formatter() << "Expected a single URL for HTTP redirection, but found "
+                       "extra tokens!" >>
+          errorMsg;
         return false;
     }
-    
+
     return true;
 }
 
@@ -233,8 +232,30 @@ validateCgiPass(const std::string& value, std::string& errorMsg)
     std::vector<std::string> vs = split(value);
 
     if (vs.size() != 2) {
-        Formatter() << "Malformed cgi_pass: expected format is: cgi_pass file_extensions path/to/cgi-executable."
-        << "(hint: commas can be used to separate multiple file extensions, but no space is allowed." >> errorMsg;
+        Formatter() << "Malformed cgi_pass: expected format is: cgi_pass "
+                       "file_extensions path/to/cgi-executable."
+                    << "(hint: commas can be used to separate multiple file "
+                       "extensions, but no space is allowed." >>
+          errorMsg;
+        return false;
+    }
+
+    return true;
+}
+
+bool
+validateNumber(const std::string& value, std::string& errorMsg)
+{
+    std::vector<std::string> vs = split(value);
+
+    if (vs.size() > 1) {
+        Formatter() << "Found extra tokens while expecting a single number" >>
+          errorMsg;
+        return false;
+    }
+
+    if (!isNumber(vs[0])) {
+        Formatter() << value << " is not a valid number" >> errorMsg;
         return false;
     }
 
