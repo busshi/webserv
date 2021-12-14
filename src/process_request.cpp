@@ -144,6 +144,11 @@ processRequest(HTTP::Request* req)
 
     Directives direc = loadDirectives(req, serverBlock);
 
+    if (!direc.getRedirect().empty()) {
+        req->response()->setHeaderField("Location", direc.getRedirect());
+        throw HTTP::Exception(req, HTTP::MOVED_PERMANENTLY);
+    }
+
     if (!direc.getRewrite().empty()) {
         req->rewrite(direc.getRewrite());
         return;

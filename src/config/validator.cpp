@@ -262,19 +262,31 @@ validateNumber(const std::string& value, std::string& errorMsg)
     return true;
 }
 
+#include <iostream>
+
 bool
 validateErrorPage(const std::string& value, std::string& errorMsg)
 {
     std::vector<std::string> vs = split(value);
 
-    if (vs.size() > 2) {
+    if (vs.size() >= 2) {
         for (size_t i = 0; i != vs.size() - 1; ++i) {
             if (!isNumber(vs[i])) {
                 Formatter() << vs[i] << " is not a valid number" >> errorMsg;
                 return false;
             }
-            if (!IS_HTTP_STATUS(parseInt(vs[i], 10))) {
+
+            unsigned long long code = parseInt(vs[i], 10);
+
+            if (!IS_HTTP_STATUS(code)) {
                 Formatter() << vs[i] << " is not a valid HTTP status code" >>
+                  errorMsg;
+                return false;
+            }
+
+            if (!(code >= 400 && code <= 599)) {
+                Formatter() << "Only 4xx and 5xx HTTP statuses can be matched "
+                               "with a custom error page" >>
                   errorMsg;
                 return false;
             }

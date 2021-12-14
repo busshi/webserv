@@ -41,6 +41,12 @@ Directives::operator=(const Directives& rhs)
 }
 
 std::string
+Directives::getRedirect(void) const
+{
+    return _redirect;
+}
+
+std::string
 Directives::getRewriteLocation() const
 {
     return _rewrite_location;
@@ -155,6 +161,12 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
 
     if (rewrite) {
         _rewrite = rewrite->getValue();
+    }
+
+    ConfigItem* redirect = item->findAtomInBlock("redirect");
+
+    if (redirect) {
+        _redirect = redirect->getValue();
     }
 
     ConfigItem* autoindex = item->findNearest("autoindex");
