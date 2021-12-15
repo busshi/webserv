@@ -14,6 +14,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+using HTTP::Request;
+using HTTP::Response;
+
 #define LP_CLOSE_CON(sockfd)                                                   \
     closeConnection(sockfd, false);                                            \
     continue;
@@ -26,6 +29,7 @@ static void
 handleSigint(int)
 {
     isWebservAlive = false;
+    std::cout << "\n" BOLD << "Stopping webserv..." << CLR << std::endl;
 }
 
 static void
@@ -37,7 +41,7 @@ handleSigpipe(int)
 static void
 closeConnection(int sockfd, bool keepAlive = true)
 {
-    HTTP::Request* req = requests[sockfd];
+    Request* req = requests[sockfd];
 
     if (uploaders.find(sockfd) != uploaders.end()) {
         delete uploaders[sockfd];
@@ -48,8 +52,6 @@ closeConnection(int sockfd, bool keepAlive = true)
         delete cgis[sockfd];
         cgis.erase(sockfd);
     }
-
-    req->log(std::cout) << std::endl;
 
     if (keepAlive) {
         req->parser->reset();
@@ -72,21 +74,12 @@ closeConnection(int sockfd, bool keepAlive = true)
 }
 
 static void
-keepAlive(int sockfd)
+terminateRequest(Request* req)
 {
-    if (cgis.find(sockfd) != cgis.end()) {
-        delete cgis[sockfd];
-        cgis.erase(sockfd);
-    }
-
-    HTTP::Request* reqp = requests[sockfd];
-
-    reqp->parser->reset();
-    reqp->header().clear();
-    reqp->body.str("");
-
-    delete reqp->response();
-    reqp->response() = 0;
+    req->log(std::cout) << std::endl;
+    closeConnection(
+      req->getClientFd(),
+      !equalsIgnoreCase(req->getHeaderField("Connection"), "close"));
 }
 
 static void
@@ -114,7 +107,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             continue;
         }
 
-        HTTP::Request* reqp = requests[csockfd];
+        Request* reqp = requests[csockfd];
 
         // we can write to cgi output
 
@@ -162,10 +155,10 @@ handleClientEvents(fd_set& rsetc,
                    fd_set& wsetc,
                    unsigned long long requestTimeout)
 {
-    for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
+    for (map<int, Request*>::const_iterator cit = requests.begin();
          cit != requests.end();) {
         int csockfd = cit->first;
-        HTTP::Request* reqp = cit->second;
+        Request* reqp = cit->second;
 
         ++cit;
 
@@ -192,7 +185,7 @@ handleClientEvents(fd_set& rsetc,
         /* if we can write */
 
         if (FD_ISSET(csockfd, &wsetc)) {
-            HTTP::Response* resp = reqp->response();
+            Response* resp = reqp->response();
 
             if (resp) {
                 Buffer<>& buf = resp->data;
@@ -208,23 +201,17 @@ handleClientEvents(fd_set& rsetc,
                     buf = buf.subbuf(ret);
                 }
 
-                // unless Connection: close header is explicitly specified,
-                // enable keep alive
-
-                bool keepAlive = !equalsIgnoreCase(
-                  reqp->getHeaderField("Connection"), "close");
-
                 if (!buf.size()) {
                     if (cgis.find(csockfd) != cgis.end()) {
                         if (cgis[csockfd]->isDone()) {
-                            closeConnection(csockfd, keepAlive);
+                            terminateRequest(reqp);
                         }
                     } else if (uploaders.find(csockfd) != uploaders.end()) {
                         if (uploaders[csockfd]->isDone()) {
-                            closeConnection(csockfd, keepAlive);
+                            terminateRequest(reqp);
                         }
                     } else if (reqp->isDone()) {
-                        closeConnection(csockfd, keepAlive);
+                        terminateRequest(reqp);
                     }
                 }
             }
@@ -256,8 +243,8 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
             FD_SET(connection, &select_rset);
             FD_SET(connection, &select_wset);
 
-            requests.insert(std::make_pair(
-              connection, new HTTP::Request(connection, parserConf)));
+            requests.insert(
+              std::make_pair(connection, new Request(connection, parserConf)));
         }
     }
 }
@@ -278,11 +265,8 @@ lifecycle(const HttpParser::Config& parserConf,
         int nready = select(FD_SETSIZE, &rsetc, &wsetc, 0, &timeout);
 
         if (nready == -1) {
-            perror("select: ");
             return;
         }
-
-        (void)keepAlive;
 
         try {
             handleClientEvents(rsetc, wsetc, requestTimeout);
