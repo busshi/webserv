@@ -236,6 +236,10 @@ ntos(long long n, int radix, bool lower)
     string s;
     bool isNeg = false;
 
+    if (n == 0) {
+        return "0";
+    }
+
     if (n < 0) {
         n = -n;
         isNeg = true;

@@ -15,6 +15,7 @@ onFinalBoundary(uintptr_t param)
 
     res->setStatus(HTTP::CREATED);
 
+    res->append("");
     res->data = res->formatHeader();
     res->data += res->body;
 }

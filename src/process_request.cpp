@@ -18,6 +18,8 @@ using std::ostringstream;
 using std::string;
 using std::vector;
 
+using HTTP::Request;
+
 static ConfigItem*
 selectServer(vector<ConfigItem*>& candidates, const string& host)
 {
@@ -38,7 +40,7 @@ selectServer(vector<ConfigItem*>& candidates, const string& host)
 }
 
 static Directives
-loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
+loadDirectives(Request* req, ConfigItem* serverBlock)
 {
     Directives directives;
     vector<ConfigItem*> locations = serverBlock->findBlocks("location");
@@ -68,7 +70,7 @@ loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
 }
 
 static void
-processCgiRequest(HTTP::Request* req,
+processCgiRequest(Request* req,
                   const std::string& cgiExecutablePath,
                   const std::string& scriptPath)
 {
@@ -83,13 +85,13 @@ processCgiRequest(HTTP::Request* req,
 }
 
 static void
-serveFile(HTTP::Request* req, const std::string& path)
+serveFile(Request* req, const std::string& path)
 {
     req->response()->sendFile(path);
 }
 
 static void
-indexDirectoryContents(HTTP::Request* req, const std::string& path)
+indexDirectoryContents(Request* req, const std::string& path)
 {
     ostringstream buf;
 
@@ -117,7 +119,7 @@ indexDirectoryContents(HTTP::Request* req, const std::string& path)
 }
 
 static void
-processUploadPost(HTTP::Request* req,
+processUploadPost(Request* req,
                   const std::string& path,
                   unsigned long long maxUploadFileSize)
 {
@@ -127,13 +129,14 @@ processUploadPost(HTTP::Request* req,
 }
 
 static void
-processUploadDelete(const std::string& path)
+processUploadDelete(Request* req, const string& path)
 {
+    req->response()->send("");
     unlink(path.c_str());
 }
 
 void
-processRequest(HTTP::Request* req)
+processRequest(Request* req)
 {
     socklen_t slen = sizeof(sockaddr_in);
     sockaddr_in addr;
@@ -189,7 +192,7 @@ processRequest(HTTP::Request* req)
     }
 
     // In case it is a directory, try all the provided indexes
-    if (s.st_mode & S_IFDIR) {
+    if (s.st_mode & S_IFDIR && req->getMethod() == "GET") {
         vector<string> indexes = direc.getIndexes();
 
         for (size_t i = 0; i != indexes.size(); ++i) {
@@ -209,6 +212,7 @@ processRequest(HTTP::Request* req)
     if (s.st_mode & S_IFDIR) {
         if (req->getMethod() == "POST" && direc.allowsUpload()) {
             processUploadPost(req, path, direc.getUploadMaxFileSize());
+            return;
         } else if (!direc.getAutoIndex()) {
             throw HTTP::Exception(
               req,
@@ -221,7 +225,8 @@ processRequest(HTTP::Request* req)
     }
 
     if (req->getMethod() == "DELETE" && direc.allowsUpload()) {
-        processUploadDelete(path);
+        processUploadDelete(req, path);
+        return;
     }
 
     if (direc.allowsCgi()) {

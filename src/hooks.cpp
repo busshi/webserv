@@ -75,7 +75,6 @@ onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    // std::cout << "FRAGMENT=\n" << fragment;
     if (uploaders.find(req.getClientFd()) != uploaders.end()) {
         uploaders[req.getClientFd()]->parseFormDataFragment(
           reinterpret_cast<const char*>(fragment.raw()), fragment.size());

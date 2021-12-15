@@ -190,6 +190,9 @@ HTTP::Response::send(const std::string& s)
 HTTP::Response&
 HTTP::Response::append(const std::string& s)
 {
+    unsigned long long cl = parseInt(getHeaderField("Content-Length"), 10);
+
+    setHeaderField("Content-Length", ntos(cl + s.size()));
     body += s;
 
     return *this;

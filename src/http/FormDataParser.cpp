@@ -3,14 +3,17 @@
 #include <cctype>
 #include <unistd.h>
 
-HTTP::FormDataParser::FormDataParser(const std::string& boundary,
-                                     const CallbackList& callbacks)
+using HTTP::FormDataParser;
+using std::string;
+
+FormDataParser::FormDataParser(const string& boundary,
+                               const CallbackList& callbacks)
   : _boundary(boundary)
   , _callbacks(callbacks)
   , _state(PARSING_BOUNDARY)
 {}
 
-HTTP::FormDataParser::~FormDataParser(void) {}
+FormDataParser::~FormDataParser(void) {}
 
 /**
  * Return the minimum of the 4 buffer positions
@@ -37,11 +40,11 @@ min4(Buffer<>::size_type pos1,
 }
 
 void
-HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
+FormDataParser::parse(const char* data, size_t n, uintptr_t param)
 {
 
-    const std::string delimiter = CRLF "--" + _boundary + CRLF,
-                      end = CRLF "--" + _boundary + "--" + CRLF;
+    const string delimiter = CRLF "--" + _boundary + CRLF,
+                 end = CRLF "--" + _boundary + "--" + CRLF;
 
     _buf += Buffer<>(data, n);
 
@@ -52,14 +55,24 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
     if (_state == PARSING_BOUNDARY) {
         // leading CRLF has already been parsed so don't expect it in the first
         // boundary
-        Buffer<>::size_type pos = _buf.find("--" + _boundary + CRLF);
+        Buffer<>::size_type pos1 = _buf.find("--" + _boundary + CRLF);
+        Buffer<>::size_type pos2 = _buf.find("--" + _boundary + "--" CRLF);
 
-        if (pos != Buffer<>::npos) {
+        if (pos1 != Buffer<>::npos) {
             _state = PARSING_ENTRY_HEADER_FIELD_NAME;
             if (_callbacks.onBoundary) {
                 _callbacks.onBoundary(param);
             }
-            _buf = _buf.subbuf(pos + _boundary.size() + 4);
+            _buf = _buf.subbuf(pos1 + _boundary.size() + 4);
+        }
+
+        // The ending boundary can appear alone - to match that case
+        else if (pos2 != Buffer<>::npos) {
+            if (_callbacks.onFinalBoundary) {
+                _callbacks.onFinalBoundary(param);
+                _state = DONE;
+                return;
+            }
         }
     }
 
@@ -79,8 +92,7 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
         Buffer<>::size_type pos = _buf.find(":");
 
         if (pos != Buffer<>::npos) {
-            std::string fieldName = _lastHeaderFieldName =
-              _buf.subbuf(0, pos).str();
+            string fieldName = _lastHeaderFieldName = _buf.subbuf(0, pos).str();
 
             _state = PARSING_ENTRY_HEADER_FIELD_VALUE;
 
@@ -96,13 +108,13 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
         Buffer<>::size_type pos = _buf.find(CRLF);
 
         if (pos != Buffer<>::npos) {
-            std::string s(_buf.subbuf(0, pos).str());
+            string s(_buf.subbuf(0, pos).str());
             Buffer<>::size_type begPos = 0;
 
             while (isspace(s[begPos]))
                 ++begPos;
 
-            std::string fieldValue = s.substr(begPos, pos - begPos);
+            string fieldValue = s.substr(begPos, pos - begPos);
 
             _state = PARSING_ENTRY_HEADER_FIELD_NAME;
 
@@ -168,20 +180,20 @@ HTTP::FormDataParser::parse(const char* data, size_t n, uintptr_t param)
     }
 }
 
-const std::string&
-HTTP::FormDataParser::getBoundary(void) const
+const string&
+FormDataParser::getBoundary(void) const
 {
     return _boundary;
 }
 
 size_t
-HTTP::FormDataParser::getFieldCount(void) const
+FormDataParser::getFieldCount(void) const
 {
     return _fieldCount;
 }
 
-HTTP::FormDataParser::State
-HTTP::FormDataParser::getState(void) const
+FormDataParser::State
+FormDataParser::getState(void) const
 {
     return _state;
 }
