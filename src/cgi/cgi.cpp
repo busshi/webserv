@@ -1,5 +1,6 @@
 #include "cgi/cgi.hpp"
 #include "core.hpp"
+#include "http/Exception.hpp"
 #include "http/status.hpp"
 #include "utils/string.hpp"
 #include <cstdlib>
@@ -12,15 +13,15 @@
 #include <unistd.h>
 
 using std::map;
+using std::ostringstream;
+using std::string;
 
-#define GET_CGI(loc) reinterpret_cast<CommonGatewayInterface*>(loc)
+#define GET_CGI(loc) reinterpret_cast<CGI*>(loc)
 
 static void
-onCgiHeaderField(const std::string& name,
-                 const std::string& value,
-                 uintptr_t cgiLoc)
+onCgiHeaderField(const string& name, const string& value, uintptr_t cgiLoc)
 {
-    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+    CGI* cgi = GET_CGI(cgiLoc);
 
     cgi->header().setField(name, value);
 }
@@ -28,13 +29,13 @@ onCgiHeaderField(const std::string& name,
 static void
 onCgiHeaderParsed(uintptr_t cgiLoc)
 {
-    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+    CGI* cgi = GET_CGI(cgiLoc);
     HTTP::Request* req = cgi->request();
     HTTP::Response* res = req->response();
 
     res->header().merge(cgi->header());
 
-    std::string status = res->getHeaderField("status");
+    string status = res->getHeaderField("status");
 
     if (!status.empty()) {
         unsigned long long code = parseInt(status, 10);
@@ -54,7 +55,7 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 static void
 onCgiBodyFragment(const Buffer<>& fragment, uintptr_t cgiLoc)
 {
-    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+    CGI* cgi = GET_CGI(cgiLoc);
 
     Buffer<> chunk(ntos(fragment.size(), 16) + CRLF);
 
@@ -68,7 +69,7 @@ onCgiBodyFragment(const Buffer<>& fragment, uintptr_t cgiLoc)
 static void
 onCgiBodyParsed(uintptr_t cgiLoc)
 {
-    CommonGatewayInterface* cgi = GET_CGI(cgiLoc);
+    CGI* cgi = GET_CGI(cgiLoc);
 
     (void)cgi;
 
@@ -76,17 +77,17 @@ onCgiBodyParsed(uintptr_t cgiLoc)
     cgi->request()->response()->data += Buffer<>("0" CRLF CRLF, 5);
 }
 
-CommonGatewayInterface::CommonGatewayInterface(int csockFd,
+CGI::CGI(int csockFd,
                                                HTTP::Request* req,
-                                               const std::string& cgiExecName,
-                                               const std::string& filepath)
+                                               const string& cgiExecName,
+                                               const string& filepath)
   : _cgiExecName(cgiExecName)
   , _filepath(filepath)
   , _csockFd(csockFd)
   , _req(req)
   , _hasStarted(false)
-  , _parser(0)
   , _pid(-1)
+  , parser(0)
 {
     _inputFd[0] = -1;
     _inputFd[1] = -1;
@@ -94,8 +95,8 @@ CommonGatewayInterface::CommonGatewayInterface(int csockFd,
     _outputFd[1] = -1;
 }
 
-static std::pair<const std::string, std::string>
-transformClientHeaders(const std::pair<const std::string, std::string>& p)
+static std::pair<const string, string>
+transformClientHeaders(const std::pair<const string, string>& p)
 {
     // in case header is prefixed by 'X-' don't transform it
     if (p.first.size() >= 2 && toupper(p.first[0]) == 'X' &&
@@ -103,48 +104,54 @@ transformClientHeaders(const std::pair<const std::string, std::string>& p)
         return make_pair(toUpperCase(p.first), p.second);
     }
 
-    return make_pair(std::string("HTTP_" + toUpperCase(p.first)), p.second);
+    return make_pair(string("HTTP_" + toUpperCase(p.first)), p.second);
 }
 
 bool
-CommonGatewayInterface::hasStarted(void) const
+CGI::hasStarted(void) const
 {
     return _hasStarted;
 }
 
 void
-CommonGatewayInterface::stopParser(void)
+CGI::stopParser(void)
 {
-    _parser->stopBodyParsing();
+    parser->stopBodyParsing();
 }
 
 void
-CommonGatewayInterface::start(void)
+CGI::_runCgiProcess(void)
 {
-    std::map<std::string, std::string> cgiEnv;
-    std::string tmp;
-    std::ostringstream oss;
+    destroyHosts();
 
-    HttpParser::Config conf;
-
-    memset(&conf, 0, sizeof(conf));
-    conf.onHeaderField = onCgiHeaderField;
-    conf.onHeaderParsed = onCgiHeaderParsed;
-    conf.onBodyFragment = onCgiBodyFragment;
-    conf.parseFullBody = true;
-    conf.onBodyParsed = onCgiBodyParsed;
-
-    _parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
-
-    _hasStarted = true;
-
-    if (pipe(_inputFd) == -1) {
-        perror("CGI pipe input: ");
+    for (map<int, CGI*>::const_iterator cit = cgis.begin();
+         cit != cgis.end();
+         ++cit) {
+        CGI* cgi = cit->second;
+        close(cgi->getInputFd());
+        close(cgi->getOutputFd());
     }
 
-    if (pipe(_outputFd) == -1) {
-        perror("CGI pipe output: ");
+    for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
+         cit != requests.end();
+         ++cit) {
+        close(cit->first);
     }
+
+    // we don't want php-cgi errors to be printed out
+    close(STDERR_FILENO);
+
+    if (dup2(_outputFd[0], STDIN_FILENO) == -1) {
+        return;
+    }
+
+    if (dup2(_inputFd[1], STDOUT_FILENO) == -1) {
+        return;
+    }
+
+    CLOSE_FD(_outputFd[0]);
+
+    string tmp;
 
     HTTP::Header henv;
     // Merge all the request header fields into the CGI environment, prefixing
@@ -175,52 +182,55 @@ CommonGatewayInterface::start(void)
     henv.setField("HTTPS", "off");
     henv.setField("REQUEST_METHOD", _req->getMethod());
     henv.setField("PATH_INFO", _filepath);
+    CLOSE_FD(_inputFd[1]);
+
+    char** envp = henv.toEnv();
+
+    execle(_cgiExecName.c_str(), _cgiExecName.c_str(), NULL, envp);
+}
+
+void
+CGI::start(void)
+{
+    map<string, string> cgiEnv;
+    ostringstream oss;
+
+    HttpParser::Config conf;
+
+    memset(&conf, 0, sizeof(conf));
+    conf.onHeaderField = onCgiHeaderField;
+    conf.onHeaderParsed = onCgiHeaderParsed;
+    conf.onBodyFragment = onCgiBodyFragment;
+    conf.parseFullBody = true;
+    conf.onBodyParsed = onCgiBodyParsed;
+
+    parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
+
+    _hasStarted = true;
+
+    if (pipe(_inputFd) == -1 || pipe(_outputFd) == -1) {
+        throw HTTP::Exception(
+          _req, HTTP::INTERNAL_SERVER_ERROR, "Could not pipe for CGI");
+    }
+
+    if (pipe(_outputFd) == -1) {
+        perror("CGI pipe output: ");
+    }
 
     _pid = fork();
 
     if (_pid == -1) {
-        perror("CGI fork: ");
+        throw HTTP::Exception(
+          _req, HTTP::INTERNAL_SERVER_ERROR, "Could not fork for CGI");
     }
 
     if (_pid == 0) {
-
-        destroyHosts();
-
-        for (map<int, CommonGatewayInterface*>::const_iterator cit =
-               cgis.begin();
-             cit != cgis.end();
-             ++cit) {
-            CommonGatewayInterface* cgi = cit->second;
-            close(cgi->getInputFd());
-            close(cgi->getOutputFd());
-        }
-
-        for (map<int, HTTP::Request*>::const_iterator cit = requests.begin();
-             cit != requests.end();
-             ++cit) {
-            close(cit->first);
-        }
-
-        // we don't want php-cgi errors to be printed out
-        close(STDERR_FILENO);
-
-        if (dup2(_outputFd[0], STDIN_FILENO) == -1) {
-            perror("CGI dup2 output: ");
-        }
-
-        if (dup2(_inputFd[1], STDOUT_FILENO) == -1) {
-            perror("CGI dup2 input");
-        }
-
-        close(_outputFd[0]);
-        close(_inputFd[1]);
-
-        char** envp = henv.toEnv();
-
-        execle(_cgiExecName.c_str(), _cgiExecName.c_str(), NULL, envp);
-
-        perror("execvp: ");
-        exit(1);
+        _runCgiProcess();
+        CLOSE_FD(_inputFd[0]);
+        CLOSE_FD(_inputFd[1]);
+        CLOSE_FD(_outputFd[0]);
+        CLOSE_FD(_outputFd[1]);
+        exit(-1);
     }
 
     fcntl(_inputFd[0], F_SETFL, O_NONBLOCK);
@@ -229,77 +239,71 @@ CommonGatewayInterface::start(void)
     FD_SET(_outputFd[1],
            &select_wset); // write end of the pipe used to provide cgi's body
 
-    close(_outputFd[0]); // used by the CGI to read body
-    close(_inputFd[1]);
+    CLOSE_FD(_outputFd[0]); // used by the CGI to read body
+    CLOSE_FD(_inputFd[1]);
 }
 
 HTTP::Request*
-CommonGatewayInterface::request(void)
+CGI::request(void)
 {
     return _req;
 }
 
 bool
-CommonGatewayInterface::parse(const char* data, size_t n)
+CGI::parse(const char* data, size_t n)
 {
-    _parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
+    parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 
     return true;
 }
 
-CommonGatewayInterface::~CommonGatewayInterface(void)
+CGI::~CGI(void)
 {
-    delete _parser;
+    delete parser;
 
     FD_CLR(_inputFd[0], &select_rset);
     FD_CLR(_outputFd[1], &select_wset);
 
-    if (_inputFd[0] != -1) {
-        close(_inputFd[0]);
-    }
-
-    if (_outputFd[1] != -1) {
-        close(_outputFd[1]);
-    }
+    CLOSE_FD(_inputFd[0]);
+    CLOSE_FD(_inputFd[1]);
+    CLOSE_FD(_outputFd[0]);
+    CLOSE_FD(_outputFd[1]);
 
     if (_pid != -1) {
-        int ret = kill(_pid, SIGKILL);
+        int status;
 
-        if (ret == -1) {
-            perror("kill: ");
+        while (waitpid(_pid, &status, WNOHANG) != _pid) {
+            kill(_pid, SIGKILL);
         }
-
-        // make sure not to create a zombie
-        waitpid(_pid, 0, 0);
     }
 }
 
 int
-CommonGatewayInterface::getClientFd() const
+CGI::getClientFd() const
 {
     return _csockFd;
 }
 
 int
-CommonGatewayInterface::getInputFd() const
+CGI::getInputFd() const
 {
     return _inputFd[0];
 }
 
 int
-CommonGatewayInterface::getOutputFd() const
+CGI::getOutputFd() const
 {
     return _outputFd[1];
 }
 
 HTTP::Header&
-CommonGatewayInterface::header(void)
+CGI::header(void)
 {
     return _header;
 }
 
 bool
-CommonGatewayInterface::isDone(void) const
+CGI::isDone(void) const
 {
-    return _parser && _parser->getState() == HttpParser::DONE;
+    return parser && parser->getState() == HttpParser::DONE;
 }

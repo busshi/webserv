@@ -105,11 +105,11 @@ handleUploadEvents(void)
 static void
 handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
 {
-    for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
+    for (map<int, CGI*>::const_iterator cit = cgis.begin();
          cit != cgis.end();
          ++cit) {
         int csockfd = cit->first;
-        CommonGatewayInterface* cgi = cit->second;
+        CGI* cgi = cit->second;
 
         if (!cgi->hasStarted()) {
             continue;
@@ -139,7 +139,16 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
 
             if (ret == 0) {
-                cgi->stopParser();
+                // if header hasn't been parsed yet and pipe has been closed,
+                // then a problem occured
+                if (cgi->parser->getState() ==
+                    HttpParser::PARSING_HEADER_FIELD_NAME) {
+                    throw HTTP::Exception(reqp,
+                                          HTTP::INTERNAL_SERVER_ERROR,
+                                          "The CGI process exited too early, "
+                                          "probably due to a system error...");
+                }
+                cgi->parser->stopBodyParsing();
             }
         }
 

@@ -70,7 +70,7 @@ processCgiRequest(HTTP::Request* req,
                   const std::string& cgiExecutablePath,
                   const std::string& scriptPath)
 {
-    CommonGatewayInterface* cgi = new CommonGatewayInterface(
+    CGI* cgi = new CGI(
       req->getClientFd(), req, cgiExecutablePath, scriptPath);
 
     cgis[req->getClientFd()] = cgi;

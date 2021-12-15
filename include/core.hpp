@@ -9,6 +9,10 @@
 #include <map>
 #include <netinet/in.h>
 #include <stdint.h>
+#define CLOSE_FD(fd)                                                           \
+    if (fd != -1)                                                              \
+        close(fd);                                                             \
+    fd = -1;
 
 /* This is the size of the buffer used to recv data from the HTTP client.
  * The greater this size is, the faster the server will (probably) be.
@@ -77,7 +81,7 @@ struct Host
 /* webserv global variables */
 
 extern std::map<int, HTTP::Request*> requests;
-extern std::map<int, CommonGatewayInterface*> cgis;
+extern std::map<int, CGI*> cgis;
 extern std::map<int, FileUploader*> uploaders;
 extern std::map<uint16_t, Host> hosts;
 extern fd_set select_rset;

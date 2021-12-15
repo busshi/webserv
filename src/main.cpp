@@ -14,7 +14,7 @@
 using std::map;
 
 map<int, HTTP::Request*> requests;
-map<int, CommonGatewayInterface*> cgis;
+map<int, CGI*> cgis;
 map<int, FileUploader*> uploaders;
 map<uint16_t, Host> hosts;
 fd_set select_rset, select_wset;
@@ -94,10 +94,9 @@ main(int argc, char** argv)
 
     destroyHosts();
 
-    for (map<int, CommonGatewayInterface*>::const_iterator cit = cgis.begin();
-         cit != cgis.end();
+    for (map<int, CGI*>::const_iterator cit = cgis.begin(); cit != cgis.end();
          ++cit) {
-        CommonGatewayInterface* cgi = cit->second;
+        CGI* cgi = cit->second;
 
         delete cgi;
     }

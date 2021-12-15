@@ -7,7 +7,7 @@
 #include <cstring>
 #include <sys/select.h>
 
-class CommonGatewayInterface
+class CGI
 {
     int _inputFd[2], _outputFd[2];
     std::string _cgiExecName, _filepath, _data;
@@ -17,15 +17,17 @@ class CommonGatewayInterface
 
     bool _hasStarted;
 
-    HttpParser* _parser;
     pid_t _pid;
 
+    void _runCgiProcess(void);
+
   public:
-    CommonGatewayInterface(int csockFd,
+    HttpParser* parser;
+    CGI(int csockFd,
                            HTTP::Request* req,
                            const std::string& cgiExecName,
                            const std::string& filepath);
-    ~CommonGatewayInterface(void);
+    ~CGI(void);
 
     HTTP::Request* request(void);
 

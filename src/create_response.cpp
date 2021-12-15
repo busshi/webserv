@@ -42,7 +42,7 @@ noAutoIndexResponse(string path,
             if (hasFileExtension(path, *cit)) {
                 int csock = res.getClientSocket();
 
-                CommonGatewayInterface* cgi = new CommonGatewayInterface(
+                CGI* cgi = new CGI(
                   csock, requests[csock], directives.getCgiExecutable(), path);
 
                 cgis[csock] = cgi;
