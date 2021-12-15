@@ -1,5 +1,6 @@
 #include "cgi/cgi.hpp"
 #include "core.hpp"
+#include "http/status.hpp"
 #include "utils/string.hpp"
 #include <cstdlib>
 #include <cstring>
@@ -32,10 +33,21 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
     HTTP::Response* res = req->response();
 
     res->header().merge(cgi->header());
+
+    std::string status = res->getHeaderField("status");
+
+    if (!status.empty()) {
+        unsigned long long code = parseInt(status, 10);
+
+        if (code >= 400 && code <= 599) {
+            throw HTTP::Exception(
+              req, HTTP::toStatusCode(code), "Someone wrote cursed php again");
+        }
+
+        res->setStatus(parseInt(status, 10));
+    }
+
     res->header().setField("Transfer-Encoding", "chunked");
-
-    // TODO: special header field status blize
-
     res->data = res->formatHeader();
 }
 
@@ -188,6 +200,9 @@ CommonGatewayInterface::start(void)
              ++cit) {
             close(cit->first);
         }
+
+        // we don't want php-cgi errors to be printed out
+        close(STDERR_FILENO);
 
         if (dup2(_outputFd[0], STDIN_FILENO) == -1) {
             perror("CGI dup2 output: ");

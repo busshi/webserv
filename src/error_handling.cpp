@@ -4,6 +4,7 @@
 #include "http/status.hpp"
 #include "utils/ErrorPageGenerator.hpp"
 #include "utils/string.hpp"
+#include <cstdlib>
 #include <sstream>
 
 using std::map;
@@ -14,12 +15,21 @@ using HTTP::StatusCode;
 using HTTP::toStatusCodeString;
 
 static string
-genDefaultErrorPage(StatusCode code)
+genDefaultErrorPage(StatusCode code, const std::string& hint)
 {
     ostringstream oss;
 
-    oss << "<style> body { text-align: center }</style>\n<h1> " << code << " "
-        << toStatusCodeString(code) << " </h1>\n<hr/>\nwebserv";
+    oss << "<style> body { text-align: center; } h1 { margin-bottom: 0; }"
+           "</style>\n<h1> "
+        << code << " " << toStatusCodeString(code) << " </h1>";
+
+    const char* errorHint = getenv("ERROR_HINT");
+
+    if (errorHint && parseInt(errorHint, 10)) {
+        oss << "<br/><h4>" << hint << "</h4>";
+    }
+
+    oss << "<hr/>\nwebserv";
 
     return oss.str();
 }
@@ -55,7 +65,7 @@ handleHttpException(HTTP::Exception& e)
     }
 
     res->setStatus(e.status());
-    res->send(genDefaultErrorPage(e.status()));
+    res->send(genDefaultErrorPage(e.status(), e.what()));
     res->data = res->formatHeader();
     res->data += res->body;
 }
