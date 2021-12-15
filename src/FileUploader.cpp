@@ -138,8 +138,9 @@ FileUploader::uploadData(const Buffer<>& data)
     if (isUploading()) {
         if (_maxUploadFileSize > 0 &&
             _currentUploadFileSize + data.size() >= _maxUploadFileSize) {
-            _req->response()->append(_origFilename +
-                                     " - FAILED: file too big\n");
+            throw HTTP::Exception(_req,
+                                  HTTP::REQUEST_PAYLOAD_TOO_LARGE,
+                                  "Uploaded file is too large");
             _isUploading = false;
             ofs.close();
             return false;
