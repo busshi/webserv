@@ -47,7 +47,9 @@ loadDirectives(HTTP::Request* req, ConfigItem* serverBlock)
     /* match the more specific location */
 
     for (size_t i = 0; i != locations.size(); ++i) {
-        string locv = trimTrailing(locations[i]->getValue(), "/");
+        string locv = locations[i]->getValue().size() > 1
+                        ? trimTrailing(locations[i]->getValue(), "/")
+                        : locations[i]->getValue();
 
         if (req->getLocation().find(locv) == 0) {
             if (loadFrom == serverBlock ||
@@ -70,8 +72,7 @@ processCgiRequest(HTTP::Request* req,
                   const std::string& cgiExecutablePath,
                   const std::string& scriptPath)
 {
-    CGI* cgi = new CGI(
-      req->getClientFd(), req, cgiExecutablePath, scriptPath);
+    CGI* cgi = new CGI(req->getClientFd(), req, cgiExecutablePath, scriptPath);
 
     cgis[req->getClientFd()] = cgi;
 

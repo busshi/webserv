@@ -90,4 +90,5 @@ class HttpParser
     operator bool(void) const { return _state != DONE; }
 
     void parse(const char* data, size_t n, uintptr_t paramLoc = 0);
+    bool hasDataQueued(void) const;
 };

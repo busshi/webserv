@@ -75,6 +75,12 @@ HttpParser::stop(void)
     _state = DONE;
 }
 
+bool
+HttpParser::hasDataQueued(void) const
+{
+    return _buf.size();
+}
+
 /**
  * @brief Get the current parser state.
  * @see HttpParser::State

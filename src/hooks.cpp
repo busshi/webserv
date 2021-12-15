@@ -25,7 +25,10 @@ onHeader(const string& method,
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.setLocation(trimTrailing(loc, "/"));
+    std::string trimmedLoc = loc.size() > 1 ? trimTrailing(loc, "/") : loc;
+
+    req.setOriginalLocation(trimmedLoc);
+    req.setLocation(trimmedLoc);
     req.setProtocol(protocol);
 
     if (!isMethodImplemented(method)) {

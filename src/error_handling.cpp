@@ -42,16 +42,9 @@ handleHttpException(HTTP::Exception& e)
     int fd = req->getClientFd();
     unsigned int code = HTTP::toStatusCode(e.status());
 
-    map<unsigned int, string> errorPages = parseErrorPage(req->getBlock());
-
-    if (errorPages.find(code) != errorPages.end()) {
-        req->rewrite(errorPages[code]);
-        return;
-    }
-
     // do not keep alive
     req->setHeaderField("Connection", "close");
-
+    res->setStatus(e.status());
     req->parser->stop();
 
     if (uploaders.find(fd) != uploaders.end()) {
@@ -64,7 +57,15 @@ handleHttpException(HTTP::Exception& e)
         cgis.erase(fd);
     }
 
-    res->setStatus(e.status());
+    map<unsigned int, string> errorPages = parseErrorPage(req->getBlock());
+
+    if (errorPages.find(code) != errorPages.end()) {
+        req->rewrite(errorPages[code]);
+        res->data = res->formatHeader();
+        res->data += res->body;
+        return;
+    }
+
     res->send(genDefaultErrorPage(e.status(), e.what()));
     res->data = res->formatHeader();
     res->data += res->body;

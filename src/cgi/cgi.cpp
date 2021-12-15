@@ -78,9 +78,9 @@ onCgiBodyParsed(uintptr_t cgiLoc)
 }
 
 CGI::CGI(int csockFd,
-                                               HTTP::Request* req,
-                                               const string& cgiExecName,
-                                               const string& filepath)
+         HTTP::Request* req,
+         const string& cgiExecName,
+         const string& filepath)
   : _cgiExecName(cgiExecName)
   , _filepath(filepath)
   , _csockFd(csockFd)
@@ -124,8 +124,7 @@ CGI::_runCgiProcess(void)
 {
     destroyHosts();
 
-    for (map<int, CGI*>::const_iterator cit = cgis.begin();
-         cit != cgis.end();
+    for (map<int, CGI*>::const_iterator cit = cgis.begin(); cit != cgis.end();
          ++cit) {
         CGI* cgi = cit->second;
         close(cgi->getInputFd());
@@ -182,7 +181,8 @@ CGI::_runCgiProcess(void)
     henv.setField("HTTPS", "off");
     henv.setField("REQUEST_METHOD", _req->getMethod());
     henv.setField("PATH_INFO", _filepath);
-    CLOSE_FD(_inputFd[1]);
+    CLOSE_FD(_inputFd[0]);
+    CLOSE_FD(_outputFd[1]);
 
     char** envp = henv.toEnv();
 
@@ -207,14 +207,9 @@ CGI::start(void)
     parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
 
     _hasStarted = true;
-
     if (pipe(_inputFd) == -1 || pipe(_outputFd) == -1) {
         throw HTTP::Exception(
           _req, HTTP::INTERNAL_SERVER_ERROR, "Could not pipe for CGI");
-    }
-
-    if (pipe(_outputFd) == -1) {
-        perror("CGI pipe output: ");
     }
 
     _pid = fork();

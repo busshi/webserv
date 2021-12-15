@@ -75,7 +75,7 @@ class Request : public Message
     Timer timer;
 
   private:
-    std::string _method, _location, _protocol;
+    std::string _method, _location, _protocol, _origLocation;
     int _csockFd;
     Response* _res;
     unsigned long long _timeout;
@@ -98,10 +98,12 @@ class Request : public Message
     const std::string& getMethod(void) const;
     const std::string& getProtocol(void) const;
     const std::string& getLocation(void) const;
+    const std::string& getOriginalLocation(void) const;
     ConfigItem* getBlock(void) const;
 
     void setProtocol(const std::string& protocol);
     void setLocation(const std::string& loc);
+    void setOriginalLocation(const std::string& origLocation);
     void setMethod(const std::string& method);
     void setBlock(ConfigItem* block);
 

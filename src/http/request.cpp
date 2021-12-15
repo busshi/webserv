@@ -6,20 +6,23 @@
 #include "http/message.hpp"
 #include "http/status.hpp"
 
+using HTTP::Request;
 using std::setw;
+using std::string;
 
 /**
- * @brief Construct a new HTTP::Request::Request object (with a client socket
+ * @brief Construct a new Request::Request object (with a client socket
  * only)
  *
  * @param csockFd
  */
 
-HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
+Request::Request(int csockFd, const HttpParser::Config& parserConf)
   : parser(0)
   , _method("UNKNOWN")
   , _location("UNKNOWN")
   , _protocol("UNKNOWN")
+  , _origLocation("UNKNOWN")
   , _csockFd(csockFd)
   , _res(0)
   , _block(0)
@@ -28,26 +31,26 @@ HTTP::Request::Request(int csockFd, const HttpParser::Config& parserConf)
     createResponse();
 }
 
-HTTP::Request::~Request(void)
+Request::~Request(void)
 {
     delete _res;
     delete parser;
 }
 
 ConfigItem*
-HTTP::Request::getBlock(void) const
+Request::getBlock(void) const
 {
     return _block;
 }
 
 void
-HTTP::Request::setBlock(ConfigItem* block)
+Request::setBlock(ConfigItem* block)
 {
     _block = block;
 }
 
 void
-HTTP::Request::rewrite(const std::string& location)
+Request::rewrite(const string& location)
 {
     setLocation(location);
     setMethod("GET");
@@ -56,61 +59,67 @@ HTTP::Request::rewrite(const std::string& location)
 }
 
 bool
-HTTP::Request::isDone(void) const
+Request::isDone(void) const
 {
     return parser->getState() == HttpParser::DONE;
 }
 
 bool
-HTTP::Request::isBodyChunked(void) const
+Request::isBodyChunked(void) const
 {
     return parser->isBodyChunked();
 }
 
 HTTP::Response*
-HTTP::Request::createResponse(void)
+Request::createResponse(void)
 {
     return _res = new HTTP::Response(_csockFd);
 }
 
 HTTP::Response*&
-HTTP::Request::response(void)
+Request::response(void)
 {
     return _res;
 }
 
 int
-HTTP::Request::getClientFd(void) const
+Request::getClientFd(void) const
 {
     return _csockFd;
 }
 
-const std::string&
-HTTP::Request::getLocation(void) const
+const string&
+Request::getLocation(void) const
 {
     return _location;
 }
 
 void
-HTTP::Request::setProtocol(const std::string& protocol)
+Request::setProtocol(const string& protocol)
 {
     _protocol = protocol;
 }
 
 void
-HTTP::Request::setMethod(const std::string& method)
+Request::setMethod(const string& method)
 {
     _method = method;
 }
 
 void
-HTTP::Request::setLocation(const std::string& location)
+Request::setLocation(const string& location)
 {
     _location = location;
 }
 
+void
+Request::setOriginalLocation(const string& origLocation)
+{
+    _origLocation = origLocation;
+}
+
 bool
-HTTP::Request::parse(const char* data, size_t n)
+Request::parse(const char* data, size_t n)
 {
     parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 
@@ -121,11 +130,11 @@ HTTP::Request::parse(const char* data, size_t n)
  * @brief Get the HTTP verb that corresponds to the request's method as a
  * string
  *
- * @return const std::string&
+ * @return const string&
  */
 
-const std::string&
-HTTP::Request::getMethod(void) const
+const string&
+Request::getMethod(void) const
 {
     return _method;
 }
@@ -135,19 +144,25 @@ HTTP::Request::getMethod(void) const
  <PROTOCOL>/<VERSION>. Given this project's purpose it should always be
  HTTP/1.1 for HTTP protocol version 1.1.
  *
- * @return const std::string&
+ * @return const string&
  */
 
-const std::string&
-HTTP::Request::getProtocol(void) const
+const string&
+Request::getProtocol(void) const
 {
     return _protocol;
 }
 
-std::ostream&
-HTTP::Request::log(std::ostream& os) const
+const string&
+Request::getOriginalLocation(void) const
 {
-    std::string method = toUpperCase(getMethod());
+    return _origLocation;
+}
+
+std::ostream&
+Request::log(std::ostream& os) const
+{
+    string method = toUpperCase(getMethod());
     unsigned code = HTTP::toStatusCode(_res->getStatus());
     const char *methodColor, *statusColor;
 
@@ -178,7 +193,8 @@ HTTP::Request::log(std::ostream& os) const
     }
 
     os << methodColor << std::left << setw(12) << method << CLR << " "
-       << setw(50) << getLocation() << statusColor << setw(8) << code << CLR;
+       << setw(50) << getOriginalLocation() << statusColor << setw(8) << code
+       << CLR;
     if (_res->getStatus() == REQUEST_TIMEOUT) {
         os << BOLD << RED << setw(10) << "TIMEOUT" << CLR;
     } else {
