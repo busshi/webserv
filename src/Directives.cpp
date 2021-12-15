@@ -154,19 +154,25 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
     ConfigItem* rewrite_location = item->findAtomInBlock("rewrite_location");
 
     if (rewrite_location) {
-        _rewrite_location = rewrite_location->getValue();
+        std::string vloc = item->getValue(), rloc = req->getLocation();
+
+        _rewrite_location = replaceSub(rewrite_location->getValue(),
+                                       "@request_uri",
+                                       rloc.substr(vloc.size()));
     }
 
     ConfigItem* rewrite = item->findAtomInBlock("rewrite");
 
     if (rewrite) {
-        _rewrite = rewrite->getValue();
+        _rewrite =
+          replaceSub(rewrite->getValue(), "@request_uri", req->getLocation());
     }
 
     ConfigItem* redirect = item->findAtomInBlock("redirect");
 
     if (redirect) {
-        _redirect = redirect->getValue();
+        _redirect =
+          replaceSub(redirect->getValue(), "@request_uri", req->getLocation());
     }
 
     ConfigItem* autoindex = item->findNearest("autoindex");

@@ -155,15 +155,8 @@ processRequest(HTTP::Request* req)
     }
 
     if (!direc.getRewriteLocation().empty()) {
-        std::string vloc = req->getBlock()->getValue(),
-                    rloc = req->getLocation();
-        std::string::size_type pos = rloc.find(vloc);
-
-        if (pos != std::string::npos) {
-            req->rewrite(trimTrailing(direc.getRewriteLocation(), "/") +
-                         rloc.substr(pos + vloc.size()));
-            return;
-        }
+        req->rewrite(direc.getRewriteLocation());
+        return;
     }
 
     vector<std::string> forbiddenMethods = direc.getForbiddenMethods();

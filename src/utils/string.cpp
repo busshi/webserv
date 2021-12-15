@@ -298,3 +298,23 @@ isNumber(const string& s)
 
     return true;
 }
+
+string
+replaceSub(const std::string& orig, const string& sub, const string& replace)
+{
+    string::size_type pos = 0;
+    string s;
+
+    while (true) {
+        string::size_type n = orig.find(sub, pos);
+
+        s += orig.substr(pos, n - pos);
+        if (n == string::npos)
+            break;
+
+        s += replace;
+        pos = n + sub.size();
+    }
+
+    return s;
+}

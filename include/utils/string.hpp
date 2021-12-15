@@ -39,3 +39,8 @@ equalsIgnoreCase(const std::string& s1, const std::string& s2);
 
 bool
 isNumber(const std::string& s);
+
+std::string
+replaceSub(const std::string& s,
+           const std::string& sub,
+           const std::string& replace);
