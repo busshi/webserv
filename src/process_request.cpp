@@ -170,18 +170,22 @@ checkRequestIntegrity(HTTP::Request* req, Directives& direc)
     }
 }
 
-static void
+/* returns true if request has been rewritten */
+
+static bool
 performRewrite(Request* req, Directives& direc)
 {
     if (!direc.getRewrite().empty()) {
         req->rewrite(direc.getRewrite());
-        return;
+        return true;
     }
 
     if (!direc.getRewriteLocation().empty()) {
         req->rewrite(direc.getRewriteLocation());
-        return;
+        return true;
     }
+
+    return false;
 }
 
 void
@@ -198,7 +202,8 @@ processRequest(Request* req)
         throw HTTP::Exception(req, HTTP::MOVED_PERMANENTLY);
     }
 
-    performRewrite(req, direc);
+    if (performRewrite(req, direc))
+        return;
 
     std::string path = direc.getPath();
     struct stat s;
