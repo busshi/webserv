@@ -57,7 +57,8 @@ closeConnection(int sockfd, bool keepAlive = true)
     if (keepAlive) {
         req->parser->reset();
         req->header().clear();
-        req->body.str("");
+        req->body.clear();
+        req->timer.reset();
 
         delete req->response();
         req->createResponse();
@@ -113,11 +114,14 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         // we can write to cgi output
 
         if (FD_ISSET(cgi->getOutputFd(), &wsetc)) {
-            std::string body = reqp->body.str();
+            Buffer<>& bodyBuf = reqp->body;
+            if (bodyBuf.size()) {
+                int n =
+                  write(cgi->getOutputFd(), bodyBuf.raw(), bodyBuf.size());
 
-            if (!body.empty()) {
-                write(cgi->getOutputFd(), body.c_str(), body.size());
-                reqp->body.str("");
+                if (n >= 0) {
+                    bodyBuf = bodyBuf.subbuf(n);
+                }
             }
         }
 

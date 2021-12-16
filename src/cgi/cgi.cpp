@@ -150,6 +150,9 @@ CGI::_runCgiProcess(void)
     }
 
     CLOSE_FD(_outputFd[0]);
+    CLOSE_FD(_outputFd[1]);
+    CLOSE_FD(_inputFd[0]);
+    CLOSE_FD(_inputFd[1]);
 
     string tmp;
 

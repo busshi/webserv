@@ -223,7 +223,7 @@ Request::log(std::ostream& os) const
     if (_res->getStatus() == REQUEST_TIMEOUT) {
         os << BOLD << RED << setw(10) << "TIMEOUT" << CLR;
     } else {
-        os << setw(10) << timer.getElapsed() << "ms" << CLR;
+        os << setw(10) << (timer.getElapsed() / 1000) << "secs." << CLR;
     }
 
     return os;

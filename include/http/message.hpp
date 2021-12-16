@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 
-#include "http/MessageParser.hpp"
 #include "Timer.hpp"
 #include "config/ConfigItem.hpp"
+#include "http/MessageParser.hpp"
 #include "utils/BinBuffer.hpp"
 
 #include "config/ConfigParser.hpp"
@@ -70,7 +70,7 @@ class Response; // forward decl
 class Request : public Message
 {
   public:
-    std::ostringstream body;
+    Buffer<> body;
     MessageParser* parser;
     Timer timer;
 
@@ -79,6 +79,7 @@ class Request : public Message
     int _csockFd;
     Response* _res;
     unsigned long long _timeout;
+
     ConfigItem* _block;
     unsigned long long _bodySize, _maxBodySize;
 

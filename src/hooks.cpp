@@ -79,7 +79,7 @@ onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc)
         uploaders[req.getClientFd()]->parseFormDataFragment(
           reinterpret_cast<const char*>(fragment.raw()), fragment.size());
     } else {
-        req.body << fragment;
+        req.body += fragment;
     }
 }
 
@@ -88,7 +88,7 @@ onBodyChunk(const Buffer<>& chunk, uintptr_t requestLoc)
 {
     HTTP::Request& req = GET_REQ(requestLoc);
 
-    req.body << chunk;
+    req.body += chunk;
 }
 
 void
