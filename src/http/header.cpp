@@ -73,7 +73,10 @@ HTTP::Header::merge(const HTTP::Header& other,
     for (Fields::const_iterator cit = other._fields.begin();
          cit != other._fields.end();
          ++cit) {
-        _fields.insert(transformer ? transformer(*cit) : *cit);
+        std::pair<const std::string, std::string> p =
+          transformer ? transformer(*cit) : *cit;
+
+        _fields[p.first] = p.second;
     }
 
     return *this;

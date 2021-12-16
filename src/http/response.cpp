@@ -9,7 +9,7 @@ HTTP::Response::Response(int csock)
 {
     setHeaderField("Server", "webserv/1.0");
     setHeaderField("Date", getDate(0));
-    setHeaderField("Content-Type", "text/plain");
+    setHeaderField("Content-type", "text/plain");
 }
 
 int
