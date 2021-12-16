@@ -221,7 +221,7 @@ ConfigParser::makeConfigItem(std::pair<std::string, std::string> keyval,
 
     if (ite->second.validator &&
         !ite->second.validator(trim(keyval.second), errorMsg)) {
-        abortParsing(main, errorMsg);
+        abortParsing(main, keyval.first + ": " + errorMsg);
     }
 
     return new ConfigItem(
