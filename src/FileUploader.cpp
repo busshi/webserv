@@ -11,13 +11,13 @@ onFinalBoundary(uintptr_t param)
 {
     FileUploader* uploader = GET_UPLOADER(param);
 
-    HTTP::Response* res = uploader->request()->response();
+    HTTP::Response& res = uploader->request()->res();
 
-    res->setStatus(HTTP::CREATED);
+    res.setStatus(HTTP::CREATED);
 
-    res->append("");
-    res->data = res->formatHeader();
-    res->data += res->body;
+    res.append("");
+    res.data = res.formatHeader();
+    res.data += res.body;
 }
 
 static void
@@ -158,7 +158,7 @@ FileUploader::uploadData(const Buffer<>& data)
 void
 FileUploader::finishUpload(void)
 {
-    _req->response()->append(_origFilename + " - OK\n");
+    _req->res().append(_origFilename + " - OK\n");
 
     _isUploading = false;
     _currentUploadFileSize = 0;

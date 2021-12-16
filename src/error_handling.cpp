@@ -38,14 +38,14 @@ void
 handleHttpException(HTTP::Exception& e)
 {
     HTTP::Request* req = e.req();
-    HTTP::Response* res = req->response();
+    HTTP::Response& res = req->res();
     int fd = req->getClientFd();
     unsigned int code = HTTP::toStatusCode(e.status());
     std::string hint = e.what();
 
     // do not keep alive
     req->setHeaderField("Connection", "close");
-    res->setStatus(e.status());
+    res.setStatus(e.status());
     req->parser->stop();
 
     if (uploaders.find(fd) != uploaders.end()) {
@@ -64,22 +64,22 @@ handleHttpException(HTTP::Exception& e)
         if (errorPages.find(code) != errorPages.end()) {
             try {
                 req->rewrite(errorPages[code]);
-                res->data = res->formatHeader();
-                res->data += res->body;
+                res.data = res.formatHeader();
+                res.data += res.body;
                 return;
             }
             // caught an exception inside an exception: stop infinite
             // recursion
             catch (HTTP::Exception& e) {
-                res->setStatus(HTTP::TOO_MANY_REQUESTS);
+                res.setStatus(HTTP::TOO_MANY_REQUESTS);
                 hint = "HTTP::Exception thrown in HTTP::Exception: avoided bad "
                        "recursion";
             }
         }
     }
 
-    res->setHeaderField("Content-Type", "text/html");
-    res->send(genDefaultErrorPage(res->getStatus(), hint));
-    res->data = res->formatHeader();
-    res->data += res->body;
+    res.setHeaderField("Content-Type", "text/html");
+    res.send(genDefaultErrorPage(res.getStatus(), hint));
+    res.data = res.formatHeader();
+    res.data += res.body;
 }

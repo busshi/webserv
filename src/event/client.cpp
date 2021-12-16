@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 using HTTP::Request;
-using HTTP::Response;
 using std::map;
 
 void
@@ -21,7 +20,7 @@ handleClientEvents(fd_set& rsetc,
         ++cit;
 
         if (reqp->timer.getElapsed() > requestTimeout) {
-            reqp->response()->setStatus(HTTP::REQUEST_TIMEOUT);
+            reqp->res().setStatus(HTTP::REQUEST_TIMEOUT);
             LP_CLOSE_CON(csockfd);
         }
 
@@ -56,40 +55,36 @@ handleClientEvents(fd_set& rsetc,
                 reqp->dropFile();
             }
 
-            reqp->response()->data += Buffer<>(eventBuf, n);
+            reqp->res().data += Buffer<>(eventBuf, n);
         }
 
         /* if we can write */
 
         if (FD_ISSET(csockfd, &wsetc)) {
-            Response* resp = reqp->response();
+            Buffer<>& buf = reqp->res().data;
 
-            if (resp) {
-                Buffer<>& buf = resp->data;
+            if (buf.size()) {
+                int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
-                if (buf.size()) {
-                    int ret = send(csockfd, buf.raw(), buf.size(), 0);
-
-                    if (ret == -1) {
-                        LP_CLOSE_CON(csockfd);
-                    }
-
-                    // let buf contain the unprocessed data
-                    buf = buf.subbuf(ret);
+                if (ret == -1) {
+                    LP_CLOSE_CON(csockfd);
                 }
 
-                if (!buf.size()) {
-                    if (cgis.find(csockfd) != cgis.end()) {
-                        if (cgis[csockfd]->isDone()) {
-                            terminateRequest(reqp);
-                        }
-                    } else if (uploaders.find(csockfd) != uploaders.end()) {
-                        if (uploaders[csockfd]->isDone()) {
-                            terminateRequest(reqp);
-                        }
-                    } else if (reqp->isDone()) {
+                // let buf contain the unprocessed data
+                buf = buf.subbuf(ret);
+            }
+
+            if (!buf.size()) {
+                if (cgis.find(csockfd) != cgis.end()) {
+                    if (cgis[csockfd]->isDone()) {
                         terminateRequest(reqp);
                     }
+                } else if (uploaders.find(csockfd) != uploaders.end()) {
+                    if (uploaders[csockfd]->isDone()) {
+                        terminateRequest(reqp);
+                    }
+                } else if (reqp->isDone()) {
+                    terminateRequest(reqp);
                 }
             }
         }

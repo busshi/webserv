@@ -11,7 +11,7 @@
 #include <string>
 #include <unistd.h>
 
-#define GET_REQ(loc) *reinterpret_cast<HTTP::Request*>(loc);
+#define GET_REQ(loc) reinterpret_cast<HTTP::Request*>(loc);
 
 using std::string;
 
@@ -23,24 +23,24 @@ onHeader(const string& method,
          const string& protocol,
          uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
     std::string trimmedLoc = loc.size() > 1 ? trimTrailing(loc, "/") : loc;
 
-    req.setOriginalLocation(trimmedLoc);
-    req.setLocation(trimmedLoc);
-    req.setProtocol(protocol);
+    req->setOriginalLocation(trimmedLoc);
+    req->setLocation(trimmedLoc);
+    req->setProtocol(protocol);
 
     if (!isMethodImplemented(method)) {
-        req.setMethod("UNKNOWN");
+        req->setMethod("UNKNOWN");
         throw HTTP::Exception(
-          &req, HTTP::NOT_IMPLEMENTED, "Method not implemented by webserv");
+          req, HTTP::NOT_IMPLEMENTED, "Method not implemented by webserv");
     } else {
-        req.setMethod(method);
+        req->setMethod(method);
     }
 
     if (!equalsIgnoreCase(protocol, "HTTP/1.1")) {
-        throw HTTP::Exception(&req,
+        throw HTTP::Exception(req,
                               HTTP::HTTP_VERSION_NOT_SUPPORTED,
                               "webserv exclusively supports HTTP/1.1");
     }
@@ -49,21 +49,21 @@ onHeader(const string& method,
 void
 onHeaderField(const string& name, const string& value, uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
-    req.setHeaderField(name, value);
+    req->setHeaderField(name, value);
 }
 
 void
 onHeaderParsed(uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
-    HTTP::Response& res = *req.response();
+    HTTP::Request* req = GET_REQ(requestLoc);
+    HTTP::Response& res = req->res();
 
-    processRequest(&req);
+    processRequest(req);
 
-    if (cgis.find(req.getClientFd()) == cgis.end() &&
-        uploaders.find(req.getClientFd()) == uploaders.end()) {
+    if (cgis.find(req->getClientFd()) == cgis.end() &&
+        uploaders.find(req->getClientFd()) == uploaders.end()) {
         res.data += res.formatHeader();
     }
 
@@ -73,36 +73,36 @@ onHeaderParsed(uintptr_t requestLoc)
 void
 onBodyFragment(const Buffer<>& fragment, uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
-    if (uploaders.find(req.getClientFd()) != uploaders.end()) {
-        uploaders[req.getClientFd()]->parseFormDataFragment(
+    if (uploaders.find(req->getClientFd()) != uploaders.end()) {
+        uploaders[req->getClientFd()]->parseFormDataFragment(
           reinterpret_cast<const char*>(fragment.raw()), fragment.size());
     } else {
-        req.body += fragment;
+        req->body += fragment;
     }
 }
 
 void
 onBodyChunk(const Buffer<>& chunk, uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
-    req.body += chunk;
+    req->body += chunk;
 }
 
 void
 onBodyUnchunked(uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
-    int csockfd = req.getClientFd();
+    int csockfd = req->getClientFd();
 
     if (cgis.find(csockfd) != cgis.end() && !cgis[csockfd]->hasStarted()) {
         std::ostringstream oss;
 
-        oss << req.body.str().size();
-        req.header().setField("Content-Length", oss.str());
+        oss << req->body.str().size();
+        req->header().setField("Content-Length", oss.str());
         cgis[csockfd]->start();
     }
 
@@ -112,7 +112,7 @@ onBodyUnchunked(uintptr_t requestLoc)
 void
 onBodyParsed(uintptr_t requestLoc)
 {
-    HTTP::Request& req = GET_REQ(requestLoc);
+    HTTP::Request* req = GET_REQ(requestLoc);
 
     (void)req;
 }

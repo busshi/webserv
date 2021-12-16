@@ -5,6 +5,7 @@
 
 using HTTP::MessageParser;
 using HTTP::Request;
+using std::make_pair;
 using std::map;
 
 void
@@ -14,7 +15,6 @@ handleServerEvents(const MessageParser::Config& parserConf, fd_set& rsetc)
          ++it) {
 
         if (FD_ISSET(it->second.ssockFd, &rsetc)) {
-
             socklen_t slen = sizeof(it->second.addr);
             int connection =
               accept(it->second.ssockFd, (sockaddr*)&it->second.addr, &slen);
@@ -28,11 +28,9 @@ handleServerEvents(const MessageParser::Config& parserConf, fd_set& rsetc)
                     << it->first << " accepted (fd=" << connection << ")\n";
 
             fcntl(connection, F_SETFL, O_NONBLOCK);
-            FD_SET(connection, &select_rset);
-            FD_SET(connection, &select_wset);
 
-            requests.insert(
-              std::make_pair(connection, new Request(connection, parserConf)));
+            Request* req = new Request(connection, parserConf);
+            requests.insert(make_pair(connection, req));
         }
     }
 }

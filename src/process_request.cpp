@@ -106,8 +106,8 @@ serveFile(Request* req, const std::string& path)
                                 strerror(errno));
     }
 
-    req->response()->setHeaderField("Content-Length", ntos(s.st_size));
-    req->response()->setContentType(path);
+    req->res().setHeaderField("Content-Length", ntos(s.st_size));
+    req->res().setContentType(path);
     req->grabFile(fd);
 }
 
@@ -130,9 +130,8 @@ indexDirectoryContents(Request* req, const std::string& path)
             glogger << Logger::DEBUG << dir->d_name << "\n";
         }
 
-        req->response()->setHeaderField("Content-Length",
-                                        ntos(buf.str().size()));
-        req->response()->send(buf.str());
+        req->res().setHeaderField("Content-Length", ntos(buf.str().size()));
+        req->res().send(buf.str());
 
         glogger << Logger::DEBUG << "\n";
         closedir(folder);
@@ -152,7 +151,7 @@ processUploadPost(Request* req,
 static void
 processUploadDelete(Request* req, const string& path)
 {
-    req->response()->send("");
+    req->res().send("");
     unlink(path.c_str());
 }
 
@@ -212,7 +211,7 @@ processRequest(Request* req)
     checkRequestIntegrity(req, direc);
 
     if (!direc.getRedirect().empty()) {
-        req->response()->setHeaderField("Location", direc.getRedirect());
+        req->res().setHeaderField("Location", direc.getRedirect());
         throw HTTP::Exception(req, HTTP::MOVED_PERMANENTLY);
     }
 

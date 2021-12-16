@@ -57,15 +57,43 @@ class Message
     Header& header(void);
 };
 
-/**
- * @brief Type used to represent the data sent by the user agent well known as
- * "HTTP request".
- *
- * This type is mainly intented to represent the data that has been sent,
- * parsing it so that critical information are made available in an easier way.
- */
+class Response : public Message
+{
+    StatusCode _statusCode;
+    int _csock;
 
-class Response; // forward decl
+    struct MediaTypeEntry
+    {
+        std::string mediaType;
+        std::string extensions;
+    };
+
+    Response(const Response& other);
+    Response& operator=(const Response& res);
+
+    void _initHeader(void);
+
+  public:
+    Buffer<> data, body;
+
+    Response(int csock = -1);
+    ~Response(void);
+
+    Response& setStatus(StatusCode statusCode);
+    Response& setStatus(unsigned intStatusCode);
+    void setContentType(const std::string& path);
+
+    StatusCode getStatus(void) const;
+
+    Response& send(const std::string& s);
+    Response& append(const std::string& s);
+
+    Header& header(void);
+
+    void clear(void);
+
+    std::string formatHeader(void) const;
+};
 
 class Request : public Message
 {
@@ -77,7 +105,7 @@ class Request : public Message
   private:
     std::string _method, _location, _protocol, _origLocation;
     int _csockFd, _resourceFd;
-    Response* _res;
+    Response _res;
     unsigned long long _timeout;
     ConfigItem* _block;
     unsigned long long _bodySize, _maxBodySize;
@@ -87,7 +115,6 @@ class Request : public Message
 
   public:
     Request(int csockfd, const MessageParser::Config& parserConf);
-
     ~Request(void);
 
     bool parse(const char* data, size_t n);
@@ -116,72 +143,14 @@ class Request : public Message
     void setCurrentBodySize(unsigned long long size);
     void setMaxBodySize(unsigned long long size);
 
+    void clear(void);
+
     void rewrite(const std::string& location);
 
-    Response* createResponse(void);
-    Response*& response(void);
+    Response& res(void);
 
     std::ostream& printHeader(std::ostream& os = std::cout) const;
 
     std::ostream& log(std::ostream& os) const;
-};
-
-/**
- * @brief Type used to represent the data SENT BACK to the user agent, well
- * known as "HTTP Response".
- *
- * A response must be based on a complete HTTP::Request object: this is the
- * request the response is litteraly "responding" to.
- *
- * A response has a statusCode and a body that respectively indicate what
- * happened (did an error happen?) and which data is sent back to the user
- * agent.
- *
- * Additionally, a response also has its own set of headers, almost none of them
- * being strictly mandatory.
- *
- * @see HTTP::Request
- */
-
-class Response : public Message
-{
-    StatusCode _statusCode;
-    int _csock;
-
-    struct MediaTypeEntry
-    {
-        std::string mediaType;
-        std::string extensions;
-    };
-
-  public:
-    Buffer<> data, body;
-
-    Response(int csock = -1);
-    Response(const Request& req);
-    Response(const Response& other);
-    ~Response(void);
-
-    Response& operator=(const Response& res);
-
-    Response& setStatus(StatusCode statusCode);
-    Response& setStatus(unsigned intStatusCode);
-    void setContentType(const std::string& path);
-
-    StatusCode getStatus(void) const;
-
-    Response& sendFile(const std::string& filepath);
-    Response& send(const std::string& s);
-    Response& append(const std::string& s);
-
-    Header& header(void);
-
-    int getClientSocket(void) const;
-
-    std::string str(void);
-
-    std::string formatHeader(void) const;
-
-    BinBuffer format(void);
 };
 }

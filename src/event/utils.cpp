@@ -21,21 +21,10 @@ closeConnection(int sockfd, bool keepAlive = true)
     }
 
     if (keepAlive) {
-        req->parser->reset();
-        req->header().clear();
-        req->body.clear();
-        req->timer.reset();
-        req->dropFile();
-
-        delete req->response();
-        req->createResponse();
+        req->clear();
     } else {
         delete req;
         requests.erase(sockfd);
-
-        FD_CLR(sockfd, &select_wset);
-        FD_CLR(sockfd, &select_rset);
-        close(sockfd);
     }
 
     glogger << Logger::INFO << Logger::getTimestamp()

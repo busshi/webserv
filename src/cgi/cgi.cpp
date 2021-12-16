@@ -32,11 +32,11 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
 {
     CGI* cgi = GET_CGI(cgiLoc);
     HTTP::Request* req = cgi->request();
-    HTTP::Response* res = req->response();
+    HTTP::Response& res = req->res();
 
-    res->header().merge(cgi->header());
+    res.header().merge(cgi->header());
 
-    string status = res->getHeaderField("status");
+    string status = res.getHeaderField("status");
 
     if (!status.empty()) {
         unsigned long long code = parseInt(status, 10);
@@ -46,11 +46,11 @@ onCgiHeaderParsed(uintptr_t cgiLoc)
               req, HTTP::toStatusCode(code), "Someone wrote cursed php again");
         }
 
-        res->setStatus(parseInt(status, 10));
+        res.setStatus(parseInt(status, 10));
     }
 
-    res->header().setField("Transfer-Encoding", "chunked");
-    res->data = res->formatHeader();
+    res.header().setField("Transfer-Encoding", "chunked");
+    res.data = res.formatHeader();
 }
 
 static void
@@ -64,7 +64,7 @@ onCgiBodyFragment(const Buffer<>& fragment, uintptr_t cgiLoc)
     chunk += Buffer<>(CRLF, 2);
 
     // send each CGI body fragment as a chunk
-    cgi->request()->response()->data = chunk;
+    cgi->request()->res().data = chunk;
 }
 
 static void
@@ -75,7 +75,7 @@ onCgiBodyParsed(uintptr_t cgiLoc)
     (void)cgi;
 
     // terminate chunk
-    cgi->request()->response()->data += Buffer<>("0" CRLF CRLF, 5);
+    cgi->request()->res().data += Buffer<>("0" CRLF CRLF, 5);
 }
 
 CGI::CGI(int csockFd,

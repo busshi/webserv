@@ -32,15 +32,20 @@ Request::Request(int csockFd, const MessageParser::Config& parserConf)
   , _bodySize(0)
   , _maxBodySize(-1) // unlimited by default
 {
+    FD_SET(_csockFd, &select_rset);
+    FD_SET(_csockFd, &select_wset);
+
     parser = new MessageParser(parserConf);
-    createResponse();
 }
 
 Request::~Request(void)
 {
     dropFile();
 
-    delete _res;
+    FD_CLR(_csockFd, &select_wset);
+    FD_CLR(_csockFd, &select_rset);
+    close(_csockFd);
+
     delete parser;
 }
 
@@ -101,14 +106,8 @@ Request::isBodyChunked(void) const
     return parser->isBodyChunked();
 }
 
-HTTP::Response*
-Request::createResponse(void)
-{
-    return _res = new HTTP::Response(_csockFd);
-}
-
-HTTP::Response*&
-Request::response(void)
+HTTP::Response&
+Request::res(void)
 {
     return _res;
 }
@@ -192,7 +191,7 @@ std::ostream&
 Request::log(std::ostream& os) const
 {
     string method = toUpperCase(getMethod());
-    unsigned code = HTTP::toStatusCode(_res->getStatus());
+    unsigned code = HTTP::toStatusCode(_res.getStatus());
     const char *methodColor, *statusColor;
 
     if (method == "GET") {
@@ -224,7 +223,7 @@ Request::log(std::ostream& os) const
     os << methodColor << std::left << setw(12) << method << CLR << " "
        << setw(50) << getOriginalLocation() << statusColor << setw(8) << code
        << CLR;
-    if (_res->getStatus() == REQUEST_TIMEOUT) {
+    if (_res.getStatus() == REQUEST_TIMEOUT) {
         os << BOLD << RED << setw(10) << "TIMEOUT" << CLR;
     } else {
         os << setw(10) << (timer.getElapsed() / 1000) << "secs." << CLR;
@@ -254,4 +253,24 @@ int
 Request::getFile(void) const
 {
     return _resourceFd;
+}
+
+/**
+ * Clears the Request object, making it ready to receive a new request.
+ * Parser's internal buffer is not emptied to support pipelining.
+ */
+
+void
+Request::clear(void)
+{
+    _res.clear();
+    dropFile();
+    timer.reset();
+    body.clear();
+    parser->reset(MessageParser::PARSING_HEADER);
+
+    _bodySize = 0;
+    _maxBodySize = -1;
+    _block = 0;
+    _header.clear();
 }
