@@ -1,5 +1,6 @@
 #include "http/message.hpp"
 #include "utils/Logger.hpp"
+#include "utils/os.hpp"
 #include <sstream>
 
 HTTP::Response::Response(int csock)
@@ -7,6 +8,7 @@ HTTP::Response::Response(int csock)
   , _csock(csock)
 {
     setHeaderField("Server", "webserv/1.0");
+    setHeaderField("Date", getDate(0));
 }
 
 int
