@@ -99,14 +99,14 @@ onBodyUnchunked(uintptr_t requestLoc)
     int csockfd = req->getClientFd();
 
     if (cgis.find(csockfd) != cgis.end() && !cgis[csockfd]->hasStarted()) {
-        std::ostringstream oss;
-
-        oss << req->body.str().size();
-        req->header().setField("Content-Length", oss.str());
+        if (req->body.size() >= req->getMaxBodySize()) {
+            throw HTTP::Exception(req,
+                                  HTTP::REQUEST_PAYLOAD_TOO_LARGE,
+                                  "chunked request body too large");
+        }
+        req->header().setField("Content-Length", ntos(req->body.size()));
         cgis[csockfd]->start();
     }
-
-    (void)req;
 }
 
 void
