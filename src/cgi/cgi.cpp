@@ -15,6 +15,7 @@
 using std::map;
 using std::ostringstream;
 using std::string;
+using HTTP::MessageParser;
 
 #define GET_CGI(loc) reinterpret_cast<CGI*>(loc)
 
@@ -195,7 +196,7 @@ CGI::start(void)
     map<string, string> cgiEnv;
     ostringstream oss;
 
-    HttpParser::Config conf;
+    MessageParser::Config conf;
 
     memset(&conf, 0, sizeof(conf));
     conf.onHeaderField = onCgiHeaderField;
@@ -204,7 +205,7 @@ CGI::start(void)
     conf.parseFullBody = true;
     conf.onBodyParsed = onCgiBodyParsed;
 
-    parser = new HttpParser(conf, HttpParser::PARSING_HEADER_FIELD_NAME);
+    parser = new MessageParser(conf, MessageParser::PARSING_HEADER_FIELD_NAME);
 
     _hasStarted = true;
     if (pipe(_inputFd) == -1 || pipe(_outputFd) == -1) {
@@ -300,5 +301,5 @@ CGI::header(void)
 bool
 CGI::isDone(void) const
 {
-    return parser && parser->getState() == HttpParser::DONE;
+    return parser && parser->getState() == MessageParser::DONE;
 }

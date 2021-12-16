@@ -12,23 +12,23 @@ else
 	OPEN := open
 endif
 
-SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp Directives.cpp HttpParser.cpp FileUploader.cpp Timer.cpp error_handling.cpp process_request.cpp)
+SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp Directives.cpp FileUploader.cpp Timer.cpp error_handling.cpp process_request.cpp)
 
 SRCS		+= $(addprefix src/config/, Lexer.cpp ConfigParser.cpp validator.cpp ConfigItem.cpp parser.cpp)
 
 SRCS		+= $(addprefix src/utils/, Formatter.cpp Logger.cpp string.cpp os.cpp ErrorPageGenerator.cpp BinBuffer.cpp)
 
-SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp FormDataParser.cpp Exception.cpp method.cpp)
+SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp FormDataParser.cpp Exception.cpp method.cpp MessageParser.cpp)
 
 SRCS		+= $(addprefix src/cgi/, cgi.cpp)
 
-HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp HttpParser.hpp FileUploader.hpp Buffer.hpp Timer.hpp)
+HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp FileUploader.hpp Buffer.hpp Timer.hpp)
 
 HEADER		+= $(addprefix include/config/, validator.hpp ConfigParser.hpp ConfigItem.hpp Lexer.hpp)
 
 HEADER		+= $(addprefix include/utils/, Formatter.hpp string.hpp os.hpp ErrorPageGenerator.hpp Logger.hpp BinBuffer.hpp)
 
-HEADER		+= $(addprefix include/http/, header.hpp status.hpp message.hpp FormDataParser.hpp Exception.hpp method.hpp)
+HEADER		+= $(addprefix include/http/, header.hpp status.hpp message.hpp FormDataParser.hpp Exception.hpp method.hpp MessageParser.hpp)
 
 HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 

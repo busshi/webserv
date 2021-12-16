@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "HttpParser.hpp"
+#include "http/MessageParser.hpp"
 #include "Timer.hpp"
 #include "config/ConfigItem.hpp"
 #include "utils/BinBuffer.hpp"
@@ -71,7 +71,7 @@ class Request : public Message
 {
   public:
     std::ostringstream body;
-    HttpParser* parser;
+    MessageParser* parser;
     Timer timer;
 
   private:
@@ -86,7 +86,7 @@ class Request : public Message
     Request& operator=(const Request& rhs);
 
   public:
-    Request(int csockfd, const HttpParser::Config& parserConf);
+    Request(int csockfd, const MessageParser::Config& parserConf);
 
     ~Request(void);
 

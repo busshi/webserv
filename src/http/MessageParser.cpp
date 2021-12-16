@@ -1,4 +1,4 @@
-#include "HttpParser.hpp"
+#include "http/MessageParser.hpp"
 #include "utils/string.hpp"
 
 #include <cctype>
@@ -11,10 +11,12 @@
 #include <unistd.h>
 #include <vector>
 
+using HTTP::MessageParser;
+
 /* Helpers */
 
 void
-HttpParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
+MessageParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
 {
     std::string header = buf.str();
     std::vector<std::string> components = split(header);
@@ -37,7 +39,7 @@ HttpParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
  * registers no callbacks, making the parser almost useless.
  */
 
-HttpParser::HttpParser(void)
+MessageParser::MessageParser(void)
   : _isChunked(false)
   , _currentChunkSize(-1)
   , _contentLength(-1)
@@ -53,8 +55,8 @@ HttpParser::HttpParser(void)
  * callback functions.
  */
 
-HttpParser::HttpParser(const HttpParser::Config& config,
-                       HttpParser::State state)
+MessageParser::MessageParser(const MessageParser::Config& config,
+                       MessageParser::State state)
   : _config(config)
   , _state(state)
   , _isChunked(false)
@@ -67,29 +69,29 @@ HttpParser::HttpParser(const HttpParser::Config& config,
  * @brief Destroy the Http Parser:: Http Parser object
  */
 
-HttpParser::~HttpParser(void) {}
+MessageParser::~MessageParser(void) {}
 
 void
-HttpParser::stop(void)
+MessageParser::stop(void)
 {
     _state = DONE;
 }
 
 bool
-HttpParser::hasDataQueued(void) const
+MessageParser::hasDataQueued(void) const
 {
     return _buf.size();
 }
 
 /**
  * @brief Get the current parser state.
- * @see HttpParser::State
+ * @see MessageParser::State
  *
- * @return HttpParser::State
+ * @return MessageParser::State
  */
 
-HttpParser::State
-HttpParser::getState(void) const
+MessageParser::State
+MessageParser::getState(void) const
 {
     return _state;
 }
@@ -104,7 +106,7 @@ HttpParser::getState(void) const
  */
 
 bool
-HttpParser::isBodyChunked(void) const
+MessageParser::isBodyChunked(void) const
 {
     return _isChunked;
 }
@@ -113,17 +115,17 @@ HttpParser::isBodyChunked(void) const
  * @brief Reset the parser to a given state, making its internal buffer empty.
  *
  * @param state The state the parser will be reset to.
- * HttpParser::PARSING_HEADER is the default.
+ * MessageParser::PARSING_HEADER is the default.
  */
 
 void
-HttpParser::reset(HttpParser::State state)
+MessageParser::reset(MessageParser::State state)
 {
     _state = state;
 }
 
 void
-HttpParser::stopBodyParsing(void)
+MessageParser::stopBodyParsing(void)
 {
     _stopBodyParsing = true;
 }
@@ -137,7 +139,7 @@ HttpParser::stopBodyParsing(void)
  */
 
 void
-HttpParser::parse(const char* data, size_t n, uintptr_t paramLoc)
+MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
 {
     _buf += Buffer<>(data, n);
 

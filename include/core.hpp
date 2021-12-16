@@ -9,6 +9,7 @@
 #include <map>
 #include <netinet/in.h>
 #include <stdint.h>
+
 #define CLOSE_FD(fd)                                                           \
     if (fd != -1)                                                              \
         close(fd);                                                             \
@@ -36,7 +37,7 @@ void
 destroyHosts(void);
 
 void
-lifecycle(const HttpParser::Config& parserConf,
+lifecycle(const HTTP::MessageParser::Config& parserConf,
           unsigned long long requestTimeout);
 
 void

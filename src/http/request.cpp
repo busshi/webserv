@@ -7,6 +7,7 @@
 #include "http/status.hpp"
 
 using HTTP::Request;
+using HTTP::MessageParser;
 using std::setw;
 using std::string;
 
@@ -17,7 +18,7 @@ using std::string;
  * @param csockFd
  */
 
-Request::Request(int csockFd, const HttpParser::Config& parserConf)
+Request::Request(int csockFd, const MessageParser::Config& parserConf)
   : parser(0)
   , _method("UNKNOWN")
   , _location("UNKNOWN")
@@ -29,7 +30,7 @@ Request::Request(int csockFd, const HttpParser::Config& parserConf)
   , _bodySize(0)
   , _maxBodySize(-1) // unlimited by default
 {
-    parser = new HttpParser(parserConf);
+    parser = new MessageParser(parserConf);
     createResponse();
 }
 
@@ -87,7 +88,7 @@ Request::rewrite(const string& location)
 bool
 Request::isDone(void) const
 {
-    return parser->getState() == HttpParser::DONE;
+    return parser->getState() == MessageParser::DONE;
 }
 
 bool

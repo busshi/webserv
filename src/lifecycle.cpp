@@ -1,5 +1,5 @@
 #include "Constants.hpp"
-#include "HttpParser.hpp"
+#include "http/MessageParser.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
 #include "http/status.hpp"
@@ -16,6 +16,7 @@
 
 using HTTP::Request;
 using HTTP::Response;
+using HTTP::MessageParser;
 
 #define LP_CLOSE_CON(sockfd)                                                   \
     closeConnection(sockfd, false);                                            \
@@ -135,7 +136,7 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
                 // then a problem occured
                 if (!cgi->parser->hasDataQueued() &&
                     cgi->parser->getState() ==
-                      HttpParser::PARSING_HEADER_FIELD_NAME) {
+                      MessageParser::PARSING_HEADER_FIELD_NAME) {
                     throw HTTP::Exception(reqp,
                                           HTTP::INTERNAL_SERVER_ERROR,
                                           "The CGI process exited too early, "
@@ -220,7 +221,7 @@ handleClientEvents(fd_set& rsetc,
 }
 
 static void
-handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
+handleServerEvents(const MessageParser::Config& parserConf, fd_set& rsetc)
 {
     for (map<uint16_t, Host>::iterator it = hosts.begin(); it != hosts.end();
          ++it) {
@@ -250,7 +251,7 @@ handleServerEvents(const HttpParser::Config& parserConf, fd_set& rsetc)
 }
 
 void
-lifecycle(const HttpParser::Config& parserConf,
+lifecycle(const MessageParser::Config& parserConf,
           unsigned long long requestTimeout)
 {
     signal(SIGINT, &handleSigint);

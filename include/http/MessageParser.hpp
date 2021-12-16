@@ -7,10 +7,12 @@
 #include <string>
 #define CRLF "\r\n"
 
-class HttpParser
+namespace HTTP {
+
+class MessageParser
 {
-    HttpParser(const HttpParser&);
-    HttpParser& operator=(HttpParser&);
+    MessageParser(const MessageParser&);
+    MessageParser& operator=(MessageParser&);
 
     void _parseHeader(const Buffer<>& buf, uintptr_t paramLoc);
 
@@ -76,9 +78,9 @@ class HttpParser
     bool _stopBodyParsing;
 
   public:
-    HttpParser(void);
-    HttpParser(const Config& config, State state = PARSING_HEADER);
-    ~HttpParser(void);
+    MessageParser(void);
+    MessageParser(const Config& config, State state = PARSING_HEADER);
+    ~MessageParser(void);
 
     State getState(void) const;
     bool isBodyChunked(void) const;
@@ -92,3 +94,4 @@ class HttpParser
     void parse(const char* data, size_t n, uintptr_t paramLoc = 0);
     bool hasDataQueued(void) const;
 };
+}

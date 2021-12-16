@@ -1,6 +1,6 @@
 #pragma once
 #include "Buffer.hpp"
-#include "HttpParser.hpp"
+#include "http/MessageParser.hpp"
 #include "http/header.hpp"
 #include "http/message.hpp"
 #include <cstdio>
@@ -22,7 +22,7 @@ class CGI
     void _runCgiProcess(void);
 
   public:
-    HttpParser* parser;
+    HTTP::MessageParser* parser;
     CGI(int csockFd,
                            HTTP::Request* req,
                            const std::string& cgiExecName,
