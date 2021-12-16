@@ -20,6 +20,8 @@ SRCS		+= $(addprefix src/utils/, Formatter.cpp Logger.cpp string.cpp os.cpp Erro
 
 SRCS		+= $(addprefix src/http/, header.cpp status.cpp message.cpp request.cpp response.cpp FormDataParser.cpp Exception.cpp method.cpp MessageParser.cpp)
 
+SRCS		+= $(addprefix src/event/, cgi.cpp upload.cpp client.cpp server.cpp utils.cpp)
+
 SRCS		+= $(addprefix src/cgi/, cgi.cpp)
 
 HEADER		= $(addprefix include/, core.hpp Directives.hpp Constants.hpp FileUploader.hpp Buffer.hpp Timer.hpp)
