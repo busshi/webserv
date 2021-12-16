@@ -259,14 +259,16 @@ processRequest(Request* req)
             processUploadPost(
               req, direc.getUploadStore(), direc.getUploadMaxFileSize());
             return;
-        } else if (!direc.getAutoIndex()) {
-            throw HTTP::Exception(
-              req,
-              HTTP::FORBIDDEN,
-              "Can't list contents of the directory: autoindex is turned off");
         } else if (req->getMethod() == "GET") {
-            indexDirectoryContents(req, path);
-            return;
+            if (direc.getAutoIndex()) {
+                indexDirectoryContents(req, path);
+                return;
+            } else {
+                throw HTTP::Exception(req,
+                                      HTTP::FORBIDDEN,
+                                      "Can't list contents of the directory: "
+                                      "autoindex is turned off");
+            }
         }
     }
 
