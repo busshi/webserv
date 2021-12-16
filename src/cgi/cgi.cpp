@@ -12,10 +12,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+using HTTP::MessageParser;
 using std::map;
 using std::ostringstream;
 using std::string;
-using HTTP::MessageParser;
 
 #define GET_CGI(loc) reinterpret_cast<CGI*>(loc)
 
@@ -248,9 +248,7 @@ CGI::request(void)
 bool
 CGI::parse(const char* data, size_t n)
 {
-    parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
-
-    return true;
+    return parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 }
 
 CGI::~CGI(void)

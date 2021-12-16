@@ -6,8 +6,8 @@
 #include "http/message.hpp"
 #include "http/status.hpp"
 
-using HTTP::Request;
 using HTTP::MessageParser;
+using HTTP::Request;
 using std::setw;
 using std::string;
 
@@ -148,9 +148,7 @@ Request::setOriginalLocation(const string& origLocation)
 bool
 Request::parse(const char* data, size_t n)
 {
-    parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
-
-    return true;
+    return parser->parse(data, n, reinterpret_cast<uintptr_t>(this));
 }
 
 /**

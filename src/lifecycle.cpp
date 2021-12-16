@@ -1,7 +1,7 @@
 #include "Constants.hpp"
-#include "http/MessageParser.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
+#include "http/MessageParser.hpp"
 #include "http/status.hpp"
 #include "utils/Logger.hpp"
 #include "utils/string.hpp"
@@ -14,9 +14,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+using HTTP::MessageParser;
 using HTTP::Request;
 using HTTP::Response;
-using HTTP::MessageParser;
 
 #define LP_CLOSE_CON(sockfd)                                                   \
     closeConnection(sockfd, false);                                            \
@@ -147,7 +147,10 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         }
 
         rBuf[ret] = 0;
-        cgi->parse(rBuf, ret);
+        if (!cgi->parse(rBuf, ret)) {
+            throw HTTP::Exception(
+              cgi->request(), HTTP::BAD_REQUEST, "ill-formed CGI response");
+        }
     }
 }
 
@@ -181,7 +184,10 @@ handleClientEvents(fd_set& rsetc,
         }
 
         rBuf[ret] = 0;
-        reqp->parse(rBuf, ret);
+        if (!reqp->parse(rBuf, ret)) {
+            throw HTTP::Exception(
+              reqp, HTTP::BAD_REQUEST, "ill-formed HTTP request");
+        }
 
         /* if we can write */
 

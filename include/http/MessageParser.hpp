@@ -14,7 +14,7 @@ class MessageParser
     MessageParser(const MessageParser&);
     MessageParser& operator=(MessageParser&);
 
-    void _parseHeader(const Buffer<>& buf, uintptr_t paramLoc);
+    bool _parseHeader(const Buffer<>& buf, uintptr_t paramLoc);
 
     /* public type definitions */
 
@@ -91,7 +91,7 @@ class MessageParser
 
     operator bool(void) const { return _state != DONE; }
 
-    void parse(const char* data, size_t n, uintptr_t paramLoc = 0);
+    bool parse(const char* data, size_t n, uintptr_t paramLoc = 0);
     bool hasDataQueued(void) const;
 };
 }

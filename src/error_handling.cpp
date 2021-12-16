@@ -57,13 +57,15 @@ handleHttpException(HTTP::Exception& e)
         cgis.erase(fd);
     }
 
-    map<unsigned int, string> errorPages = parseErrorPage(req->getBlock());
+    if (req->getBlock()) {
+        map<unsigned int, string> errorPages = parseErrorPage(req->getBlock());
 
-    if (errorPages.find(code) != errorPages.end()) {
-        req->rewrite(errorPages[code]);
-        res->data = res->formatHeader();
-        res->data += res->body;
-        return;
+        if (errorPages.find(code) != errorPages.end()) {
+            req->rewrite(errorPages[code]);
+            res->data = res->formatHeader();
+            res->data += res->body;
+            return;
+        }
     }
 
     res->send(genDefaultErrorPage(e.status(), e.what()));

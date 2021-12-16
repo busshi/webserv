@@ -15,21 +15,21 @@ using HTTP::MessageParser;
 
 /* Helpers */
 
-void
+bool
 MessageParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
 {
     std::string header = buf.str();
     std::vector<std::string> components = split(header);
 
     if (components.size() != 3) {
-        std::cerr << "Expected 3 components in header, found "
-                  << components.size() << "\n";
-        return;
+        return false;
     }
 
     if (_config.onHeader) {
         _config.onHeader(components[0], components[1], components[2], paramLoc);
     }
+
+    return true;
 }
 
 /**
@@ -56,7 +56,7 @@ MessageParser::MessageParser(void)
  */
 
 MessageParser::MessageParser(const MessageParser::Config& config,
-                       MessageParser::State state)
+                             MessageParser::State state)
   : _config(config)
   , _state(state)
   , _isChunked(false)
@@ -138,7 +138,7 @@ MessageParser::stopBodyParsing(void)
  * @param paramLoc
  */
 
-void
+bool
 MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
 {
     _buf += Buffer<>(data, n);
@@ -151,7 +151,9 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
         if (pos != Buffer<>::npos) {
             Buffer<> sub = _buf.subbuf(0, pos);
 
-            _parseHeader(sub, paramLoc);
+            if (!_parseHeader(sub, paramLoc)) {
+                return false;
+            }
 
             _buf = _buf.subbuf(pos + 2);
             _state = PARSING_HEADER_FIELD_NAME;
@@ -173,6 +175,10 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
             _state = PARSING_BODY;
         } else {
             Buffer<>::size_type pos = _buf.find(":");
+            Buffer<>::size_type crlfPos = _buf.find(CRLF);
+
+            if (crlfPos < pos)
+                return false;
 
             if (pos != Buffer<>::npos) {
                 const std::string fieldName(_buf.subbuf(0, pos).str());
@@ -232,11 +238,11 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
                     _config.onBodyParsed(paramLoc);
                 }
 
-                return;
+                return true;
             }
 
             if (!_buf.size()) {
-                return;
+                return true;
             }
 
             Buffer<> fragment = _buf.subbuf(0, _contentLength);
@@ -273,7 +279,7 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
                             _config.onBodyUnchunked(paramLoc);
                         }
 
-                        return;
+                        return true;
                     }
 
                     // never decode more than chunkSize even if there is
@@ -290,4 +296,6 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
             }
         }
     }
+
+    return true;
 }
