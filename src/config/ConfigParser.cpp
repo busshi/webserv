@@ -2,8 +2,10 @@
 #include "config/ConfigItem.hpp"
 #include "config/validator.hpp"
 #include "utils/Formatter.hpp"
+#include "utils/os.hpp"
 #include "utils/string.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -147,8 +149,13 @@ ConfigParser::loadConfig(const char* configPath)
     std::ifstream ifs(configPath);
     std::string line, data;
 
+    if (isFolder(configPath)) {
+        throw ParserException(std::string("Can't read ") + configPath +
+                              ": is a folder");
+    }
+
     if (!ifs) {
-        throw std::runtime_error("Could not open config file");
+        throw ParserException(std::string("Could not open file ") + configPath);
     }
 
     while (std::getline(ifs, line)) {

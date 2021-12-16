@@ -1,9 +1,9 @@
 #include "Constants.hpp"
-#include "http/MessageParser.hpp"
 #include "cgi/cgi.hpp"
 #include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "http/FormDataParser.hpp"
+#include "http/MessageParser.hpp"
 #include "http/message.hpp"
 #include "utils/BinBuffer.hpp"
 #include "utils/Logger.hpp"
@@ -11,8 +11,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
-using std::map;
 using HTTP::MessageParser;
+using std::map;
 
 map<int, HTTP::Request*> requests;
 map<int, CGI*> cgis;

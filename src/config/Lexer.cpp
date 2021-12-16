@@ -71,7 +71,6 @@ Lexer::getKey(void)
     }
 
     if (ch() != '{' && !isspace(ch())) {
-        std::cout << ch() << "\n";
         throw LexerException(
           _lineNb,
           _columnNb,
