@@ -59,6 +59,7 @@ closeConnection(int sockfd, bool keepAlive = true)
         req->header().clear();
         req->body.clear();
         req->timer.reset();
+        req->dropFile();
 
         delete req->response();
         req->createResponse();
@@ -177,7 +178,7 @@ handleClientEvents(fd_set& rsetc,
 
         int ret = 0;
 
-        /* if there is something to read */
+        /* if there is something to read from the client socket */
 
         if (FD_ISSET(csockfd, &rsetc)) {
             ret = recv(csockfd, rBuf, BUFSIZE, 0);
@@ -191,6 +192,22 @@ handleClientEvents(fd_set& rsetc,
         if (!reqp->parse(rBuf, ret)) {
             throw HTTP::Exception(
               reqp, HTTP::BAD_REQUEST, "ill-formed HTTP request");
+        }
+
+        // we can read from the file we need to serve to the client
+
+        if (reqp->getFile() != -1 && FD_ISSET(reqp->getFile(), &rsetc)) {
+            int n = read(reqp->getFile(), rBuf, BUFSIZE);
+
+            if (n == -1) {
+                LP_CLOSE_CON(csockfd);
+            }
+
+            if (n == 0) {
+                reqp->dropFile();
+            }
+
+            reqp->response()->data += Buffer<>(rBuf, n);
         }
 
         /* if we can write */

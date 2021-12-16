@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <unistd.h>
 
 #include "Constants.hpp"
 #include "config/ConfigItem.hpp"
@@ -25,6 +26,7 @@ Request::Request(int csockFd, const MessageParser::Config& parserConf)
   , _protocol("UNKNOWN")
   , _origLocation("UNKNOWN")
   , _csockFd(csockFd)
+  , _resourceFd(-1)
   , _res(0)
   , _block(0)
   , _bodySize(0)
@@ -36,6 +38,8 @@ Request::Request(int csockFd, const MessageParser::Config& parserConf)
 
 Request::~Request(void)
 {
+    dropFile();
+
     delete _res;
     delete parser;
 }
@@ -88,7 +92,7 @@ Request::rewrite(const string& location)
 bool
 Request::isDone(void) const
 {
-    return parser->getState() == MessageParser::DONE;
+    return _resourceFd == -1 && parser->getState() == MessageParser::DONE;
 }
 
 bool
@@ -227,4 +231,27 @@ Request::log(std::ostream& os) const
     }
 
     return os;
+}
+
+void
+Request::grabFile(int fd)
+{
+    FD_SET(fd, &select_rset);
+    _resourceFd = fd;
+}
+
+void
+Request::dropFile(void)
+{
+    if (_resourceFd != -1) {
+        FD_CLR(_resourceFd, &select_rset);
+        close(_resourceFd);
+        _resourceFd = -1;
+    }
+}
+
+int
+Request::getFile(void) const
+{
+    return _resourceFd;
 }

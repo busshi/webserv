@@ -76,10 +76,9 @@ class Request : public Message
 
   private:
     std::string _method, _location, _protocol, _origLocation;
-    int _csockFd;
+    int _csockFd, _resourceFd;
     Response* _res;
     unsigned long long _timeout;
-
     ConfigItem* _block;
     unsigned long long _bodySize, _maxBodySize;
 
@@ -92,6 +91,10 @@ class Request : public Message
     ~Request(void);
 
     bool parse(const char* data, size_t n);
+
+    void grabFile(int fd);
+    void dropFile(void);
+    int getFile(void) const;
 
     bool isBodyChunked(void) const;
     bool isDone(void) const;
@@ -151,8 +154,6 @@ class Response : public Message
         std::string extensions;
     };
 
-    std::string _detectMediaType(const std::string& resource) const;
-
   public:
     Buffer<> data, body;
 
@@ -165,6 +166,7 @@ class Response : public Message
 
     Response& setStatus(StatusCode statusCode);
     Response& setStatus(unsigned intStatusCode);
+    void setContentType(const std::string& path);
 
     StatusCode getStatus(void) const;
 

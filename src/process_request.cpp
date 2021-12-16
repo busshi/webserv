@@ -8,6 +8,7 @@
 #include "http/status.hpp"
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -71,8 +72,6 @@ loadDirectives(Request* req, ConfigItem* serverBlock)
     req->setBlock(loadFrom);
     directives.load(req, loadFrom);
 
-    // std::cout << "Path=" << directives.getPath() << std::endl;
-
     return directives;
 }
 
@@ -94,7 +93,22 @@ processCgiRequest(Request* req,
 static void
 serveFile(Request* req, const std::string& path)
 {
-    req->response()->sendFile(path);
+    int fd = open(path.c_str(), O_RDONLY);
+    struct stat s;
+
+    if (fd == -1 || fstat(fd, &s) == -1) {
+        if (fd != -1) {
+            close(fd);
+        }
+        throw HTTP::Exception(req,
+                              HTTP::INTERNAL_SERVER_ERROR,
+                              string("Could not open/stat ") + path + ": " +
+                                strerror(errno));
+    }
+
+    req->response()->setHeaderField("Content-Length", ntos(s.st_size));
+    req->response()->setContentType(path);
+    req->grabFile(fd);
 }
 
 static void

@@ -78,6 +78,7 @@ handleHttpException(HTTP::Exception& e)
         }
     }
 
+    res->setHeaderField("Content-Type", "text/html");
     res->send(genDefaultErrorPage(res->getStatus(), hint));
     res->data = res->formatHeader();
     res->data += res->body;

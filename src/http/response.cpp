@@ -9,6 +9,7 @@ HTTP::Response::Response(int csock)
 {
     setHeaderField("Server", "webserv/1.0");
     setHeaderField("Date", getDate(0));
+    setHeaderField("Content-Type", "text/plain");
 }
 
 int
@@ -156,7 +157,6 @@ HTTP::Response::sendFile(const std::string& filepath)
         }
     }
 
-    setHeaderField("Content-Type", _detectMediaType(filepath));
     oss << body.size();
     setHeaderField("Content-Length", oss.str());
 
@@ -208,27 +208,33 @@ HTTP::Response::append(const std::string& s)
  * @return std::string
  */
 
-std::string
-HTTP::Response::_detectMediaType(const std::string& resource) const
+void
+HTTP::Response::setContentType(const std::string& path)
 {
-    static MediaTypeEntry entries[] = {
-        { "image/png", "png" },       { "image/jpeg", "jpg|jpeg" },
-        { "image/webp", "webp" },     { "image/gif", "gif" },
-        { "image/bmp", "bmp" },       { "text/css", "css" },
-        { "text/javascript", "js" },  { "text/html", "html|htm" },
-        { "application/pdf", "pdf" }, { "image/svg+xml", "svg" }
-    };
+    static MediaTypeEntry entries[] = { { "image/png", "png" },
+                                        { "image/jpeg", "jpg|jpeg" },
+                                        { "image/webp", "webp" },
+                                        { "image/gif", "gif" },
+                                        { "image/bmp", "bmp" },
+                                        { "text/css", "css" },
+                                        { "application/javascript", "js" },
+                                        { "text/html", "html|htm" },
+                                        { "application/pdf", "pdf" },
+                                        { "image/svg+xml", "svg" },
+                                        { "image/x-icon", "ico" },
+                                        { "application/json", ".json" } };
 
-    const std::string::size_type index = resource.find_last_of('.');
-    const std::string ext = resource.substr(index + 1, resource.size() - index);
+    const std::string::size_type index = path.find_last_of('.');
+    const std::string ext = path.substr(index + 1, path.size() - index);
 
     for (size_t i = 0; i != sizeof(entries) / sizeof(*entries); ++i) {
         if (entries[i].extensions.find(ext) != std::string::npos) {
-            return entries[i].mediaType;
+            setHeaderField("Content-Type", entries[i].mediaType);
+            return;
         }
     }
 
-    return "text/plain";
+    setHeaderField("Content-Type", "text/plain");
 }
 
 BinBuffer
