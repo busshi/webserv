@@ -80,6 +80,7 @@ class Request : public Message
     Response* _res;
     unsigned long long _timeout;
     ConfigItem* _block;
+    unsigned long long _bodySize, _maxBodySize;
 
     Request(const Request& other);
     Request& operator=(const Request& rhs);
@@ -99,6 +100,8 @@ class Request : public Message
     const std::string& getProtocol(void) const;
     const std::string& getLocation(void) const;
     const std::string& getOriginalLocation(void) const;
+    unsigned long long getCurrentBodySize(void) const;
+    unsigned long long getMaxBodySize(void) const;
     ConfigItem* getBlock(void) const;
 
     void setProtocol(const std::string& protocol);
@@ -106,6 +109,8 @@ class Request : public Message
     void setOriginalLocation(const std::string& origLocation);
     void setMethod(const std::string& method);
     void setBlock(ConfigItem* block);
+    void setCurrentBodySize(unsigned long long size);
+    void setMaxBodySize(unsigned long long size);
 
     void rewrite(const std::string& location);
 

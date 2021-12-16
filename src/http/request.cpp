@@ -26,6 +26,8 @@ Request::Request(int csockFd, const HttpParser::Config& parserConf)
   , _csockFd(csockFd)
   , _res(0)
   , _block(0)
+  , _bodySize(0)
+  , _maxBodySize(-1) // unlimited by default
 {
     parser = new HttpParser(parserConf);
     createResponse();
@@ -47,6 +49,30 @@ void
 Request::setBlock(ConfigItem* block)
 {
     _block = block;
+}
+
+unsigned long long
+Request::getCurrentBodySize(void) const
+{
+    return _maxBodySize;
+}
+
+void
+Request::setCurrentBodySize(unsigned long long size)
+{
+    _bodySize = size;
+}
+
+unsigned long long
+Request::getMaxBodySize(void) const
+{
+    return _maxBodySize;
+}
+
+void
+Request::setMaxBodySize(unsigned long long size)
+{
+    _maxBodySize = size;
 }
 
 void

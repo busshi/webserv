@@ -21,10 +21,17 @@ using std::vector;
 using HTTP::Request;
 
 static ConfigItem*
-selectServer(vector<ConfigItem*>& candidates, const string& host)
+selectServer(HTTP::Request* req)
 {
+    sockaddr_in addr;
+    socklen_t slen = sizeof(addr);
+    getsockname(req->getClientFd(), (sockaddr*)&addr, &slen);
+
+    uint16_t port = ntohs(addr.sin_port);
+    vector<ConfigItem*> candidates = hosts[port].candidates;
     string serverName;
     ConfigItem* serverNameItem = 0;
+    string host = req->getHeaderField("Host");
     string strippedHost = host.substr(0, host.find(':'));
 
     for (std::vector<ConfigItem*>::iterator it = candidates.begin();
@@ -135,34 +142,23 @@ processUploadDelete(Request* req, const string& path)
     unlink(path.c_str());
 }
 
-void
-processRequest(Request* req)
+static void
+checkRequestIntegrity(HTTP::Request* req, Directives& direc)
 {
-    socklen_t slen = sizeof(sockaddr_in);
-    sockaddr_in addr;
-    getsockname(req->getClientFd(), (sockaddr*)&addr, &slen);
-    uint16_t port = ntohs(addr.sin_port);
+    if (!req->isBodyChunked()) {
+        // no content-length will mean the same as Content-Length: 0
+        unsigned long long cl =
+          parseInt(req->getHeaderField("Content-Length"), 10);
 
-    ConfigItem* serverBlock =
-      selectServer(hosts[port].candidates, req->getHeaderField("HOST"));
-
-    Directives direc = loadDirectives(req, serverBlock);
-
-    if (!direc.getRedirect().empty()) {
-        req->response()->setHeaderField("Location", direc.getRedirect());
-        throw HTTP::Exception(req, HTTP::MOVED_PERMANENTLY);
+        if (cl >= req->getMaxBodySize()) {
+            throw HTTP::Exception(
+              req,
+              HTTP::REQUEST_PAYLOAD_TOO_LARGE,
+              "Request body exceeds limit enforced by configuration");
+        }
     }
 
-    if (!direc.getRewrite().empty()) {
-        req->rewrite(direc.getRewrite());
-        return;
-    }
-
-    if (!direc.getRewriteLocation().empty()) {
-        req->rewrite(direc.getRewriteLocation());
-        return;
-    }
-
+    // check: forbidden methods
     vector<std::string> forbiddenMethods = direc.getForbiddenMethods();
 
     for (size_t i = 0; i != forbiddenMethods.size(); ++i) {
@@ -172,6 +168,37 @@ processRequest(Request* req)
                                   "This method is forbidden on that route");
         }
     }
+}
+
+static void
+performRewrite(Request* req, Directives& direc)
+{
+    if (!direc.getRewrite().empty()) {
+        req->rewrite(direc.getRewrite());
+        return;
+    }
+
+    if (!direc.getRewriteLocation().empty()) {
+        req->rewrite(direc.getRewriteLocation());
+        return;
+    }
+}
+
+void
+processRequest(Request* req)
+{
+    ConfigItem* serverBlock = selectServer(req);
+    Directives direc = loadDirectives(req, serverBlock);
+
+    req->setMaxBodySize(direc.getBodyMaxSize());
+    checkRequestIntegrity(req, direc);
+
+    if (!direc.getRedirect().empty()) {
+        req->response()->setHeaderField("Location", direc.getRedirect());
+        throw HTTP::Exception(req, HTTP::MOVED_PERMANENTLY);
+    }
+
+    performRewrite(req, direc);
 
     std::string path = direc.getPath();
     struct stat s;

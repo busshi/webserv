@@ -11,6 +11,7 @@ Directives::Directives(void)
   : _allowsCgi(false)
   , _allowsUpload(false)
   , _dropsLocationPrefix(false)
+  , _bodyMaxSize(-1)
 {}
 
 Directives::~Directives(void) {}
@@ -198,8 +199,10 @@ Directives::load(HTTP::Request* req, ConfigItem* item)
                                                  : DFLT_MAX_UPLOAD_FILE_SIZE);
 
     ConfigItem* bodyMaxSize = item->findNearest("client_body_max_size");
-    _bodyMaxSize =
-      parseSize(bodyMaxSize ? bodyMaxSize->getValue() : DFLT_MAX_BODY_SIZE);
+
+    if (bodyMaxSize) {
+        _bodyMaxSize = parseSize(bodyMaxSize->getValue());
+    }
 
     // search ONLY in the current block
     ConfigItem* cgiPass = item->findAtomInBlock("cgi_pass");
