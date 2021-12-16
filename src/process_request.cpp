@@ -243,7 +243,8 @@ processRequest(Request* req)
     // try autoindex now.
     if (s.st_mode & S_IFDIR) {
         if (req->getMethod() == "POST" && direc.allowsUpload()) {
-            processUploadPost(req, path, direc.getUploadMaxFileSize());
+            processUploadPost(
+              req, direc.getUploadStore(), direc.getUploadMaxFileSize());
             return;
         } else if (!direc.getAutoIndex()) {
             throw HTTP::Exception(
