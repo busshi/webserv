@@ -1,6 +1,7 @@
 #include "Buffer.hpp"
 #include "core.hpp"
 #include "http/Exception.hpp"
+#include "http/MessageParser.hpp"
 #include "http/message.hpp"
 #include "http/method.hpp"
 #include "http/status.hpp"
@@ -9,6 +10,7 @@
 #include "utils/string.hpp"
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
 
@@ -25,9 +27,14 @@ onHeader(const string& method,
          uintptr_t requestLoc)
 {
     HTTP::Request* req = GET_REQ(requestLoc);
+    string decoded;
 
-    std::string decoded =
-      HTTP::urlDecode(loc.size() > 1 ? trimTrailing(loc, "/") : loc);
+    try {
+        decoded =
+          HTTP::urlDecode(loc.size() > 1 ? trimTrailing(loc, "/") : loc);
+    } catch (std::runtime_error& e) {
+        throw HTTP::Exception(req, HTTP::BAD_REQUEST, e.what());
+    }
 
     req->setOriginalLocation(decoded);
     req->setLocation(decoded);

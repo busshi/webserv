@@ -2,6 +2,7 @@
 #include "event.hpp"
 #include "http/message.hpp"
 
+#include <stdexcept>
 #include <unistd.h>
 
 using HTTP::Request;
@@ -37,11 +38,14 @@ handleClientEvents(fd_set& rsetc,
         }
 
         eventBuf[ret] = 0;
-        if (!reqp->parse(eventBuf, ret)) {
-            throw HTTP::Exception(
-              reqp, HTTP::BAD_REQUEST, "ill-formed HTTP request");
-        }
 
+        /* parsing errors would raise a runtime error */
+        try {
+            reqp->parse(eventBuf, ret);
+        } catch (HTTP::MessageParser::IllFormedException& e) {
+            throw HTTP::Exception(reqp, HTTP::BAD_REQUEST, e.what());
+        }
+        
         // we can read from the file we need to serve to the client
 
         if (reqp->getFile() != -1 && FD_ISSET(reqp->getFile(), &rsetc)) {

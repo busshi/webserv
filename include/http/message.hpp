@@ -7,10 +7,10 @@
 
 #include "Timer.hpp"
 #include "config/ConfigItem.hpp"
-#include "http/MessageParser.hpp"
 #include "utils/BinBuffer.hpp"
 
 #include "config/ConfigParser.hpp"
+#include "http/MessageParser.hpp"
 #include "http/header.hpp"
 #include "http/status.hpp"
 #include "utils/string.hpp"

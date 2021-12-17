@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <stdint.h>
 #include <string>
 #include <unistd.h>
@@ -15,6 +16,11 @@ using HTTP::MessageParser;
 
 /* Helpers */
 
+MessageParser::IllFormedException::IllFormedException(
+  const std::string& s) throw()
+  : std::runtime_error(s)
+{}
+
 bool
 MessageParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
 {
@@ -22,7 +28,9 @@ MessageParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
     std::vector<std::string> components = split(header);
 
     if (components.size() != 3) {
-        return false;
+        throw IllFormedException(
+          "Ill-formed http header: expected <method> "
+          "<location> <protocol>, but got extra tokens");
     }
 
     if (_config.onHeader) {
@@ -151,9 +159,7 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
         if (pos != Buffer<>::npos) {
             Buffer<> sub = _buf.subbuf(0, pos);
 
-            if (!_parseHeader(sub, paramLoc)) {
-                return false;
-            }
+            _parseHeader(sub, paramLoc);
 
             _buf = _buf.subbuf(pos + 2);
             _state = PARSING_HEADER_FIELD_NAME;
@@ -178,7 +184,9 @@ MessageParser::parse(const char* data, size_t n, uintptr_t paramLoc)
             Buffer<>::size_type crlfPos = _buf.find(CRLF);
 
             if (crlfPos < pos)
-                return false;
+                throw IllFormedException(
+                  "ill-formed http request: got CRLF before header field name "
+                  "delimiter ':'");
 
             if (pos != Buffer<>::npos) {
                 const std::string fieldName(_buf.subbuf(0, pos).str());

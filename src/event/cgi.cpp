@@ -4,6 +4,7 @@
 #include "http/MessageParser.hpp"
 #include "http/message.hpp"
 
+#include <stdexcept>
 #include <unistd.h>
 
 using HTTP::MessageParser;
@@ -64,9 +65,10 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
         }
 
         eventBuf[ret] = 0;
-        if (!cgi->parse(eventBuf, ret)) {
-            throw HTTP::Exception(
-              cgi->request(), HTTP::BAD_REQUEST, "ill-formed CGI response");
+        try {
+            cgi->parse(eventBuf, ret);
+        } catch (HTTP::MessageParser::IllFormedException& e) {
+            throw HTTP::Exception(cgi->request(), HTTP::BAD_REQUEST, e.what());
         }
     }
 }

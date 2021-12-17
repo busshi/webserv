@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <stdint.h>
 #include <string>
 #define CRLF "\r\n"
@@ -78,6 +79,12 @@ class MessageParser
     bool _stopBodyParsing;
 
   public:
+    class IllFormedException : public std::runtime_error
+    {
+      public:
+        IllFormedException(const std::string& s) throw();
+    };
+
     MessageParser(void);
     MessageParser(const Config& config, State state = PARSING_HEADER);
     ~MessageParser(void);
