@@ -175,7 +175,10 @@ Response::setContentType(const std::string& path)
                                         { "application/pdf", "pdf" },
                                         { "image/svg+xml", "svg" },
                                         { "image/x-icon", "ico" },
-                                        { "application/json", ".json" } };
+                                        { "application/json", "json" },
+                                        { "video/mp4", "mp4" },
+                                        { "video/webm", "webm" },
+                                        { "application/ogg", "ogg" } };
 
     const std::string::size_type index = path.find_last_of('.');
     const std::string ext = path.substr(index + 1, path.size() - index);
@@ -199,6 +202,8 @@ Response::getStatus(void) const
 void
 Response::clear(void)
 {
+    data.clear();
+    body.clear();
     _header.clear();
     _initHeader();
     _statusCode = HTTP::OK;
