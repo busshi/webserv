@@ -131,6 +131,7 @@ indexDirectoryContents(Request* req, const std::string& path)
         }
 
         req->res().setHeaderField("Content-Length", ntos(buf.str().size()));
+        req->res().setHeaderField("Content-Type", "text/html");
         req->res().send(buf.str());
 
         glogger << Logger::DEBUG << "\n";

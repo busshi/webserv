@@ -5,6 +5,7 @@
 #include "http/FormDataParser.hpp"
 #include "http/MessageParser.hpp"
 #include "http/message.hpp"
+#include "http/uri.hpp"
 #include "utils/BinBuffer.hpp"
 #include "utils/Logger.hpp"
 #include <map>

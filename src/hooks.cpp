@@ -4,6 +4,7 @@
 #include "http/message.hpp"
 #include "http/method.hpp"
 #include "http/status.hpp"
+#include "http/uri.hpp"
 #include "utils/Logger.hpp"
 #include "utils/string.hpp"
 #include <iostream>
@@ -25,14 +26,14 @@ onHeader(const string& method,
 {
     HTTP::Request* req = GET_REQ(requestLoc);
 
-    std::string trimmedLoc = loc.size() > 1 ? trimTrailing(loc, "/") : loc;
+    std::string decoded =
+      HTTP::urlDecode(loc.size() > 1 ? trimTrailing(loc, "/") : loc);
 
-    req->setOriginalLocation(trimmedLoc);
-    req->setLocation(trimmedLoc);
+    req->setOriginalLocation(decoded);
+    req->setLocation(decoded);
     req->setProtocol(protocol);
 
     if (!isMethodImplemented(method)) {
-        req->setMethod("UNKNOWN");
         throw HTTP::Exception(
           req, HTTP::NOT_IMPLEMENTED, "Method not implemented by webserv");
     } else {
