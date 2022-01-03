@@ -36,7 +36,7 @@ HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
-CXX_FLAGS	= -g3 -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address -Ihttp-parser $(if $(LOGGER), -DLOGGER, )
+CXX_FLAGS	= -g3 -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address $(if $(LOGGER), -DLOGGER, )
 
 CC			= @c++
 
@@ -50,7 +50,7 @@ FORMATTER   := clang-format
 		$(CC) $(CXX_FLAGS) $< -c -o $@
 		@printf "\033[1;33mCC\033[0;m\t$@\n"
 
-$(NAME): http-parser http-parser/libhttpparser.a $(OBJS) $(HEADER)
+$(NAME): $(HEADER) $(OBJS)
 	$(CC)  $(OBJS) -fsanitize=address -o $@
 	@printf "BIN \033[1;32m=>\033[0m \t$@\n"
 			
@@ -93,9 +93,3 @@ redoc: cleandoc doc
 	@printf "Doc REgenerated successfully.\n"
 
 .PHONY: doc
-
-http-parser:
-	git clone https://github.com/aurelien-brabant/http-parser.git
-
-http-parser/libhttpparser.a:
-	make re -C http-parser
