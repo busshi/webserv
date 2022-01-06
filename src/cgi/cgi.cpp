@@ -168,6 +168,8 @@ CGI::_runCgiProcess(void)
 
     henv.setField("REDIRECT_STATUS", "200");
 
+    henv.setField("QUERY_STRING", _req->getQueryString());
+
     henv.setField("SCRIPT_FILENAME", _filepath);
     henv.setField("SCRIPT_NAME", _filepath);
 

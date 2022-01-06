@@ -124,6 +124,12 @@ Request::getLocation(void) const
     return _location;
 }
 
+const std::string&
+Request::getQueryString(void) const
+{
+	return _queryString;
+}
+
 void
 Request::setProtocol(const string& protocol)
 {
@@ -146,6 +152,12 @@ void
 Request::setOriginalLocation(const string& origLocation)
 {
     _origLocation = origLocation;
+}
+
+void
+Request::setQueryString(const std::string& queryString)
+{
+	_queryString = queryString;
 }
 
 bool
