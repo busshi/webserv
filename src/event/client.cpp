@@ -68,7 +68,7 @@ handleClientEvents(fd_set& rsetc,
             if (buf.size()) {
                 int ret = send(csockfd, buf.raw(), buf.size(), 0);
 
-                if (ret == -1) {
+                if (ret <= 0) {
                     LP_CLOSE_CON(csockfd);
                 }
 

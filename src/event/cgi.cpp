@@ -33,9 +33,11 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
                 int n =
                   write(cgi->getOutputFd(), bodyBuf.raw(), bodyBuf.size());
 
-                if (n >= 0) {
-                    bodyBuf = bodyBuf.subbuf(n);
+                if (n <= 0) {
+                    LP_CLOSE_CON(csockfd);
                 }
+
+                bodyBuf = bodyBuf.subbuf(n);
             }
         }
 
