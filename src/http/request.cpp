@@ -127,7 +127,7 @@ Request::getLocation(void) const
 const std::string&
 Request::getQueryString(void) const
 {
-	return _queryString;
+    return _queryString;
 }
 
 void
@@ -157,7 +157,7 @@ Request::setOriginalLocation(const string& origLocation)
 void
 Request::setQueryString(const std::string& queryString)
 {
-	_queryString = queryString;
+    _queryString = queryString;
 }
 
 bool

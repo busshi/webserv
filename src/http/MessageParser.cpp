@@ -28,9 +28,8 @@ MessageParser::_parseHeader(const Buffer<>& buf, uintptr_t paramLoc)
     std::vector<std::string> components = split(header);
 
     if (components.size() != 3) {
-        throw IllFormedException(
-          "Ill-formed http header: expected <method> "
-          "<location> <protocol>, but got extra tokens");
+        throw IllFormedException("Ill-formed http header: expected <method> "
+                                 "<location> <protocol>, but got extra tokens");
     }
 
     if (_config.onHeader) {

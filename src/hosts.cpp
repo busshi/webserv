@@ -1,17 +1,17 @@
+#include "Constants.hpp"
 #include "config/ConfigParser.hpp"
 #include "core.hpp"
 #include "utils/Logger.hpp"
 #include <cstring>
 #include <fcntl.h>
+#include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
-#include <iostream>
-#include "Constants.hpp"
 
+using std::clog;
 using std::map;
 using std::vector;
-using std::clog;
 
 void
 initHosts(ConfigItem* global)
@@ -21,7 +21,11 @@ initHosts(ConfigItem* global)
     /* for each server block */
 
     if (serverBlocks.size() == 0) {
-        std::clog << ORANGE << "/!\\ Warning " << ": no server block found, the server will hang forever and will do nothing, and that's sad :( " << ORANGE << "/!\\\n\n" << CLR;
+        std::clog << ORANGE << "/!\\ Warning "
+                  << ": no server block found, the server will hang forever "
+                     "and will do nothing, and that's sad :( "
+                  << ORANGE << "/!\\\n\n"
+                  << CLR;
     }
 
     for (size_t i = 0; i != serverBlocks.size(); ++i) {

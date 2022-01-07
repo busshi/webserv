@@ -107,7 +107,7 @@ Lexer::nextTokenType(void)
     }
 
     if (_pos >= _s.size()) {
-        
+
         return END_OF_FILE;
     }
 

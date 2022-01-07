@@ -16,7 +16,7 @@ class Lexer
         VALUE,
         END_OF_FILE,
         SEMICOLON,
-		NEWLINE
+        NEWLINE
     };
 
   public:
@@ -72,15 +72,15 @@ class Lexer
     };
 
   private:
-	std::vector<Token> _tokenHistory;
+    std::vector<Token> _tokenHistory;
 
     std::string _s;
     std::string::size_type _pos;
     size_t _blockDepth;
     size_t _lineNb, _columnNb;
 
-	TokenType nextTokenType(void);
-	TokenType getLastRealTokenType(void);
+    TokenType nextTokenType(void);
+    TokenType getLastRealTokenType(void);
 
     void skipSpace(void);
     void skipComment(void);
@@ -97,14 +97,13 @@ class Lexer
      * Shorthand for _s[_pos]
      */
     unsigned char ch(void) const;
-    
+
     /*
      * Move the cursor of n characters.
      * Shortand for _pos += n
      * Adds n to _columnNb
      */
     void movePos(size_t n);
-
 };
 
 std::ostream&

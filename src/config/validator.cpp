@@ -308,4 +308,3 @@ validateBool(const std::string& value, std::string& errorMsg)
 
     return true;
 }
-

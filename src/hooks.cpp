@@ -31,17 +31,18 @@ onHeader(const string& method,
     string parsedLoc;
     string::size_type pos = loc.find('?');
 
-    /* if the '?' char is encountered capture the query string and strip it from the location */
+    /* if the '?' char is encountered capture the query string and strip it from
+     * the location */
     if (pos != string::npos) {
-    	req->setQueryString(loc.substr(pos + 1));
-	parsedLoc = loc.substr(0, pos);
+        req->setQueryString(loc.substr(pos + 1));
+        parsedLoc = loc.substr(0, pos);
     } else {
-	parsedLoc = loc;
+        parsedLoc = loc;
     }
 
     try {
-        parsedLoc =
-          HTTP::urlDecode(parsedLoc.size() > 1 ? trimTrailing(parsedLoc, "/") : parsedLoc);
+        parsedLoc = HTTP::urlDecode(
+          parsedLoc.size() > 1 ? trimTrailing(parsedLoc, "/") : parsedLoc);
     } catch (std::runtime_error& e) {
         throw HTTP::Exception(req, HTTP::BAD_REQUEST, e.what());
     }

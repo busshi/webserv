@@ -24,9 +24,9 @@ class CGI
   public:
     HTTP::MessageParser* parser;
     CGI(int csockFd,
-                           HTTP::Request* req,
-                           const std::string& cgiExecName,
-                           const std::string& filepath);
+        HTTP::Request* req,
+        const std::string& cgiExecName,
+        const std::string& filepath);
     ~CGI(void);
 
     HTTP::Request* request(void);
