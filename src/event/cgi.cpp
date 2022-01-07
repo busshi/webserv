@@ -64,7 +64,6 @@ handleCgiEvents(fd_set& rsetc, fd_set& wsetc)
             }
         }
 
-        eventBuf[ret] = 0;
         try {
             cgi->parse(eventBuf, ret);
         } catch (HTTP::MessageParser::IllFormedException& e) {
