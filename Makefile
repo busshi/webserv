@@ -36,7 +36,7 @@ HEADER		+= $(addprefix include/cgi/, cgi.hpp)
 
 OBJS		= $(SRCS:.cpp=.o)
 
-CXX_FLAGS	= -g3 -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude -fsanitize=address $(if $(LOGGER), -DLOGGER, )
+CXX_FLAGS	= -g3 -Wall -Wextra -Werror -std=c++98 -Iinclude/webserv/ -Iinclude $(if $(LOGGER), -DLOGGER, )
 
 CC			= @c++
 
