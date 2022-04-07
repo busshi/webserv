@@ -75,4 +75,3 @@ HTTP::Message::operator=(const Message& rhs)
 
     return *this;
 }
-

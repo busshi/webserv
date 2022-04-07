@@ -107,6 +107,7 @@ Lexer::nextTokenType(void)
     }
 
     if (_pos >= _s.size()) {
+
         return END_OF_FILE;
     }
 
@@ -194,13 +195,12 @@ Lexer::processOne(void)
         skipSpace();
     }
 
-    if (_pos == _s.size()) {
+    if (_pos >= _s.size()) {
         if (_blockDepth > 0) {
             throw LexerException(
               _lineNb, _columnNb, "Unclosed block, missing closing brace");
         }
-        if (_tokenHistory.back().getType() == KEY) {
-            std::string msg;
+        if (getLastRealTokenType() == KEY) {
             throw LexerException(
               _lineNb, _columnNb, "Unterminated key: missing value");
         }

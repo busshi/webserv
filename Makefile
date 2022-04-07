@@ -1,17 +1,5 @@
 NAME		= webserv
 
-DOXYGEN_OUT			:= ./doxygen
-DOXYGEN_CONF_DIR	:= ./doxygen-conf
-DOXYGEN_CONF_FILE	:= doxygen.conf
-
-UNAME				:= $(shell uname)
-
-ifeq ($(UNAME), Linux)
-	OPEN := xdg-open
-else
-	OPEN := open
-endif
-
 SRCS		+= $(addprefix src/, main.cpp hosts.cpp lifecycle.cpp hooks.cpp Directives.cpp FileUploader.cpp Timer.cpp error_handling.cpp process_request.cpp)
 
 SRCS		+= $(addprefix src/config/, Lexer.cpp ConfigParser.cpp validator.cpp ConfigItem.cpp parser.cpp)
@@ -42,8 +30,6 @@ CC			= @c++
 
 RM			= @rm -rf
 
-OK			= "\r[ \033[0;32mok\033[0m ]"
-
 FORMATTER   := clang-format
 
 %.o:%.cpp $(HEADER)
@@ -72,24 +58,3 @@ fclean: clean
 
 re:	fclean all
 .PHONY: re
-
-run: re
-	@./$(NAME) "./asset/config/simple.conf"
-.PHONY: run
-
-$(DOXYGEN_OUT)/html/index.html:
-	@printf "Will generate documentation using doxygen...\n"
-	@doxygen $(DOXYGEN_CONF_DIR)/$(DOXYGEN_CONF_FILE)
-	@printf "Documentation generated!\n"
-
-doc: $(DOXYGEN_OUT)/html/index.html
-	@($(OPEN) $(DOXYGEN_OUT)/html/index.html 2> /dev/null &)
-	@printf "Now displaying documentation in your browser's tab\nProcess has been sent to the background.\n";
-
-cleandoc:
-	$(RM) $(DOXYGEN_OUT)
-
-redoc: cleandoc doc
-	@printf "Doc REgenerated successfully.\n"
-
-.PHONY: doc

@@ -27,17 +27,28 @@ onHeader(const string& method,
          uintptr_t requestLoc)
 {
     HTTP::Request* req = GET_REQ(requestLoc);
-    string decoded;
+
+    string parsedLoc;
+    string::size_type pos = loc.find('?');
+
+    /* if the '?' char is encountered capture the query string and strip it from
+     * the location */
+    if (pos != string::npos) {
+        req->setQueryString(loc.substr(pos + 1));
+        parsedLoc = loc.substr(0, pos);
+    } else {
+        parsedLoc = loc;
+    }
 
     try {
-        decoded =
-          HTTP::urlDecode(loc.size() > 1 ? trimTrailing(loc, "/") : loc);
+        parsedLoc = HTTP::urlDecode(
+          parsedLoc.size() > 1 ? trimTrailing(parsedLoc, "/") : parsedLoc);
     } catch (std::runtime_error& e) {
         throw HTTP::Exception(req, HTTP::BAD_REQUEST, e.what());
     }
 
-    req->setOriginalLocation(decoded);
-    req->setLocation(decoded);
+    req->setOriginalLocation(parsedLoc);
+    req->setLocation(parsedLoc);
     req->setProtocol(protocol);
 
     if (!isMethodImplemented(method)) {

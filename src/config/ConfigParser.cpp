@@ -112,6 +112,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                     Formatter() << "name \"" << keyval.first
                                 << "\" MUST be turned into a block\n" >>
                       errorMsg;
+                    delete tmp;
                     abortParsing(main, errorMsg);
                 }
                 current->children.push_back(tmp);
@@ -125,6 +126,7 @@ ConfigParser::parse(const std::vector<Lexer::Token>& tv)
                     Formatter() << "name \"" << keyval.first
                                 << "\" CANNOT be turned into a block\n" >>
                       errorMsg;
+                    delete tmp;
                     abortParsing(main, errorMsg);
                 }
                 current->children.push_back(tmp);

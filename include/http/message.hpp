@@ -103,7 +103,7 @@ class Request : public Message
     Timer timer;
 
   private:
-    std::string _method, _location, _protocol, _origLocation;
+    std::string _method, _location, _protocol, _origLocation, _queryString;
     int _csockFd, _resourceFd;
     Response _res;
     unsigned long long _timeout;
@@ -130,6 +130,7 @@ class Request : public Message
     const std::string& getMethod(void) const;
     const std::string& getProtocol(void) const;
     const std::string& getLocation(void) const;
+    const std::string& getQueryString(void) const;
     const std::string& getOriginalLocation(void) const;
     unsigned long long getCurrentBodySize(void) const;
     unsigned long long getMaxBodySize(void) const;
@@ -142,6 +143,7 @@ class Request : public Message
     void setBlock(ConfigItem* block);
     void setCurrentBodySize(unsigned long long size);
     void setMaxBodySize(unsigned long long size);
+    void setQueryString(const std::string& queryString);
 
     void clear(void);
 

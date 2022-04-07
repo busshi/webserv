@@ -39,4 +39,3 @@ getLastModified(std::string path)
     else
         return getDate(time(0));
 }
-
